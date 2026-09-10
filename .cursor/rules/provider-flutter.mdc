@@ -1,0 +1,165 @@
+---
+description: Flutter Service Provider Web and Mobile rules for MZ Logistics
+alwaysApply: true
+---
+
+# MZ Logistics Service Provider Platform - Flutter Rules
+
+Follow the global MZ Logistics rules.
+
+This application serves transportation companies and service providers.
+
+Supports:
+- Web
+- Android
+- iOS
+
+## Core Principle
+
+The Service Provider is the parent business account.
+
+Under the Service Provider account are:
+
+- Company users
+- Trucks
+- Vehicles
+- Equipment
+- Drivers
+- Quotations
+- Jobs
+- Trips
+- Financial information
+
+Drivers and trucks must never be treated as independent service provider accounts.
+
+## Main Features
+
+Structure features around:
+
+- Dashboard
+- Shipment Requests
+- Quotations
+- Jobs
+- Trips
+- Dispatch
+- Fleet
+- Trucks
+- Equipment
+- Drivers
+- Documents
+- Finance
+- Notifications
+- Company Settings
+- Users
+- Roles & Permissions
+
+## Roles
+
+The UI must respect backend permissions.
+
+Possible roles include:
+
+Provider Admin:
+- Full company access.
+
+Operations Manager:
+- Jobs.
+- Trips.
+- Operations.
+- Dispatch.
+
+Dispatcher:
+- Assign trucks.
+- Assign drivers.
+- Manage trip scheduling.
+
+Fleet Manager:
+- Trucks.
+- Vehicles.
+- Equipment.
+- Driver operational data.
+
+Finance:
+- Payments.
+- Invoices.
+- Settlements.
+
+Do not rely on role name alone when backend provides permissions.
+
+Use permissions to determine what the user can:
+- View.
+- Create.
+- Update.
+- Delete.
+- Approve.
+- Assign.
+
+## Desktop Experience
+
+Provider web experience should be operational and information-dense without becoming cluttered.
+
+Use:
+- Tables.
+- Filters.
+- Search.
+- Dashboards.
+- Side navigation.
+- Status indicators.
+
+Fleet and trip management should be efficient on desktop.
+
+## Mobile Experience
+
+Mobile should focus on important operational actions.
+
+Avoid copying large desktop tables directly to mobile.
+
+Convert data intelligently into:
+- Cards.
+- Expandable rows.
+- Compact summaries.
+- Mobile filters.
+
+## Quotations
+
+Quotation forms must clearly support:
+
+- Total price.
+- Number of trucks.
+- Truck types.
+- Truck capacities.
+- Number of trips.
+- Quantity per trip.
+- Execution duration.
+- Additional cost or conditions.
+
+## Jobs and Trips
+
+Clearly distinguish between:
+
+Job
+and
+Trip.
+
+Never visually or logically merge them.
+
+One Job may contain multiple Trips.
+
+## Fleet
+
+Truck information must clearly show:
+- Truck type.
+- Capacity.
+- Availability.
+- Assigned driver where applicable.
+- Current operational state.
+
+## Validation
+
+Prevent invalid assignments in UI where possible, but backend remains authoritative.
+
+Examples:
+- Over-capacity truck.
+- Unavailable truck.
+- Unavailable driver.
+- Invalid trip state.
