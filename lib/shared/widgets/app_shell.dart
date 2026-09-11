@@ -42,7 +42,7 @@ const sidebarDestinations = <NavDestination>[
     path: '/finance',
     labelKey: 'nav.finance',
     icon: Icons.account_balance_outlined,
-    anyPermissions: [AppPermissions.paymentsView, AppPermissions.invoicesView, AppPermissions.settlementsView],
+    anyPermissions: [AppPermissions.paymentsView, AppPermissions.invoicesView, AppPermissions.settlementsView, AppPermissions.walletsView],
   ),
   NavDestination(path: '/notifications', labelKey: 'nav.notifications', icon: Icons.notifications_outlined),
   NavDestination(path: '/company', labelKey: 'nav.company', icon: Icons.apartment_outlined, permission: AppPermissions.companyManage),
@@ -50,12 +50,20 @@ const sidebarDestinations = <NavDestination>[
   NavDestination(path: '/profile', labelKey: 'nav.profile', icon: Icons.person_outline),
 ];
 
-List<NavDestination> visibleDestinations(PermissionSet permissions) {
+List<NavDestination> visibleDestinations(SessionState session) {
   return sidebarDestinations.where((item) {
-    if (item.permission != null && !permissions.can(item.permission!)) {
+    if (session.isAccountRestricted) {
+      if (!session.allowsRestrictedPath(item.path)) {
+        return false;
+      }
+      if (item.path == '/dashboard' || item.path == '/profile') {
+        return true;
+      }
+    }
+    if (item.permission != null && !session.permissions.can(item.permission!)) {
       return false;
     }
-    if (item.anyPermissions != null && !permissions.any(item.anyPermissions!)) {
+    if (item.anyPermissions != null && !session.permissions.any(item.anyPermissions!)) {
       return false;
     }
     return true;
@@ -70,7 +78,7 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
-    final items = visibleDestinations(session.permissions);
+    final items = visibleDestinations(session);
     final location = GoRouterState.of(context).uri.path;
     final desktop = Breakpoints.isDesktop(context);
 
@@ -114,11 +122,12 @@ class AppShell extends ConsumerWidget {
       appBar: AppBar(
         title: Text(context.tr(_titleKey(location))),
         actions: [
-          IconButton(
-            tooltip: context.tr('nav.notifications'),
-            onPressed: () => context.go('/notifications'),
-            icon: const Icon(Icons.notifications_outlined),
-          ),
+          if (!session.isAccountRestricted)
+            IconButton(
+              tooltip: context.tr('nav.notifications'),
+              onPressed: () => context.go('/notifications'),
+              icon: const Icon(Icons.notifications_outlined),
+            ),
           IconButton(
             tooltip: context.tr('nav.language'),
             onPressed: () => ref.read(localeControllerProvider.notifier).toggle(),
@@ -231,11 +240,12 @@ class _TopBar extends ConsumerWidget {
             icon: const Icon(Icons.language, size: 18),
             label: Text(context.tr('nav.language')),
           ),
-          IconButton(
-            tooltip: context.tr('nav.notifications'),
-            onPressed: () => context.go('/notifications'),
-            icon: const Icon(Icons.notifications_outlined),
-          ),
+          if (!ref.watch(sessionProvider).isAccountRestricted)
+            IconButton(
+              tooltip: context.tr('nav.notifications'),
+              onPressed: () => context.go('/notifications'),
+              icon: const Icon(Icons.notifications_outlined),
+            ),
           const SizedBox(width: 8),
           InkWell(
             onTap: () => context.go('/profile'),

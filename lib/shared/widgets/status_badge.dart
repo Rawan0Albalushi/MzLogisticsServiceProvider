@@ -41,6 +41,8 @@ class StatusBadge extends StatelessWidget {
       case 'available':
       case 'paid':
       case 'active':
+      case 'earning_released':
+      case 'payout_completed':
         return AppColors.success;
       case 'in_progress':
       case 'in_transit':
@@ -57,6 +59,8 @@ class StatusBadge extends StatelessWidget {
       case 'pending_dispatch':
       case 'unassigned':
       case 'issued':
+      case 'job_earning':
+      case 'payout_reserved':
         return AppColors.warning;
       case 'cancelled':
       case 'rejected':

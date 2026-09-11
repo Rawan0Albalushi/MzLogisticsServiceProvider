@@ -50,9 +50,15 @@ class SessionState {
   final String? token;
   final AppUser? user;
 
+  static const restrictedAllowedPaths = {'/dashboard', '/profile', '/company', '/more'};
+
   bool get isAuthenticated => token != null && token!.isNotEmpty && user != null;
   bool get isPendingReview => user?.organization?.isPending ?? false;
+  bool get isAccountRestricted => isAuthenticated && !(user?.organization?.isActive ?? false);
+  bool get canOperate => isAuthenticated && (user?.organization?.isActive ?? false);
   PermissionSet get permissions => user?.permissionSet ?? const PermissionSet([]);
+
+  bool allowsRestrictedPath(String path) => restrictedAllowedPaths.contains(path);
 }
 
 class SessionNotifier extends Notifier<SessionState> {
@@ -90,6 +96,15 @@ class SessionNotifier extends Notifier<SessionState> {
 
   void updateUser(AppUser user) {
     state = SessionState(ready: true, token: state.token, user: user);
+  }
+
+  Future<void> refreshUser() async {
+    final token = state.token;
+    if (token == null || token.isEmpty) {
+      return;
+    }
+    final user = await ref.read(authRepositoryProvider).me();
+    state = SessionState(ready: true, token: token, user: user);
   }
 
   Future<void> logout() async {

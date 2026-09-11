@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/breakpoints.dart';
+import '../providers/session_provider.dart';
 
 class PageHeader extends StatelessWidget {
   const PageHeader({
@@ -62,11 +64,17 @@ class PageHeader extends StatelessWidget {
   }
 }
 
-class PendingReviewBanner extends StatelessWidget {
+class PendingReviewBanner extends ConsumerWidget {
   const PendingReviewBanner({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(sessionProvider).user?.organization?.status;
+    final messageKey = switch (status) {
+      'rejected' => 'auth.restrictedRejected',
+      'suspended' => 'auth.restrictedSuspended',
+      _ => 'auth.pendingReview',
+    };
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -75,7 +83,7 @@ class PendingReviewBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.amber.withValues(alpha: 0.45)),
       ),
-      child: Text(context.tr('auth.pendingReview')),
+      child: Text(context.tr(messageKey)),
     );
   }
 }

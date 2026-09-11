@@ -43,18 +43,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
     final locale = ref.watch(localeControllerProvider);
+    final locked = !session.canOperate;
     return Padding(
       padding: const EdgeInsets.all(20),
       child: ListView(
         children: [
           PageHeader(title: context.tr('profile.title')),
+          if (locked) ...[
+            const SizedBox(height: 12),
+            const PendingReviewBanner(),
+          ],
           const SizedBox(height: 16),
           SectionCard(
             child: Column(
               children: [
-                AppTextField(label: context.tr('auth.name'), controller: _name, required: true),
+                AppTextField(label: context.tr('auth.name'), controller: _name, required: true, enabled: !locked),
                 const SizedBox(height: 12),
-                AppTextField(label: context.tr('auth.phone'), controller: _phone),
+                AppTextField(label: context.tr('auth.phone'), controller: _phone, enabled: !locked),
                 const SizedBox(height: 12),
                 InfoRow(label: context.tr('auth.email'), value: session.user?.email ?? '—'),
                 InfoRow(label: context.tr('users.roles'), value: session.user?.primaryRole ?? '—'),
@@ -65,6 +70,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     StatusBadge(status: session.user?.organization?.status, organization: true),
                   ],
                 ),
+                if (!locked) ...[
                 const SizedBox(height: 16),
                 AppButton(
                   label: context.tr('profile.update'),
@@ -93,6 +99,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     }
                   },
                 ),
+                ],
               ],
             ),
           ),

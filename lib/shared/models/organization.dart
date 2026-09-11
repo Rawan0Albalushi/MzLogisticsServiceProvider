@@ -48,6 +48,8 @@ class Organization {
 
   bool get isPending => status == 'pending';
   bool get isActive => status == 'active';
+  bool get isRejected => status == 'rejected';
+  bool get isSuspended => status == 'suspended';
 
   factory Organization.fromJson(Map<String, dynamic> json) {
     return Organization(

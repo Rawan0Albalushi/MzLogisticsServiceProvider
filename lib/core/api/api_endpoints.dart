@@ -17,6 +17,7 @@ class ApiEndpoints {
   static const payments = '/payments';
   static const invoices = '/invoices';
   static const settlements = '/settlements';
+  static const wallets = '/wallets';
   static const notifications = '/notifications';
   static const organizations = '/organizations';
 
@@ -30,6 +31,8 @@ class ApiEndpoints {
   static String tripStatus(int id) => '/trips/$id/status';
   static String truck(int id) => '/trucks/$id';
   static String organization(int id) => '/organizations/$id';
+  static String wallet(int id) => '/wallets/$id';
+  static String walletTransactions(int id) => '/wallets/$id/transactions';
   static String readNotification(String id) => '/notifications/$id/read';
   static const readAllNotifications = '/notifications/read-all';
 }

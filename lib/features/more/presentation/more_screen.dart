@@ -13,7 +13,7 @@ class MoreScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = visibleDestinations(ref.watch(sessionProvider).permissions)
+    final items = visibleDestinations(ref.watch(sessionProvider))
         .where((item) => item.path != '/dashboard')
         .toList();
     return Padding(

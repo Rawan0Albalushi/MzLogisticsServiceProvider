@@ -72,6 +72,9 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
   }
 
   Future<void> _submit() async {
+    if (!ref.read(sessionProvider).canOperate) {
+      return;
+    }
     if (!_formKey.currentState!.validate() || _loading) {
       return;
     }
@@ -111,6 +114,12 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!ref.watch(sessionProvider).canOperate) {
+      return const Padding(
+        padding: EdgeInsets.all(20),
+        child: PendingReviewBanner(),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.all(20),
       child: AsyncBody(

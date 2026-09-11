@@ -12,6 +12,8 @@ class DashboardSnapshot {
     this.paymentsCompletedAmount = 0,
     this.commissionAmount = 0,
     this.providerReceivable = 0,
+    this.walletPending = 0,
+    this.walletAvailable = 0,
     this.invoicesCount = 0,
   });
 
@@ -25,6 +27,8 @@ class DashboardSnapshot {
   final double paymentsCompletedAmount;
   final double commissionAmount;
   final double providerReceivable;
+  final double walletPending;
+  final double walletAvailable;
   final int invoicesCount;
 
   factory DashboardSnapshot.fromJson(Map<String, dynamic> json) {
@@ -39,6 +43,8 @@ class DashboardSnapshot {
       paymentsCompletedAmount: asDouble(json['payments_completed_amount']) ?? 0,
       commissionAmount: asDouble(json['commission_amount']) ?? 0,
       providerReceivable: asDouble(json['provider_receivable']) ?? 0,
+      walletPending: asDouble(json['wallet_pending']) ?? 0,
+      walletAvailable: asDouble(json['wallet_available']) ?? 0,
       invoicesCount: asInt(json['invoices_count']) ?? 0,
     );
   }

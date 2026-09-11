@@ -7,6 +7,7 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/dashboard.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/account_restricted_view.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/metric_card.dart';
 import '../../../shared/widgets/page_header.dart';
@@ -24,6 +25,9 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
+    if (session.isAccountRestricted) {
+      return const AccountRestrictedView();
+    }
     final locale = Localizations.localeOf(context).languageCode;
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -37,10 +41,6 @@ class DashboardScreen extends ConsumerWidget {
                 title: context.tr('dashboard.title'),
                 subtitle: context.tr('dashboard.subtitle'),
               ),
-              if (session.isPendingReview) ...[
-                const SizedBox(height: 16),
-                const PendingReviewBanner(),
-              ],
               const SizedBox(height: 16),
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -57,7 +57,8 @@ class DashboardScreen extends ConsumerWidget {
                     _metric(context, context.tr('dashboard.activeJobs'), '${data.jobsActive}', Icons.work_outline, '/jobs', AppPermissions.jobsView, session),
                     _metric(context, context.tr('dashboard.activeTrips'), '${data.tripsActive}', Icons.route_outlined, '/trips', AppPermissions.tripsView, session),
                     _metric(context, context.tr('dashboard.inTransit'), '${data.tripsInTransit}', Icons.moving, '/trips', AppPermissions.tripsView, session),
-                    _metric(context, context.tr('dashboard.receivable'), Formatters.money(data.providerReceivable, locale: locale), Icons.payments_outlined, '/finance', AppPermissions.paymentsView, session),
+                    _metric(context, context.tr('dashboard.available'), Formatters.money(data.walletAvailable, locale: locale), Icons.account_balance_wallet_outlined, '/finance', AppPermissions.walletsView, session),
+                    _metric(context, context.tr('dashboard.pendingWallet'), Formatters.money(data.walletPending, locale: locale), Icons.hourglass_bottom_outlined, '/finance', AppPermissions.walletsView, session),
                     _metric(context, context.tr('dashboard.commission'), Formatters.money(data.commissionAmount, locale: locale), Icons.account_balance_outlined, '/finance', AppPermissions.paymentsView, session),
                     _metric(context, context.tr('dashboard.invoices'), '${data.invoicesCount}', Icons.receipt_long_outlined, '/finance', AppPermissions.invoicesView, session),
                   ].whereType<Widget>().toList();

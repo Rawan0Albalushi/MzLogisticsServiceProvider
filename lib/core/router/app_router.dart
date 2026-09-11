@@ -80,6 +80,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (session.isAuthenticated && loggingIn) {
         return '/dashboard';
       }
+      if (session.isAccountRestricted && !session.allowsRestrictedPath(state.matchedLocation)) {
+        return '/dashboard';
+      }
       return null;
     },
     routes: [

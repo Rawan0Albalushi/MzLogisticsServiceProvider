@@ -17,6 +17,7 @@ class AppPermissions {
   static const paymentsView = 'payments.view';
   static const invoicesView = 'invoices.view';
   static const settlementsView = 'settlements.view';
+  static const walletsView = 'wallets.view';
   static const usersManage = 'users.manage';
   static const companyManage = 'company.manage';
   static const trackingView = 'tracking.view';

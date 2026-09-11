@@ -31,9 +31,9 @@ class ShipmentDetailScreen extends ConsumerWidget {
         value: ref.watch(shipmentDetailProvider(id)),
         onRetry: () => ref.invalidate(shipmentDetailProvider(id)),
         builder: (item) {
-          final canQuote = session.permissions.can(AppPermissions.quotationsCreate) &&
-              !item.quotedBy(session.user?.organizationId) &&
-              !session.isPendingReview;
+          final canQuote = session.canOperate &&
+              session.permissions.can(AppPermissions.quotationsCreate) &&
+              !item.quotedBy(session.user?.organizationId);
           return ListView(
             children: [
               PageHeader(
@@ -48,7 +48,7 @@ class ShipmentDetailScreen extends ConsumerWidget {
                     ),
                 ],
               ),
-              if (session.isPendingReview) ...[
+              if (session.isAccountRestricted) ...[
                 const SizedBox(height: 12),
                 const PendingReviewBanner(),
               ],

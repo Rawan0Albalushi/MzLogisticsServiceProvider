@@ -4,6 +4,7 @@ import '../../../core/api/paginated.dart';
 import '../../../shared/models/invoice.dart';
 import '../../../shared/models/payment.dart';
 import '../../../shared/models/settlement.dart';
+import '../../../shared/models/wallet.dart';
 
 class FinanceRepository {
   FinanceRepository(this._api);
@@ -24,6 +25,23 @@ class FinanceRepository {
       'per_page': 15,
     });
     return Paginated.fromResponse(response, Invoice.fromJson);
+  }
+
+  Future<Wallet?> wallet() async {
+    final response = await _api.get(ApiEndpoints.wallets, query: {
+      'page': 1,
+      'per_page': 1,
+    });
+    final page = Paginated.fromResponse(response, Wallet.fromJson);
+    return page.items.isEmpty ? null : page.items.first;
+  }
+
+  Future<Paginated<WalletTransaction>> walletTransactions(int walletId, {int page = 1}) async {
+    final response = await _api.get(ApiEndpoints.walletTransactions(walletId), query: {
+      'page': page,
+      'per_page': 15,
+    });
+    return Paginated.fromResponse(response, WalletTransaction.fromJson);
   }
 
   Future<Paginated<Settlement>> settlements({int page = 1}) async {

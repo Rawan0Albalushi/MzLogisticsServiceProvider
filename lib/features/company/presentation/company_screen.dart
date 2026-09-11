@@ -79,6 +79,7 @@ class _CompanyScreenState extends ConsumerState<CompanyScreen> {
         onRetry: () => ref.invalidate(organizationProvider(id)),
         builder: (org) {
           _hydrate(org);
+          final locked = !session.canOperate;
           return ListView(
             children: [
               PageHeader(
@@ -86,7 +87,7 @@ class _CompanyScreenState extends ConsumerState<CompanyScreen> {
                 subtitle: context.tr('company.settings'),
                 actions: [StatusBadge(status: org.status, organization: true)],
               ),
-              if (org.isPending) ...[
+              if (locked) ...[
                 const SizedBox(height: 12),
                 const PendingReviewBanner(),
               ],
@@ -94,21 +95,22 @@ class _CompanyScreenState extends ConsumerState<CompanyScreen> {
               SectionCard(
                 child: Column(
                   children: [
-                    AppTextField(label: context.tr('auth.companyName'), controller: _name, required: true),
+                    AppTextField(label: context.tr('auth.companyName'), controller: _name, required: true, enabled: !locked),
                     const SizedBox(height: 12),
-                    AppTextField(label: context.tr('company.nameAr'), controller: _nameAr),
+                    AppTextField(label: context.tr('company.nameAr'), controller: _nameAr, enabled: !locked),
                     const SizedBox(height: 12),
-                    AppTextField(label: context.tr('common.email'), controller: _email),
+                    AppTextField(label: context.tr('common.email'), controller: _email, enabled: !locked),
                     const SizedBox(height: 12),
-                    AppTextField(label: context.tr('common.phone'), controller: _phone),
+                    AppTextField(label: context.tr('common.phone'), controller: _phone, enabled: !locked),
                     const SizedBox(height: 12),
-                    AppTextField(label: context.tr('common.city'), controller: _city),
+                    AppTextField(label: context.tr('common.city'), controller: _city, enabled: !locked),
                     const SizedBox(height: 12),
-                    AppTextField(label: context.tr('common.address'), controller: _address, maxLines: 3),
+                    AppTextField(label: context.tr('common.address'), controller: _address, maxLines: 3, enabled: !locked),
                     const SizedBox(height: 12),
-                    AppTextField(label: context.tr('auth.commercialRegister'), controller: _cr),
+                    AppTextField(label: context.tr('auth.commercialRegister'), controller: _cr, enabled: !locked),
                     const SizedBox(height: 12),
-                    AppTextField(label: context.tr('common.taxNumber'), controller: _tax),
+                    AppTextField(label: context.tr('common.taxNumber'), controller: _tax, enabled: !locked),
+                    if (!locked) ...[
                     const SizedBox(height: 20),
                     AppButton(
                       label: context.tr('common.save'),
@@ -146,6 +148,7 @@ class _CompanyScreenState extends ConsumerState<CompanyScreen> {
                         }
                       },
                     ),
+                    ],
                   ],
                 ),
               ),
