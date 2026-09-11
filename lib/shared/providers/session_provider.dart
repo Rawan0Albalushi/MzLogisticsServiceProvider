@@ -13,6 +13,7 @@ import '../../features/notifications/data/notification_repository.dart';
 import '../../features/quotations/data/quotation_repository.dart';
 import '../../features/shipments/data/shipment_repository.dart';
 import '../../features/trips/data/trip_repository.dart';
+import '../../features/truck_types/data/truck_type_repository.dart';
 import '../models/user.dart';
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) => TokenStorage());
@@ -35,6 +36,7 @@ final quotationRepositoryProvider = Provider((ref) => QuotationRepository(ref.wa
 final jobRepositoryProvider = Provider((ref) => JobRepository(ref.watch(apiClientProvider)));
 final tripRepositoryProvider = Provider((ref) => TripRepository(ref.watch(apiClientProvider)));
 final fleetRepositoryProvider = Provider((ref) => FleetRepository(ref.watch(apiClientProvider)));
+final truckTypeRepositoryProvider = Provider((ref) => TruckTypeRepository(ref.watch(apiClientProvider)));
 final financeRepositoryProvider = Provider((ref) => FinanceRepository(ref.watch(apiClientProvider)));
 final organizationRepositoryProvider = Provider((ref) => OrganizationRepository(ref.watch(apiClientProvider)));
 final notificationRepositoryProvider = Provider((ref) => NotificationRepository(ref.watch(apiClientProvider)));

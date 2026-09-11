@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_exception.dart';
-import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
@@ -16,6 +15,7 @@ import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../quotations/presentation/quotations_screen.dart';
+import '../../truck_types/presentation/truck_type_providers.dart';
 import 'shipment_detail_screen.dart';
 
 class SubmitQuotationScreen extends ConsumerStatefulWidget {
@@ -37,7 +37,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
   final _duration = TextEditingController(text: '1');
   final _extra = TextEditingController();
   final _conditions = TextEditingController();
-  String _truckType = AppConfig.truckTypes.first;
+  String? _truckType;
   var _loading = false;
 
   void _syncTripCountToTrucks() {
@@ -78,6 +78,10 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
     if (!_formKey.currentState!.validate() || _loading) {
       return;
     }
+    final truckType = _truckType;
+    if (truckType == null || truckType.isEmpty) {
+      return;
+    }
     _syncTripCountToTrucks();
     setState(() => _loading = true);
     try {
@@ -86,7 +90,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
             QuotationDraft(
               totalPrice: double.parse(_price.text),
               truckCount: int.parse(_truckCount.text),
-              truckType: _truckType,
+              truckType: truckType,
               truckCapacityTons: double.parse(_capacity.text),
               tripCount: int.parse(_tripCount.text),
               quantityPerTrip: double.parse(_qtyPerTrip.text),
@@ -163,16 +167,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      AppDropdown<String>(
-                        label: context.tr('quotations.truckType'),
-                        value: _truckType,
-                        required: true,
-                        items: [
-                          for (final type in AppConfig.truckTypes)
-                            DropdownMenuItem(value: type, child: Text(context.l10n.truckType(type))),
-                        ],
-                        onChanged: (value) => setState(() => _truckType = value ?? _truckType),
-                      ),
+                      _typeDropdown(context),
                       const SizedBox(height: 12),
                       AppTextField(
                         label: context.tr('quotations.truckCapacity'),
@@ -249,6 +244,34 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _typeDropdown(BuildContext context) {
+    final catalog = ref.watch(catalogTruckTypesProvider);
+    return catalog.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (_, _) => Text(context.tr('common.error')),
+      data: (types) {
+        final value = types.any((item) => item.code == _truckType) ? _truckType : types.firstOrNull?.code;
+        if (value != null && value != _truckType) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() => _truckType = value);
+            }
+          });
+        }
+        return AppDropdown<String>(
+          label: context.tr('quotations.truckType'),
+          value: value,
+          required: true,
+          items: [
+            for (final type in types)
+              DropdownMenuItem(value: type.code, child: Text(type.displayName(context.l10n.isRtl))),
+          ],
+          onChanged: (selected) => setState(() => _truckType = selected ?? _truckType),
+        );
+      },
     );
   }
 }

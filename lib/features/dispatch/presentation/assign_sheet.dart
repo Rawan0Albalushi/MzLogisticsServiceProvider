@@ -131,7 +131,7 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
               const SizedBox(height: 4),
               Text(
                 context.tr('dispatch.fleetPlanType', {
-                  'type': context.l10n.truckType(quotedType),
+                  'type': context.l10n.truckType(quotedType, label: _plan.truckTypeLabel),
                   'capacity': Formatters.number(quotedCapacity, locale: locale),
                 }),
               ),
@@ -240,7 +240,7 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
   String _truckLabel(BuildContext context, Truck truck, Trip trip, String? quotedType) {
     final planned = trip.plannedQuantity ?? 0;
     final base =
-        '${truck.plateNumber ?? ''} · ${context.l10n.truckType(truck.type)} · ${Formatters.number(truck.capacityTons)} ${context.tr('common.tons')}';
+        '${truck.plateNumber ?? ''} · ${context.l10n.truckType(truck.type, label: truck.typeLabel)} · ${Formatters.number(truck.capacityTons)} ${context.tr('common.tons')}';
     final currentTruck = trip.truck?.id == truck.id;
     if (truck.isUnavailable || (!currentTruck && truck.isBusy) || !truck.canCarry(planned)) {
       return '$base (${context.tr('common.unavailable')})';

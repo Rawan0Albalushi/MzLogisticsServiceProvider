@@ -70,7 +70,7 @@ class JobDetailScreen extends ConsumerWidget {
                       ),
                       InfoRow(
                         label: context.tr('quotations.truckType'),
-                        value: context.l10n.truckType(job.quotation!.truckType),
+                        value: context.l10n.truckType(job.quotation!.truckType, label: job.quotation!.truckTypeLabel),
                       ),
                     ],
                   ],

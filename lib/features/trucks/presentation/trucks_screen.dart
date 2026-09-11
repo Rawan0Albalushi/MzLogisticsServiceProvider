@@ -84,7 +84,7 @@ class TrucksScreen extends ConsumerWidget {
                       ],
                       rowCells: (item) => [
                         Text(item.plateNumber ?? ''),
-                        Text(context.l10n.truckType(item.type)),
+                        Text(context.l10n.truckType(item.type, label: item.typeLabel)),
                         Text(Formatters.number(item.capacityTons)),
                         Text(item.assignedDriver?.name ?? '—'),
                         StatusBadge(status: item.status),
@@ -99,7 +99,7 @@ class TrucksScreen extends ConsumerWidget {
                         child: ListTile(
                           title: Text(item.plateNumber ?? ''),
                           subtitle: Text(
-                            '${context.l10n.truckType(item.type)} · ${Formatters.number(item.capacityTons)} ${context.tr('common.tons')}',
+                            '${context.l10n.truckType(item.type, label: item.typeLabel)} · ${Formatters.number(item.capacityTons)} ${context.tr('common.tons')}',
                           ),
                           trailing: StatusBadge(status: item.status),
                           onTap: session.permissions.can(AppPermissions.fleetManage)

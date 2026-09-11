@@ -7,6 +7,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/utils/validators.dart';
 import '../../../shared/models/truck.dart';
+import '../../../shared/models/truck_type.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
@@ -15,6 +16,7 @@ import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../fleet/presentation/fleet_screen.dart';
+import '../../truck_types/presentation/truck_type_providers.dart';
 import 'trucks_screen.dart';
 
 class TruckFormScreen extends ConsumerStatefulWidget {
@@ -34,7 +36,7 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
   final _make = TextEditingController();
   final _model = TextEditingController();
   final _insurance = TextEditingController();
-  String _type = AppConfig.truckTypes.first;
+  String? _type;
   String _status = 'available';
   var _loading = false;
   var _hydrated = false;
@@ -69,10 +71,14 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
     if (!_formKey.currentState!.validate() || _loading) {
       return;
     }
+    final type = _type;
+    if (type == null || type.isEmpty) {
+      return;
+    }
     setState(() => _loading = true);
     final payload = {
       'plate_number': _plate.text.trim(),
-      'type': _type,
+      'type': type,
       'capacity_tons': double.parse(_capacity.text),
       'status': _status,
       if (_year.text.isNotEmpty) 'year': int.tryParse(_year.text),
@@ -144,16 +150,7 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
                   validator: (value) => AppValidators.required(value, context.tr('validation.required')),
                 ),
                 const SizedBox(height: 12),
-                AppDropdown<String>(
-                  label: context.tr('quotations.truckType'),
-                  value: _type,
-                  required: true,
-                  items: [
-                    for (final type in AppConfig.truckTypes)
-                      DropdownMenuItem(value: type, child: Text(context.l10n.truckType(type))),
-                  ],
-                  onChanged: (value) => setState(() => _type = value ?? _type),
-                ),
+                _typeDropdown(context),
                 const SizedBox(height: 12),
                 AppTextField(
                   label: context.tr('quotations.truckCapacity'),
@@ -187,6 +184,38 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _typeDropdown(BuildContext context) {
+    final catalog = ref.watch(catalogTruckTypesProvider);
+    return catalog.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (_, _) => Text(context.tr('common.error')),
+      data: (types) {
+        final options = [...types];
+        if (_type != null && _type!.isNotEmpty && !options.any((item) => item.code == _type)) {
+          options.insert(0, TruckTypeOption.fallback(_type!));
+        }
+        final value = options.any((item) => item.code == _type) ? _type : options.firstOrNull?.code;
+        if (value != null && value != _type) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() => _type = value);
+            }
+          });
+        }
+        return AppDropdown<String>(
+          label: context.tr('quotations.truckType'),
+          value: value,
+          required: true,
+          items: [
+            for (final type in options)
+              DropdownMenuItem(value: type.code, child: Text(type.displayName(context.l10n.isRtl))),
+          ],
+          onChanged: (selected) => setState(() => _type = selected ?? _type),
+        );
+      },
     );
   }
 }

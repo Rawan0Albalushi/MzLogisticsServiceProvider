@@ -6,6 +6,7 @@ class Truck {
     required this.id,
     this.plateNumber,
     this.type,
+    this.typeLabel,
     this.capacityTons,
     this.year,
     this.make,
@@ -19,6 +20,7 @@ class Truck {
   final int id;
   final String? plateNumber;
   final String? type;
+  final String? typeLabel;
   final double? capacityTons;
   final int? year;
   final String? make;
@@ -41,6 +43,7 @@ class Truck {
       id: asInt(json['id']) ?? 0,
       plateNumber: asString(json['plate_number']),
       type: asString(json['type']),
+      typeLabel: asString(json['type_label']),
       capacityTons: asDouble(json['capacity_tons']),
       year: asInt(json['year']),
       make: asString(json['make']),

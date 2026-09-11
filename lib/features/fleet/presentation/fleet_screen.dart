@@ -92,7 +92,7 @@ class FleetScreen extends ConsumerWidget {
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(truck.plateNumber ?? ''),
-                        subtitle: Text('${context.l10n.truckType(truck.type)} · ${context.l10n.status(truck.status)}'),
+                        subtitle: Text('${context.l10n.truckType(truck.type, label: truck.typeLabel)} · ${context.l10n.status(truck.status)}'),
                         onTap: () => context.go('/trucks'),
                       ),
                   ],

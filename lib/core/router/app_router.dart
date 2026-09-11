@@ -24,6 +24,7 @@ import '../../features/shipments/presentation/shipments_screen.dart';
 import '../../features/shipments/presentation/submit_quotation_screen.dart';
 import '../../features/trips/presentation/trip_detail_screen.dart';
 import '../../features/trips/presentation/trips_screen.dart';
+import '../../features/truck_types/presentation/truck_types_screen.dart';
 import '../../features/trucks/presentation/truck_form_screen.dart';
 import '../../features/trucks/presentation/trucks_screen.dart';
 import '../../features/users/presentation/users_screen.dart';
@@ -119,6 +120,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           fadeRoute('/dispatch', (context, state) => const DispatchScreen()),
           fadeRoute('/fleet', (context, state) => const FleetScreen()),
           fadeRoute('/trucks', (context, state) => const TrucksScreen()),
+          fadeRoute('/truck-types', (context, state) => const TruckTypesScreen()),
           fadeRoute('/trucks/new', (context, state) => const TruckFormScreen()),
           fadeRoute(
             '/trucks/:id/edit',

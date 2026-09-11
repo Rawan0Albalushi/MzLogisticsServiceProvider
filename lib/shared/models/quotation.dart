@@ -11,6 +11,7 @@ class Quotation {
     this.currency,
     this.truckCount,
     this.truckType,
+    this.truckTypeLabel,
     this.truckCapacityTons,
     this.tripCount,
     this.quantityPerTrip,
@@ -31,6 +32,7 @@ class Quotation {
   final String? currency;
   final int? truckCount;
   final String? truckType;
+  final String? truckTypeLabel;
   final double? truckCapacityTons;
   final int? tripCount;
   final double? quantityPerTrip;
@@ -65,6 +67,7 @@ class Quotation {
       currency: asString(json['currency']),
       truckCount: asInt(json['truck_count']),
       truckType: asString(json['truck_type']),
+      truckTypeLabel: asString(json['truck_type_label']),
       truckCapacityTons: asDouble(json['truck_capacity_tons']),
       tripCount: asInt(json['trip_count']),
       quantityPerTrip: asDouble(json['quantity_per_trip']),

@@ -69,7 +69,7 @@ class QuotationDetailScreen extends ConsumerWidget {
                   children: [
                     InfoRow(label: context.tr('quotations.totalPrice'), value: Formatters.money(item.totalPrice, currency: item.currency, locale: locale)),
                     InfoRow(label: context.tr('quotations.truckCount'), value: '${item.truckCount ?? 0}'),
-                    InfoRow(label: context.tr('quotations.truckType'), value: context.l10n.truckType(item.truckType)),
+                    InfoRow(label: context.tr('quotations.truckType'), value: context.l10n.truckType(item.truckType, label: item.truckTypeLabel)),
                     InfoRow(label: context.tr('quotations.truckCapacity'), value: Formatters.number(item.truckCapacityTons, locale: locale)),
                     InfoRow(label: context.tr('quotations.tripCount'), value: '${item.tripCount ?? 0}'),
                     InfoRow(label: context.tr('quotations.quantityPerTrip'), value: Formatters.number(item.quantityPerTrip, locale: locale)),

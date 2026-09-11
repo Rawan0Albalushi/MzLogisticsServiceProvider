@@ -42,7 +42,10 @@ class AppLocalizations {
     return mapped == 'status.$value' ? value : mapped;
   }
 
-  String truckType(String? value) {
+  String truckType(String? value, {String? label}) {
+    if (label != null && label.isNotEmpty) {
+      return label;
+    }
     if (value == null || value.isEmpty) {
       return '—';
     }

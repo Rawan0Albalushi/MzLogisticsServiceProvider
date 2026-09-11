@@ -35,6 +35,7 @@ const sidebarDestinations = <NavDestination>[
   NavDestination(path: '/dispatch', labelKey: 'nav.dispatch', icon: Icons.assignment_ind_outlined, permission: AppPermissions.tripsAssign),
   NavDestination(path: '/fleet', labelKey: 'nav.fleet', icon: Icons.agriculture_outlined, permission: AppPermissions.fleetView),
   NavDestination(path: '/trucks', labelKey: 'nav.trucks', icon: Icons.fire_truck_outlined, permission: AppPermissions.fleetView),
+  NavDestination(path: '/truck-types', labelKey: 'nav.truckTypes', icon: Icons.category_outlined, permission: AppPermissions.fleetManage),
   NavDestination(path: '/equipment', labelKey: 'nav.equipment', icon: Icons.handyman_outlined, permission: AppPermissions.fleetView),
   NavDestination(path: '/drivers', labelKey: 'nav.drivers', icon: Icons.badge_outlined, permission: AppPermissions.driversView),
   NavDestination(path: '/documents', labelKey: 'nav.documents', icon: Icons.folder_outlined, permission: AppPermissions.fleetView),
@@ -183,6 +184,7 @@ class AppShell extends ConsumerWidget {
         location == '/trips' ||
         location == '/dispatch' ||
         location == '/trucks' ||
+        location == '/truck-types' ||
         location == '/equipment' ||
         location == '/drivers' ||
         location == '/documents') {
@@ -198,6 +200,7 @@ class AppShell extends ConsumerWidget {
     if (location.startsWith('/jobs')) return 'nav.jobs';
     if (location.startsWith('/trips')) return 'nav.trips';
     if (location.startsWith('/dispatch')) return 'nav.dispatch';
+    if (location.startsWith('/truck-types')) return 'nav.truckTypes';
     if (location.startsWith('/trucks')) return 'nav.trucks';
     if (location.startsWith('/equipment')) return 'nav.equipment';
     if (location.startsWith('/drivers')) return 'nav.drivers';
@@ -272,6 +275,7 @@ class _TopBar extends ConsumerWidget {
     if (location.startsWith('/jobs')) return 'nav.jobs';
     if (location.startsWith('/trips')) return 'nav.trips';
     if (location.startsWith('/dispatch')) return 'nav.dispatch';
+    if (location.startsWith('/truck-types')) return 'nav.truckTypes';
     if (location.startsWith('/trucks')) return 'nav.trucks';
     if (location.startsWith('/equipment')) return 'nav.equipment';
     if (location.startsWith('/drivers')) return 'nav.drivers';

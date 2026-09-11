@@ -80,7 +80,7 @@ class QuotationsScreen extends ConsumerWidget {
                         Text(item.reference ?? ''),
                         Text(item.shipment?.reference ?? ''),
                         Text(Formatters.money(item.totalPrice, currency: item.currency, locale: locale)),
-                        Text(context.l10n.truckType(item.truckType)),
+                        Text(context.l10n.truckType(item.truckType, label: item.truckTypeLabel)),
                         StatusBadge(status: item.status),
                         _WithdrawButton(quotation: item),
                       ],

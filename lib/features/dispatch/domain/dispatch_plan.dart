@@ -7,6 +7,7 @@ class DispatchPlan {
     required this.quotedTruckCount,
     this.job,
     this.truckType,
+    this.truckTypeLabel,
     this.truckCapacityTons,
   });
 
@@ -14,6 +15,7 @@ class DispatchPlan {
   final int quotedTruckCount;
   final TransportJob? job;
   final String? truckType;
+  final String? truckTypeLabel;
   final double? truckCapacityTons;
 
   bool get isMulti => trips.length > 1;
@@ -28,6 +30,7 @@ class DispatchPlan {
         quotedTruckCount: truckCount,
         job: job,
         truckType: quotation?.truckType,
+        truckTypeLabel: quotation?.truckTypeLabel,
         truckCapacityTons: quotation?.truckCapacityTons,
       );
     }
@@ -49,6 +52,7 @@ class DispatchPlan {
       quotedTruckCount: truckCount,
       job: job,
       truckType: quotation?.truckType,
+      truckTypeLabel: quotation?.truckTypeLabel,
       truckCapacityTons: quotation?.truckCapacityTons,
     );
   }
@@ -59,6 +63,7 @@ class DispatchPlan {
       quotedTruckCount: trip.job?.quotation?.dispatchTruckCount ?? 1,
       job: trip.job,
       truckType: trip.job?.quotation?.truckType,
+      truckTypeLabel: trip.job?.quotation?.truckTypeLabel,
       truckCapacityTons: trip.job?.quotation?.truckCapacityTons,
     );
   }
