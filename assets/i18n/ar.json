@@ -47,7 +47,14 @@
     "pendingReview": "شركتكم قيد المراجعة. يمكنكم تصفح المنصة، لكن لا يمكن تقديم عروض أسعار قبل تفعيل الحساب.",
     "demoHint": "تجريبي: {email}",
     "signingIn": "جاري تسجيل الدخول…",
-    "creatingAccount": "جاري إنشاء الحساب…"
+    "creatingAccount": "جاري إنشاء الحساب…",
+    "companySection": "بيانات الشركة",
+    "accountSection": "بيانات الحساب",
+    "companySectionHint": "الاسم الرسمي وبيانات التواصل",
+    "accountSectionHint": "بيانات دخول المسؤول إلى المنصة",
+    "reviewNote": "يُفعَّل الحساب بعد التحقق من الشركة.",
+    "brandPointWorkspace": "مساحة عمل واحدة للأسطول والعروض والعمليات.",
+    "brandPointReview": "يُراجع الحساب قبل تفعيل عروض الأسعار."
   },
   "common": {
     "save": "حفظ",

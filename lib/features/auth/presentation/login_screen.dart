@@ -5,14 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_exception.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
-import '../../../core/l10n/locale_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/breakpoints.dart';
 import '../../../core/utils/validators.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import 'auth_scaffold.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -105,101 +104,5 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
 
     return AuthScaffold(child: form);
-  }
-}
-
-class AuthScaffold extends ConsumerWidget {
-  const AuthScaffold({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final desktop = Breakpoints.isDesktop(context);
-    final brandWidth = (MediaQuery.sizeOf(context).width * 0.36).clamp(360.0, 560.0);
-    return Scaffold(
-      body: desktop
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(
-                  width: brandWidth,
-                  child: const _BrandPanel(),
-                ),
-                Expanded(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 440),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(32),
-                        child: child,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.all(24),
-                children: [
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: TextButton.icon(
-                      onPressed: () => ref.read(localeControllerProvider.notifier).toggle(),
-                      icon: const Icon(Icons.language),
-                      label: Text(context.tr('nav.language')),
-                    ),
-                  ),
-                  Text(context.tr('app.name'), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 24),
-                  child,
-                ],
-              ),
-            ),
-    );
-  }
-}
-
-class _BrandPanel extends ConsumerWidget {
-  const _BrandPanel();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      color: AppColors.navy,
-      padding: const EdgeInsets.all(48),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: TextButton(
-              onPressed: () => ref.read(localeControllerProvider.notifier).toggle(),
-              child: Text(context.tr('nav.language'), style: const TextStyle(color: AppColors.white)),
-            ),
-          ),
-          const Spacer(),
-          Text(
-            context.tr('app.name'),
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            context.tr('app.tagline'),
-            style: const TextStyle(color: Color(0xFFD5DEE4), fontSize: 16),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            context.tr('app.companyFleetNote'),
-            style: const TextStyle(color: Color(0xFFB7C4CC), height: 1.5),
-          ),
-          const Spacer(),
-        ],
-      ),
-    );
   }
 }

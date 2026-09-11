@@ -17,6 +17,7 @@ class AppTextField extends StatelessWidget {
     this.onChanged,
     this.inputFormatters,
     this.hint,
+    this.showRequiredHint = true,
   });
 
   final String label;
@@ -30,6 +31,7 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final List<TextInputFormatter>? inputFormatters;
   final String? hint;
+  final bool showRequiredHint;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +47,7 @@ class AppTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: required ? '$label *' : label,
         hintText: hint,
-        helperText: required ? context.tr('common.required') : null,
+        helperText: required && showRequiredHint ? context.tr('common.required') : null,
         helperStyle: const TextStyle(fontSize: 11),
       ),
     );

@@ -47,7 +47,14 @@
     "pendingReview": "Your company is pending review. You can explore the workspace, but quotations cannot be submitted until the account is active.",
     "demoHint": "Demo: {email}",
     "signingIn": "Signing in…",
-    "creatingAccount": "Creating account…"
+    "creatingAccount": "Creating account…",
+    "companySection": "Company details",
+    "accountSection": "Account details",
+    "companySectionHint": "Legal name and contact details",
+    "accountSectionHint": "Sign-in details for the company admin",
+    "reviewNote": "The account is activated after company verification.",
+    "brandPointWorkspace": "One workspace for fleet, quotations, and operations.",
+    "brandPointReview": "Accounts are reviewed before quotations can be submitted."
   },
   "common": {
     "save": "Save",
