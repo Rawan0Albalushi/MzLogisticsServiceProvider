@@ -41,6 +41,11 @@ class TransportJob {
   final List<Trip> trips;
   final String? createdAt;
 
+  List<Trip> get unassignedTrips =>
+      trips.where((trip) => trip.status == 'unassigned').toList();
+
+  int get dispatchTruckCount => quotation?.dispatchTruckCount ?? 1;
+
   factory TransportJob.fromJson(Map<String, dynamic> json) {
     return TransportJob(
       id: asInt(json['id']) ?? 0,

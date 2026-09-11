@@ -45,6 +45,17 @@ class Quotation {
 
   bool get canWithdraw => status == 'submitted';
 
+  int get dispatchTruckCount {
+    final count = truckCount ?? 1;
+    return count < 1 ? 1 : count;
+  }
+
+  int get plannedTripRecords {
+    final trips = tripCount ?? 1;
+    final trucks = dispatchTruckCount;
+    return trucks > trips ? trucks : trips;
+  }
+
   factory Quotation.fromJson(Map<String, dynamic> json) {
     return Quotation(
       id: asInt(json['id']) ?? 0,

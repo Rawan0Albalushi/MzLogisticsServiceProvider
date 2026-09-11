@@ -11,12 +11,13 @@ class TripRepository {
 
   Future<Paginated<Trip>> list({
     int page = 1,
+    int perPage = 15,
     String? status,
     int? jobId,
   }) async {
     final response = await _api.get(ApiEndpoints.trips, query: {
       'page': page,
-      'per_page': 15,
+      'per_page': perPage,
       if (status != null && status.isNotEmpty) 'status': status,
       'job_id': ?jobId,
     });

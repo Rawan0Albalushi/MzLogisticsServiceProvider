@@ -30,6 +30,7 @@ class Truck {
 
   bool get isAvailable => status == 'available';
   bool get isUnavailable => status == 'maintenance' || status == 'inactive';
+  bool get isBusy => status == 'assigned';
 
   bool canCarry(double plannedQuantity) {
     return (capacityTons ?? 0) + 0.0001 >= plannedQuantity;

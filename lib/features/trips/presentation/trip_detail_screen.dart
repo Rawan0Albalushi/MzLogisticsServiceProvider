@@ -13,12 +13,8 @@ import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
-import '../../dispatch/presentation/dispatch_screen.dart';
+import '../../dispatch/presentation/assign_sheet.dart';
 import 'trips_screen.dart';
-
-final tripDetailProvider = FutureProvider.autoDispose.family((ref, int id) {
-  return ref.watch(tripRepositoryProvider).show(id);
-});
 
 class TripDetailScreen extends ConsumerWidget {
   const TripDetailScreen({super.key, required this.id});
@@ -46,7 +42,7 @@ class TripDetailScreen extends ConsumerWidget {
                     AppButton(
                       label: context.tr('common.assign'),
                       amber: true,
-                      onPressed: () => showAssignSheet(context, ref, trip),
+                      onPressed: () => showAssignSheet(context, ref, trip: trip),
                     ),
                 ],
               ),

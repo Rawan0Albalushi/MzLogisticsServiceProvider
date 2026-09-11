@@ -22,6 +22,10 @@ final jobsProvider = FutureProvider.autoDispose((ref) {
       );
 });
 
+final jobDetailProvider = FutureProvider.autoDispose.family((ref, int id) {
+  return ref.watch(jobRepositoryProvider).show(id);
+});
+
 class JobsScreen extends ConsumerWidget {
   const JobsScreen({super.key});
 

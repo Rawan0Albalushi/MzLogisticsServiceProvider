@@ -23,7 +23,11 @@ final tripsProvider = FutureProvider.autoDispose((ref) {
 });
 
 final unassignedTripsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(tripRepositoryProvider).list(status: 'unassigned', page: 1);
+  return ref.watch(tripRepositoryProvider).list(status: 'unassigned', page: 1, perPage: 50);
+});
+
+final tripDetailProvider = FutureProvider.autoDispose.family((ref, int id) {
+  return ref.watch(tripRepositoryProvider).show(id);
 });
 
 class TripsScreen extends ConsumerWidget {

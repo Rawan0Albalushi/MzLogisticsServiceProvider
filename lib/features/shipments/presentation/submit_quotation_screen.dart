@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_exception.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
 import '../../../shared/models/quotation.dart';
 import '../../../shared/providers/session_provider.dart';
@@ -39,6 +40,24 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
   String _truckType = AppConfig.truckTypes.first;
   var _loading = false;
 
+  void _syncTripCountToTrucks() {
+    final trucks = int.tryParse(_truckCount.text.trim()) ?? 0;
+    final trips = int.tryParse(_tripCount.text.trim()) ?? 0;
+    if (trucks > trips) {
+      _tripCount.text = '$trucks';
+    }
+  }
+
+  int get _plannedTrucks {
+    final trucks = int.tryParse(_truckCount.text.trim()) ?? 1;
+    return trucks < 1 ? 1 : trucks;
+  }
+
+  int get _plannedTrips {
+    final trips = int.tryParse(_tripCount.text.trim()) ?? 1;
+    return _plannedTrucks > trips ? _plannedTrucks : trips;
+  }
+
   @override
   void dispose() {
     _price.dispose();
@@ -56,6 +75,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
     if (!_formKey.currentState!.validate() || _loading) {
       return;
     }
+    _syncTripCountToTrucks();
     setState(() => _loading = true);
     try {
       await ref.read(quotationRepositoryProvider).submit(
@@ -123,6 +143,15 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                         required: true,
                         keyboardType: TextInputType.number,
                         validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
+                        onChanged: (_) => setState(_syncTripCountToTrucks),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          context.tr('quotations.truckCountHint'),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       AppDropdown<String>(
@@ -150,6 +179,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                         required: true,
                         keyboardType: TextInputType.number,
                         validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
+                        onChanged: (_) => setState(() {}),
                       ),
                       const SizedBox(height: 12),
                       AppTextField(
@@ -158,6 +188,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                         required: true,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         validator: (value) => AppValidators.positiveNumber(value, context.tr('validation.positive')),
+                        onChanged: (_) => setState(() {}),
                       ),
                       const SizedBox(height: 12),
                       AppTextField(
@@ -178,6 +209,20 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                         label: context.tr('quotations.conditions'),
                         controller: _conditions,
                         maxLines: 4,
+                      ),
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          context.tr('quotations.planSummary', {
+                            'trucks': '$_plannedTrucks',
+                            'trips': '$_plannedTrips',
+                            'quantity': Formatters.number(
+                              (double.tryParse(_qtyPerTrip.text.trim()) ?? 0) * _plannedTrips,
+                            ),
+                          }),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       ),
                       const SizedBox(height: 20),
                       AppButton(
