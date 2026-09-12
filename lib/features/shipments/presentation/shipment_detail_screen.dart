@@ -9,6 +9,7 @@ import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/page_header.dart';
+import '../../../shared/utils/quantity_units.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
 
@@ -38,13 +39,16 @@ class ShipmentDetailScreen extends ConsumerWidget {
             children: [
               PageHeader(
                 title: item.reference ?? context.tr('shipments.detailTitle'),
-                subtitle: item.customer?.name,
+                subtitle: [
+                  context.tr('shipments.detailTitle'),
+                  item.customer?.name,
+                ].whereType<String>().where((part) => part.trim().isNotEmpty).join(' · '),
                 actions: [
                   if (canQuote)
                     AppButton(
                       label: context.tr('shipments.quote'),
                       amber: true,
-                      onPressed: () => context.go('/shipments/$id/quote'),
+                      onPressed: () => context.push('/shipments/$id/quote'),
                     ),
                 ],
               ),
@@ -60,7 +64,11 @@ class ShipmentDetailScreen extends ConsumerWidget {
                     InfoRow(label: context.tr('common.status'), value: context.l10n.status(item.status)),
                     InfoRow(label: context.tr('shipments.cargo'), value: item.cargoType ?? '—'),
                     InfoRow(label: context.tr('shipments.weight'), value: '${Formatters.number(item.weightTons, locale: locale)} ${context.tr('common.tons')}'),
-                    InfoRow(label: context.tr('common.quantity'), value: '${Formatters.number(item.quantity, locale: locale)} ${item.quantityUnit ?? ''}'),
+                    if (!QuantityUnits.isTons(item.quantityUnit))
+                      InfoRow(
+                        label: context.tr('common.quantity'),
+                        value: '${Formatters.number(item.quantity, locale: locale)} ${QuantityUnits.label(context, item.quantityUnit)}',
+                      ),
                     InfoRow(label: context.tr('shipments.pickup'), value: '${item.pickupCity ?? ''} · ${item.pickupAddress ?? ''}'),
                     InfoRow(label: context.tr('shipments.delivery'), value: '${item.deliveryCity ?? ''} · ${item.deliveryAddress ?? ''}'),
                     InfoRow(label: context.tr('common.requiredDate'), value: Formatters.date(item.requiredDate, locale: locale)),

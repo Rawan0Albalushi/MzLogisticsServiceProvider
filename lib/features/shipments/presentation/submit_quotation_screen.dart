@@ -1,13 +1,20 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
 import '../../../shared/models/quotation.dart';
+import '../../../shared/models/shipment.dart';
+import '../../../shared/models/truck.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/utils/quantity_units.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
@@ -17,6 +24,10 @@ import '../../../shared/widgets/section_card.dart';
 import '../../quotations/presentation/quotations_screen.dart';
 import '../../truck_types/presentation/truck_type_providers.dart';
 import 'shipment_detail_screen.dart';
+
+final quoteFleetTrucksProvider = FutureProvider.autoDispose((ref) {
+  return ref.watch(fleetRepositoryProvider).trucks(page: 1, perPage: 100);
+});
 
 class SubmitQuotationScreen extends ConsumerStatefulWidget {
   const SubmitQuotationScreen({super.key, required this.shipmentId});
@@ -39,12 +50,36 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
   final _conditions = TextEditingController();
   String? _truckType;
   var _loading = false;
+  var _prefilled = false;
+  var _qtyTouched = false;
+  var _capacityTouched = false;
+  Shipment? _shipment;
 
-  void _syncTripCountToTrucks() {
-    final trucks = int.tryParse(_truckCount.text.trim()) ?? 0;
+  void _setControllerText(TextEditingController controller, String value) {
+    if (controller.text == value) {
+      return;
+    }
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
+  int _neededTripCount(Shipment? shipment) {
+    final quantity = shipment?.quantity ?? 0;
+    final perTrip = _qtyPerTripValue > 0 ? _qtyPerTripValue : quantity;
+    if (quantity <= 0 || perTrip <= 0) {
+      return _plannedTrucks;
+    }
+    return math.max(_plannedTrucks, (quantity / perTrip).ceil());
+  }
+
+  void _syncTripsToPlan() {
+    final trucks = _plannedTrucks;
     final trips = int.tryParse(_tripCount.text.trim()) ?? 0;
-    if (trucks > trips) {
-      _tripCount.text = '$trucks';
+    final needed = _neededTripCount(_shipment);
+    if (trucks > trips || trips > math.max(needed, trucks) * 2) {
+      _setControllerText(_tripCount, '$trucks');
     }
   }
 
@@ -57,6 +92,10 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
     final trips = int.tryParse(_tripCount.text.trim()) ?? 1;
     return _plannedTrucks > trips ? _plannedTrucks : trips;
   }
+
+  double get _qtyPerTripValue => double.tryParse(_qtyPerTrip.text.trim()) ?? 0;
+
+  double get _capacityValue => double.tryParse(_capacity.text.trim()) ?? 0;
 
   @override
   void dispose() {
@@ -71,7 +110,104 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  String _formatInput(num value) {
+    if (value <= 0) {
+      return '';
+    }
+    final rounded = (value * 100).round() / 100;
+    if (rounded == rounded.roundToDouble()) {
+      return '${rounded.round()}';
+    }
+    return rounded.toStringAsFixed(2);
+  }
+
+  void _prefill(Shipment shipment) {
+    if (_prefilled) {
+      return;
+    }
+    _prefilled = true;
+    _shipment = shipment;
+    final quantity = shipment.quantity ?? 0;
+    final weight = shipment.weightTons ?? 0;
+    if (_qtyPerTrip.text.trim().isEmpty && quantity > 0) {
+      _setControllerText(_qtyPerTrip, _formatInput(quantity));
+    }
+    if (_capacity.text.trim().isEmpty && weight > 0) {
+      _setControllerText(_capacity, _formatInput(weight));
+    }
+    setState(() {});
+  }
+
+  void _applySuggestedSplit() {
+    final shipment = _shipment;
+    if (shipment == null) {
+      return;
+    }
+    final trips = _plannedTrips;
+    if (!_qtyTouched) {
+      final quantity = shipment.quantity ?? 0;
+      if (quantity > 0) {
+        _setControllerText(_qtyPerTrip, _formatInput(quantity / trips));
+      }
+    }
+    if (!_capacityTouched) {
+      final weight = shipment.weightTons ?? 0;
+      if (weight > 0) {
+        _setControllerText(_capacity, _formatInput(weight / trips));
+      }
+    }
+  }
+
+  void _onPlanChanged({bool fromTrucks = false}) {
+    if (fromTrucks) {
+      _syncTripsToPlan();
+    }
+    _applySuggestedSplit();
+    setState(() {});
+  }
+
+  double _loadWeightPerTrip(Shipment shipment) {
+    final quantity = shipment.quantity ?? 0;
+    final weight = shipment.weightTons ?? 0;
+    if (quantity > 0 && _qtyPerTripValue > 0) {
+      return weight * (_qtyPerTripValue / quantity);
+    }
+    return _plannedTrips == 0 ? 0 : weight / _plannedTrips;
+  }
+
+  _QuotePlan _planOf(Shipment shipment, List<Truck> trucks) {
+    final trips = _plannedTrips;
+    final requiredQty = shipment.quantity ?? 0;
+    final plannedQty = _qtyPerTripValue * trips;
+    final weightPerTrip = _loadWeightPerTrip(shipment);
+    final ofType = trucks.where((item) => item.type == _truckType && !item.isUnavailable).toList();
+    final maxCapacity = ofType.fold<double>(0, (max, item) {
+      final capacity = item.capacityTons ?? 0;
+      return capacity > max ? capacity : max;
+    });
+    return _QuotePlan(
+      requiredQuantity: requiredQty,
+      plannedQuantity: plannedQty,
+      weightPerTrip: weightPerTrip,
+      capacity: _capacityValue,
+      truckCount: _plannedTrucks,
+      tripCount: trips,
+      fleetCount: ofType.length,
+      fleetMaxCapacity: maxCapacity,
+      neededTrips: _neededTripCount(shipment),
+      unit: shipment.quantityUnit,
+    );
+  }
+
+  void _openRequest() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.go('/shipments/${widget.shipmentId}');
+  }
+
+  Future<void> _submit(_QuotePlan plan) async {
     if (!ref.read(sessionProvider).canOperate) {
       return;
     }
@@ -82,7 +218,11 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
     if (truckType == null || truckType.isEmpty) {
       return;
     }
-    _syncTripCountToTrucks();
+    if (!plan.covers || plan.overshoot) {
+      showAppSnack(context, context.tr('quotations.submitBlocked'));
+      return;
+    }
+    _syncTripsToPlan();
     setState(() => _loading = true);
     try {
       await ref.read(quotationRepositoryProvider).submit(
@@ -130,119 +270,214 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
         value: ref.watch(shipmentDetailProvider(widget.shipmentId)),
         onRetry: () => ref.invalidate(shipmentDetailProvider(widget.shipmentId)),
         builder: (shipment) {
+          if (!_prefilled) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _prefill(shipment);
+              }
+            });
+          }
+          _shipment = shipment;
+          final trucks = ref.watch(quoteFleetTrucksProvider).maybeWhen(
+                data: (page) => page.items,
+                orElse: () => const <Truck>[],
+              );
+          final plan = _planOf(shipment, trucks);
+          final summary = _RequestSummary(shipment: shipment);
+          final form = _quoteForm(shipment, plan);
+          final subtitleParts = [
+            shipment.reference,
+            shipment.customer?.name,
+          ].whereType<String>().where((part) => part.trim().isNotEmpty);
           return ListView(
             children: [
               PageHeader(
                 title: context.tr('quotations.submitTitle'),
-                subtitle: '${context.tr('quotations.submitSubtitle')} · ${shipment.reference ?? ''}',
-              ),
-              const SizedBox(height: 16),
-              SectionCard(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      AppTextField(
-                        label: context.tr('quotations.totalPrice'),
-                        controller: _price,
-                        required: true,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        validator: (value) => AppValidators.positiveNumber(value, context.tr('validation.positive')),
-                      ),
-                      const SizedBox(height: 12),
-                      AppTextField(
-                        label: context.tr('quotations.truckCount'),
-                        controller: _truckCount,
-                        required: true,
-                        keyboardType: TextInputType.number,
-                        validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
-                        onChanged: (_) => setState(_syncTripCountToTrucks),
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          context.tr('quotations.truckCountHint'),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _typeDropdown(context),
-                      const SizedBox(height: 12),
-                      AppTextField(
-                        label: context.tr('quotations.truckCapacity'),
-                        controller: _capacity,
-                        required: true,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        validator: (value) => AppValidators.positiveNumber(value, context.tr('validation.positive')),
-                      ),
-                      const SizedBox(height: 12),
-                      AppTextField(
-                        label: context.tr('quotations.tripCount'),
-                        controller: _tripCount,
-                        required: true,
-                        keyboardType: TextInputType.number,
-                        validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      const SizedBox(height: 12),
-                      AppTextField(
-                        label: context.tr('quotations.quantityPerTrip'),
-                        controller: _qtyPerTrip,
-                        required: true,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        validator: (value) => AppValidators.positiveNumber(value, context.tr('validation.positive')),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      const SizedBox(height: 12),
-                      AppTextField(
-                        label: context.tr('quotations.durationDays'),
-                        controller: _duration,
-                        required: true,
-                        keyboardType: TextInputType.number,
-                        validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
-                      ),
-                      const SizedBox(height: 12),
-                      AppTextField(
-                        label: context.tr('quotations.additionalCosts'),
-                        controller: _extra,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                      const SizedBox(height: 12),
-                      AppTextField(
-                        label: context.tr('quotations.conditions'),
-                        controller: _conditions,
-                        maxLines: 4,
-                      ),
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          context.tr('quotations.planSummary', {
-                            'trucks': '$_plannedTrucks',
-                            'trips': '$_plannedTrips',
-                            'quantity': Formatters.number(
-                              (double.tryParse(_qtyPerTrip.text.trim()) ?? 0) * _plannedTrips,
-                            ),
-                          }),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      AppButton(
-                        label: context.tr('common.submit'),
-                        onPressed: _submit,
-                        loading: _loading,
-                        expanded: true,
-                        amber: true,
-                      ),
-                    ],
+                subtitle: subtitleParts.join(' · '),
+                actions: [
+                  AppButton(
+                    label: context.tr('quotations.backToRequest'),
+                    outlined: true,
+                    icon: Icons.arrow_back,
+                    onPressed: _openRequest,
                   ),
-                ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                context.tr('quotations.submitSubtitle'),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.muted,
+                      height: 1.45,
+                    ),
+              ),
+              const SizedBox(height: 20),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final twoCol = constraints.maxWidth >= 920;
+                  if (!twoCol) {
+                    return Column(
+                      children: [
+                        summary,
+                        const SizedBox(height: 16),
+                        form,
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 5, child: summary),
+                      const SizedBox(width: 20),
+                      Expanded(flex: 7, child: form),
+                    ],
+                  );
+                },
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _quoteForm(Shipment shipment, _QuotePlan plan) {
+    final unit = QuantityUnits.label(context, shipment.quantityUnit);
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          SectionCard(
+            title: context.tr('quotations.planSection'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _typeDropdown(context),
+                const SizedBox(height: 8),
+                _FleetHint(plan: plan, locale: Localizations.localeOf(context).languageCode),
+                const SizedBox(height: 16),
+                AppTextField(
+                  label: context.tr('quotations.truckCapacity'),
+                  controller: _capacity,
+                  required: true,
+                  showRequiredHint: false,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) => AppValidators.positiveNumber(value, context.tr('validation.positive')),
+                  onChanged: (_) {
+                    _capacityTouched = true;
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  label: context.tr('quotations.truckCount'),
+                  controller: _truckCount,
+                  required: true,
+                  showRequiredHint: false,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                  validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
+                  onChanged: (_) => _onPlanChanged(fromTrucks: true),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('quotations.truckCountHint'),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                        height: 1.45,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  label: context.tr('quotations.tripCount'),
+                  controller: _tripCount,
+                  required: true,
+                  showRequiredHint: false,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                  validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
+                  onChanged: (_) => _onPlanChanged(),
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  label: '${context.tr('quotations.quantityPerTrip')} ($unit)',
+                  controller: _qtyPerTrip,
+                  required: true,
+                  showRequiredHint: false,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) => AppValidators.positiveNumber(value, context.tr('validation.positive')),
+                  onChanged: (_) {
+                    _qtyTouched = true;
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('quotations.qtyPerTripHint', {'unit': unit}),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                        height: 1.45,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                _PlanStatus(plan: plan),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SectionCard(
+            title: context.tr('quotations.priceSection'),
+            child: Column(
+              children: [
+                AppTextField(
+                  label: context.tr('quotations.totalPrice'),
+                  controller: _price,
+                  required: true,
+                  showRequiredHint: false,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) => AppValidators.positiveNumber(value, context.tr('validation.positive')),
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  label: context.tr('quotations.additionalCosts'),
+                  controller: _extra,
+                  showRequiredHint: false,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  label: context.tr('quotations.durationDays'),
+                  controller: _duration,
+                  required: true,
+                  showRequiredHint: false,
+                  keyboardType: TextInputType.number,
+                  validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  label: context.tr('quotations.conditions'),
+                  controller: _conditions,
+                  maxLines: 4,
+                  showRequiredHint: false,
+                ),
+                const SizedBox(height: 20),
+                AppButton(
+                  label: context.tr('common.submit'),
+                  onPressed: _loading ? null : () => _submit(plan),
+                  loading: _loading,
+                  expanded: true,
+                  amber: true,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -272,6 +507,219 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
           onChanged: (selected) => setState(() => _truckType = selected ?? _truckType),
         );
       },
+    );
+  }
+}
+
+class _QuotePlan {
+  const _QuotePlan({
+    required this.requiredQuantity,
+    required this.plannedQuantity,
+    required this.weightPerTrip,
+    required this.capacity,
+    required this.truckCount,
+    required this.tripCount,
+    required this.fleetCount,
+    required this.fleetMaxCapacity,
+    required this.neededTrips,
+    this.unit,
+  });
+
+  final double requiredQuantity;
+  final double plannedQuantity;
+  final double weightPerTrip;
+  final double capacity;
+  final int truckCount;
+  final int tripCount;
+  final int fleetCount;
+  final double fleetMaxCapacity;
+  final int neededTrips;
+  final String? unit;
+
+  bool get covers => plannedQuantity + 0.0001 >= requiredQuantity && requiredQuantity > 0;
+
+  bool get overshoot {
+    if (requiredQuantity <= 0 || plannedQuantity <= requiredQuantity + 0.0001) {
+      return false;
+    }
+    final qtyPerTrip = tripCount <= 0 ? plannedQuantity : plannedQuantity / tripCount;
+    final extra = plannedQuantity - requiredQuantity;
+    return extra + 0.0001 >= qtyPerTrip * 0.5 && plannedQuantity > requiredQuantity * 1.05;
+  }
+
+  bool get capacityOk => weightPerTrip <= 0 || capacity + 0.0001 >= weightPerTrip;
+
+  bool get fleetOk => fleetCount == 0 || truckCount <= fleetCount;
+
+  _PlanTone get tone {
+    if (!covers || overshoot) {
+      return _PlanTone.danger;
+    }
+    if (!capacityOk || !fleetOk) {
+      return _PlanTone.warning;
+    }
+    return _PlanTone.ok;
+  }
+}
+
+enum _PlanTone { ok, warning, danger }
+
+class _RequestSummary extends StatelessWidget {
+  const _RequestSummary({required this.shipment});
+
+  final Shipment shipment;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final unit = QuantityUnits.label(context, shipment.quantityUnit);
+    final route = '${shipment.pickupCity ?? '—'} → ${shipment.deliveryCity ?? '—'}';
+    return SectionCard(
+      title: context.tr('shipments.requestSummary'),
+      child: Column(
+        children: [
+          InfoRow(label: context.tr('common.reference'), value: shipment.reference ?? '—'),
+          if (shipment.customer?.name != null)
+            InfoRow(label: context.tr('common.customer'), value: shipment.customer!.name ?? '—'),
+          InfoRow(label: context.tr('shipments.cargo'), value: shipment.cargoType ?? '—'),
+          if (shipment.cargoDescription != null && shipment.cargoDescription!.isNotEmpty)
+            InfoRow(label: context.tr('common.details'), value: shipment.cargoDescription!),
+          InfoRow(
+            label: context.tr('shipments.weight'),
+            value: '${Formatters.number(shipment.weightTons, locale: locale)} ${context.tr('common.tons')}',
+          ),
+          if (!QuantityUnits.isTons(shipment.quantityUnit))
+            InfoRow(
+              label: context.tr('common.quantity'),
+              value: '${Formatters.number(shipment.quantity, locale: locale)} $unit',
+            ),
+          if (shipment.volumeCbm != null)
+            InfoRow(
+              label: context.tr('shipments.volume'),
+              value: '${Formatters.number(shipment.volumeCbm, locale: locale)} ${context.tr('common.cbm')}',
+            ),
+          InfoRow(label: context.tr('shipments.route'), value: route),
+          InfoRow(
+            label: context.tr('shipments.pickup'),
+            value: '${shipment.pickupCity ?? ''} · ${shipment.pickupAddress ?? ''}',
+          ),
+          InfoRow(
+            label: context.tr('shipments.delivery'),
+            value: '${shipment.deliveryCity ?? ''} · ${shipment.deliveryAddress ?? ''}',
+          ),
+          InfoRow(
+            label: context.tr('common.requiredDate'),
+            value: Formatters.date(shipment.requiredDate, locale: locale),
+          ),
+          if (shipment.notes != null && shipment.notes!.isNotEmpty)
+            InfoRow(label: context.tr('common.notes'), value: shipment.notes!),
+        ],
+      ),
+    );
+  }
+}
+
+class _FleetHint extends StatelessWidget {
+  const _FleetHint({required this.plan, required this.locale});
+
+  final _QuotePlan plan;
+  final String locale;
+
+  @override
+  Widget build(BuildContext context) {
+    if (plan.fleetCount == 0) {
+      return Text(
+        context.tr('quotations.fleetHintNone'),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted, height: 1.45),
+      );
+    }
+    return Text(
+      context.tr('quotations.fleetHint', {
+        'count': '${plan.fleetCount}',
+        'capacity': Formatters.number(plan.fleetMaxCapacity, locale: locale),
+      }),
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted, height: 1.45),
+    );
+  }
+}
+
+class _PlanStatus extends StatelessWidget {
+  const _PlanStatus({required this.plan});
+
+  final _QuotePlan plan;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final unit = QuantityUnits.label(context, plan.unit);
+    final tone = plan.tone;
+    final colors = switch (tone) {
+      _PlanTone.ok => (const Color(0x142F6B4F), AppColors.success),
+      _PlanTone.warning => (const Color(0x1AC9892C), AppColors.warning),
+      _PlanTone.danger => (const Color(0x1A8B2E2E), AppColors.danger),
+    };
+    final lines = <String>[
+      context.tr('quotations.planSummary', {
+        'trucks': '${plan.truckCount}',
+        'trips': '${plan.tripCount}',
+        'quantity': Formatters.number(plan.plannedQuantity, locale: locale),
+        'unit': unit,
+      }),
+      if (!plan.covers)
+        context.tr('quotations.coverageShort', {
+          'planned': Formatters.number(plan.plannedQuantity, locale: locale),
+          'required': Formatters.number(plan.requiredQuantity, locale: locale),
+          'unit': unit,
+        })
+      else if (plan.overshoot)
+        context.tr('quotations.overshootShort', {
+          'planned': Formatters.number(plan.plannedQuantity, locale: locale),
+          'required': Formatters.number(plan.requiredQuantity, locale: locale),
+          'unit': unit,
+        })
+      else
+        context.tr('quotations.coverageOk'),
+      if (plan.tripCount > plan.neededTrips)
+        context.tr('quotations.tripsHint', {'count': '${plan.neededTrips}'}),
+      plan.capacityOk
+          ? context.tr('quotations.capacityOk', {
+              'weight': Formatters.number(plan.weightPerTrip, locale: locale),
+            })
+          : context.tr('quotations.capacityShort', {
+              'capacity': Formatters.number(plan.capacity, locale: locale),
+              'weight': Formatters.number(plan.weightPerTrip, locale: locale),
+            }),
+      if (!plan.fleetOk)
+        context.tr('quotations.fleetShort', {
+          'needed': '${plan.truckCount}',
+          'available': '${plan.fleetCount}',
+        }),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.$1,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.$2.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < lines.length; i++) ...[
+            if (i > 0) const SizedBox(height: 6),
+            Text(
+              lines[i],
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.$2,
+                    fontWeight: i == 0 ? FontWeight.w600 : FontWeight.w500,
+                    height: 1.35,
+                  ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

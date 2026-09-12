@@ -20,46 +20,81 @@ class PageHeader extends StatelessWidget {
   final List<Widget> actions;
   final Widget? trailing;
 
+  bool _isMostlyLtr(String value) {
+    return RegExp(r'^[\x00-\x7F\-_/.:#\s]+$').hasMatch(value.trim());
+  }
+
   @override
   Widget build(BuildContext context) {
-    final desktop = Breakpoints.isDesktop(context);
+    final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+          height: 1.35,
+        );
+    final subtitleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: AppColors.muted,
+          height: 1.45,
+        );
+
     final titleBlock = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+          style: titleStyle,
+          textDirection: _isMostlyLtr(title) ? TextDirection.ltr : null,
+          textAlign: TextAlign.start,
         ),
-        if (subtitle != null) ...[
-          const SizedBox(height: 4),
-          Text(subtitle!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted)),
+        if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            subtitle!,
+            style: subtitleStyle,
+            textDirection: _isMostlyLtr(subtitle!) ? TextDirection.ltr : null,
+            textAlign: TextAlign.start,
+          ),
         ],
       ],
     );
 
-    if (!desktop) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          titleBlock,
-          if (actions.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Wrap(spacing: 8, runSpacing: 8, children: actions),
-          ],
-          if (trailing != null) ...[
-            const SizedBox(height: 12),
-            trailing!,
-          ],
-        ],
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = !Breakpoints.isDesktop(context) || constraints.maxWidth < 720;
+        if (stacked || actions.isEmpty && trailing == null) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              titleBlock,
+              if (actions.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(spacing: 8, runSpacing: 8, children: actions),
+              ],
+              if (trailing != null) ...[
+                const SizedBox(height: 12),
+                trailing!,
+              ],
+            ],
+          );
+        }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: titleBlock),
-        Wrap(spacing: 8, runSpacing: 8, children: [...actions, ?trailing]),
-      ],
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: titleBlock),
+            const SizedBox(width: 16),
+            Flexible(
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.end,
+                  children: [...actions, ?trailing],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -83,7 +118,7 @@ class PendingReviewBanner extends ConsumerWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.amber.withValues(alpha: 0.45)),
       ),
-      child: Text(context.tr(messageKey)),
+      child: Text(context.tr(messageKey), style: const TextStyle(height: 1.45)),
     );
   }
 }

@@ -17,15 +17,19 @@ class SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: padding,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (title != null) ...[
               Text(
                 title!,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.35,
+                    ),
               ),
               const SizedBox(height: 12),
               const Divider(height: 1, color: AppColors.border),
@@ -45,19 +49,33 @@ class InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
+  bool _isMostlyLtr(String text) {
+    return RegExp(r'^[\x00-\x7F\-_/.:#\s]+$').hasMatch(text.trim());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 150,
-            child: Text(label, style: const TextStyle(color: AppColors.muted)),
-          ),
           Expanded(
-            child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(color: AppColors.muted, height: 1.4),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w500, height: 1.4),
+              textDirection: _isMostlyLtr(value) ? TextDirection.ltr : null,
+              textAlign: TextAlign.start,
+            ),
           ),
         ],
       ),

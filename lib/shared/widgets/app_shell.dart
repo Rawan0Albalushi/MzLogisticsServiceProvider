@@ -93,19 +93,22 @@ class AppShell extends ConsumerWidget {
                 children: [
                   _TopBar(location: location),
                   Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final maxW = Breakpoints.contentMaxWidth(context);
-                        final width = constraints.maxWidth < maxW ? constraints.maxWidth : maxW;
-                        return Align(
-                          alignment: Alignment.topCenter,
-                          child: SizedBox(
-                            width: width,
-                            height: constraints.maxHeight,
-                            child: child,
-                          ),
-                        );
-                      },
+                    child: ColoredBox(
+                      color: AppColors.surface,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final maxW = Breakpoints.contentMaxWidth(context);
+                          final width = constraints.maxWidth < maxW ? constraints.maxWidth : maxW;
+                          return Align(
+                            alignment: Alignment.topCenter,
+                            child: SizedBox(
+                              width: width,
+                              height: constraints.maxHeight,
+                              child: child,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -137,7 +140,7 @@ class AppShell extends ConsumerWidget {
         ],
       ),
       drawer: Drawer(child: _Sidebar(items: items, location: location, inDrawer: true)),
-      body: child,
+      body: ColoredBox(color: AppColors.surface, child: child),
       bottomNavigationBar: mobileTabs.length < 2
           ? null
           : NavigationBar(
@@ -233,11 +236,15 @@ class _TopBar extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Text(
-            context.tr(_desktopTitle(location)),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          Expanded(
+            child: Text(
+              context.tr(_desktopTitle(location)),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, height: 1.3),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 12),
           TextButton.icon(
             onPressed: () => ref.read(localeControllerProvider.notifier).toggle(),
             icon: const Icon(Icons.language, size: 18),
@@ -252,16 +259,26 @@ class _TopBar extends ConsumerWidget {
           const SizedBox(width: 8),
           InkWell(
             onTap: () => context.go('/profile'),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(user?.name ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text(
-                  user?.organization?.name ?? user?.primaryRole ?? '',
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
-                ),
-              ],
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 220),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    user?.name ?? '',
+                    style: const TextStyle(fontWeight: FontWeight.w600, height: 1.3),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  Text(
+                    user?.organization?.name ?? user?.primaryRole ?? '',
+                    style: const TextStyle(color: AppColors.muted, fontSize: 12, height: 1.3),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ],
+              ),
             ),
           ),
         ],

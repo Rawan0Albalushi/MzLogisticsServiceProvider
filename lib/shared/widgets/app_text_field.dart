@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/l10n/app_localizations.dart';
+import '../../core/theme/app_colors.dart';
 
 class AppTextField extends StatelessWidget {
   const AppTextField({
@@ -35,21 +36,28 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      validator: validator,
-      maxLines: maxLines,
-      enabled: enabled,
-      onChanged: onChanged,
-      inputFormatters: inputFormatters,
-      decoration: InputDecoration(
-        labelText: required ? '$label *' : label,
-        hintText: hint,
-        helperText: required && showRequiredHint ? context.tr('common.required') : null,
-        helperStyle: const TextStyle(fontSize: 11),
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _FieldLabel(label: label, isRequired: required),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          validator: validator,
+          maxLines: maxLines,
+          enabled: enabled,
+          onChanged: onChanged,
+          inputFormatters: inputFormatters,
+          decoration: InputDecoration(
+            hintText: hint,
+            helperText: required && showRequiredHint ? context.tr('common.required') : null,
+            helperMaxLines: 2,
+            helperStyle: const TextStyle(fontSize: 11, height: 1.35, color: AppColors.muted),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -72,11 +80,46 @@ class AppDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<T>(
-      initialValue: items.any((item) => item.value == value) ? value : null,
-      items: items,
-      onChanged: onChanged,
-      decoration: InputDecoration(labelText: required ? '$label *' : label),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _FieldLabel(label: label, isRequired: required),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<T>(
+          initialValue: items.any((item) => item.value == value) ? value : null,
+          items: items,
+          onChanged: onChanged,
+          isExpanded: true,
+          decoration: const InputDecoration(),
+        ),
+      ],
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel({required this.label, required this.isRequired});
+
+  final String label;
+  final bool isRequired;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        text: label,
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700),
+            ),
+        ],
+      ),
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            height: 1.4,
+          ),
     );
   }
 }

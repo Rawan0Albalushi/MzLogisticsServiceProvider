@@ -7,9 +7,8 @@ import 'app_colors.dart';
 class AppTheme {
   const AppTheme._();
 
-  static ThemeData light(Locale _) {
-    final textTheme = GoogleFonts.ibmPlexSansArabicTextTheme();
-
+  static ThemeData light(Locale locale) {
+    final arabic = locale.languageCode == 'ar';
     final scheme = const ColorScheme.light(
       primary: AppColors.navy,
       onPrimary: AppColors.white,
@@ -22,19 +21,65 @@ class AppTheme {
       outline: AppColors.border,
     );
 
-    return ThemeData(
+    final latinStyle = GoogleFonts.ibmPlexSans();
+    final arabicStyle = GoogleFonts.ibmPlexSansArabic();
+    final primaryFamily = arabic ? arabicStyle.fontFamily : latinStyle.fontFamily;
+    final fallbackFamily = arabic ? latinStyle.fontFamily : arabicStyle.fontFamily;
+
+    final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.surface,
+      fontFamily: primaryFamily,
+    );
+    final fallbacks = <String>[
+      ?fallbackFamily,
+      'Segoe UI',
+      'Tahoma',
+      'Arial',
+      'sans-serif',
+    ];
+
+    final seeded = arabic
+        ? GoogleFonts.ibmPlexSansArabicTextTheme(base.textTheme)
+        : GoogleFonts.ibmPlexSansTextTheme(base.textTheme);
+
+    TextStyle? withMetrics(TextStyle? style, {FontWeight? weight, double height = 1.45}) {
+      return style?.copyWith(
+        fontFamily: primaryFamily,
+        fontFamilyFallback: fallbacks,
+        fontWeight: weight ?? style.fontWeight,
+        height: height,
+        letterSpacing: 0,
+      );
+    }
+
+    final textTheme = seeded
+        .apply(
+          bodyColor: AppColors.ink,
+          displayColor: AppColors.ink,
+          fontFamily: primaryFamily,
+          fontFamilyFallback: fallbacks,
+        )
+        .copyWith(
+          headlineSmall: withMetrics(seeded.headlineSmall, weight: FontWeight.w600, height: 1.35),
+          titleLarge: withMetrics(seeded.titleLarge, weight: FontWeight.w600, height: 1.35),
+          titleMedium: withMetrics(seeded.titleMedium, weight: FontWeight.w600, height: 1.4),
+          titleSmall: withMetrics(seeded.titleSmall, weight: FontWeight.w600, height: 1.4),
+          bodyLarge: withMetrics(seeded.bodyLarge),
+          bodyMedium: withMetrics(seeded.bodyMedium),
+          bodySmall: withMetrics(seeded.bodySmall),
+          labelLarge: withMetrics(seeded.labelLarge, height: 1.3),
+          labelMedium: withMetrics(seeded.labelMedium, height: 1.3),
+        );
+
+    return base.copyWith(
+      textTheme: textTheme,
       pageTransitionsTheme: PageTransitionsTheme(
         builders: {
           for (final platform in TargetPlatform.values)
             platform: const SubtleFadePageTransitionsBuilder(),
         },
-      ),
-      textTheme: textTheme.apply(
-        bodyColor: AppColors.ink,
-        displayColor: AppColors.ink,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.white,
@@ -42,10 +87,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: textTheme.titleMedium?.copyWith(
-          color: AppColors.ink,
-          fontWeight: FontWeight.w600,
-        ),
+        titleTextStyle: textTheme.titleMedium,
       ),
       cardTheme: CardThemeData(
         color: AppColors.white,
@@ -60,9 +102,11 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.white,
-        hintStyle: const TextStyle(color: AppColors.muted),
-        labelStyle: const TextStyle(color: AppColors.muted),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+        labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+        floatingLabelBehavior: FloatingLabelBehavior.never,
+        alignLabelWithHint: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.border),
@@ -104,7 +148,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.chipBg,
         side: const BorderSide(color: AppColors.border),
-        labelStyle: textTheme.labelMedium?.copyWith(color: AppColors.ink),
+        labelStyle: textTheme.labelMedium,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
       dataTableTheme: const DataTableThemeData(
