@@ -100,7 +100,10 @@ class _CompactAuthHeader extends StatelessWidget {
             Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(color: AppColors.amber, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                gradient: AppColors.accentGradient,
+                shape: BoxShape.circle,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -255,11 +258,18 @@ class _BrandPanel extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Container(width: 40, height: 2, color: AppColors.amber),
+                    Container(
+                      width: 40,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.accentGradient,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       context.tr('app.tagline'),
-                      style: const TextStyle(color: Color(0xFFD5DEE4), fontSize: 16, height: 1.45),
+                      style: const TextStyle(color: AppColors.navyMuted, fontSize: 16, height: 1.45),
                     ),
                     const SizedBox(height: 36),
                     _BrandPoint(icon: Icons.apartment_outlined, text: context.tr('auth.brandPointWorkspace')),
@@ -294,7 +304,7 @@ class _BrandPoint extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(color: Color(0xFFC5D0D6), height: 1.5, fontSize: 13.5),
+            style: const TextStyle(color: AppColors.navyMuted, height: 1.5, fontSize: 13.5),
           ),
         ),
       ],

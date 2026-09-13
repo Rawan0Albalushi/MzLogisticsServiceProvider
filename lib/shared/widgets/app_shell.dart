@@ -365,6 +365,25 @@ class _Sidebar extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.accentGradient,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        'MZ',
+                        style: TextStyle(
+                          color: AppColors.onAccent,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Text(
                       context.tr('app.name'),
                       style: const TextStyle(
@@ -376,7 +395,7 @@ class _Sidebar extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       context.tr('app.tagline'),
-                      style: const TextStyle(color: Color(0xFFB7C4CC), fontSize: 12),
+                      style: const TextStyle(color: AppColors.navyMuted, fontSize: 12),
                     ),
                   ],
                 ),
@@ -407,10 +426,10 @@ class _Sidebar extends ConsumerWidget {
                       await ref.read(sessionProvider.notifier).logout();
                     }
                   },
-                  icon: const Icon(Icons.logout, color: Color(0xFFD7DEE3)),
+                  icon: const Icon(Icons.logout, color: AppColors.navyMuted),
                   label: Text(
                     context.tr('nav.logout'),
-                    style: const TextStyle(color: Color(0xFFD7DEE3)),
+                    style: const TextStyle(color: AppColors.navyMuted),
                   ),
                 ),
               ),
@@ -418,7 +437,7 @@ class _Sidebar extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 child: Text(
                   user?.organization?.name ?? '',
-                  style: const TextStyle(color: Color(0xFF8EA0AA), fontSize: 12),
+                  style: const TextStyle(color: AppColors.navyMuted, fontSize: 12),
                 ),
               ),
             ],
@@ -458,13 +477,13 @@ class _SideItem extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(item.icon, size: 18, color: selected ? AppColors.amber : const Color(0xFFD7DEE3)),
+              Icon(item.icon, size: 18, color: selected ? AppColors.amber : AppColors.navyMuted),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   context.tr(item.labelKey),
                   style: TextStyle(
-                    color: selected ? AppColors.white : const Color(0xFFD7DEE3),
+                    color: selected ? AppColors.white : AppColors.navyMuted,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),

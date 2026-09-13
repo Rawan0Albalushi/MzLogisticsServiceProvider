@@ -114,9 +114,9 @@ class PendingReviewBanner extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F1E4),
+        color: AppColors.warning.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.amber.withValues(alpha: 0.45)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.45)),
       ),
       child: Text(context.tr(messageKey), style: const TextStyle(height: 1.45)),
     );

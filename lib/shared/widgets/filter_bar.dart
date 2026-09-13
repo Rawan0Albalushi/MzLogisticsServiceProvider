@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/l10n/app_localizations.dart';
+import '../../core/theme/app_colors.dart';
 
-const Color _ink = Color(0xFF12202B);
-const Color _muted = Color(0xFF5C6B76);
-const Color _border = Color(0xFFD4DCE2);
-const Color _card = Color(0xFFFFFFFF);
-const Color _amber = Color(0xFFC9892C);
+const Color _ink = AppColors.ink;
+const Color _muted = AppColors.muted;
+const Color _border = AppColors.border;
+const Color _card = AppColors.white;
+const Color _amber = AppColors.amber;
 const double _controlHeight = 36;
 const double _gap = 8;
 const double _searchMin = 280;
@@ -703,7 +704,7 @@ class _DayCell extends StatelessWidget {
       color: selected
           ? _amber
           : inRange
-          ? const Color(0xFFF4EAD8)
+          ? AppColors.accentSoft
           : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
@@ -748,7 +749,7 @@ class _AdminControl extends StatelessWidget {
         boxShadow: focused
             ? const [
                 BoxShadow(
-                  color: Color(0x59C9892C),
+                  color: Color(0x594F46E5),
                   blurRadius: 0,
                   spreadRadius: 2,
                 ),

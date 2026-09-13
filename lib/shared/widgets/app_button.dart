@@ -25,10 +25,13 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = loading
-        ? const SizedBox(
+        ? SizedBox(
             width: 18,
             height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: amber ? AppColors.onAccent : AppColors.white,
+            ),
           )
         : Row(
             mainAxisSize: MainAxisSize.min,
@@ -46,16 +49,26 @@ class AppButton extends StatelessWidget {
             onPressed: loading ? null : onPressed,
             child: child,
           )
-        : FilledButton(
-            onPressed: loading ? null : onPressed,
-            style: amber
-                ? FilledButton.styleFrom(
-                    backgroundColor: AppColors.amber,
-                    foregroundColor: AppColors.white,
-                  )
-                : null,
-            child: child,
-          );
+        : amber
+            ? DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: AppColors.accentGradient,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: FilledButton(
+                  onPressed: loading ? null : onPressed,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppColors.onAccent,
+                    shadowColor: Colors.transparent,
+                  ),
+                  child: child,
+                ),
+              )
+            : FilledButton(
+                onPressed: loading ? null : onPressed,
+                child: child,
+              );
 
     if (!expanded) {
       return button;
