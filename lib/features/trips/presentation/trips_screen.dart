@@ -8,7 +8,10 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/trip.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../core/theme/page_visuals.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/entity_card.dart';
 import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
@@ -49,8 +52,7 @@ class TripsScreen extends ConsumerWidget {
       return const NoPermissionState();
     }
     final locale = Localizations.localeOf(context).languageCode;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: Column(
         children: [
           PageHeader(title: context.tr('trips.title'), subtitle: context.tr('trips.subtitle')),
@@ -127,20 +129,17 @@ class TripsScreen extends ConsumerWidget {
                         Text(Formatters.dateTime(item.etaAt, locale: locale)),
                         StatusBadge(status: item.status),
                       ],
-                      cardBuilder: (item) => Card(
-                        child: ListTile(
-                          title: Text(item.reference ?? ''),
-                          subtitle: Text(
-                            [
-                              item.job?.reference,
-                              '${item.pickupCity ?? ''} → ${item.deliveryCity ?? ''}',
-                              item.truck?.plateNumber,
-                              item.driver?.name,
-                            ].where((value) => value != null && value.toString().trim().isNotEmpty).join(' · '),
-                          ),
-                          trailing: StatusBadge(status: item.status),
-                          onTap: () => context.go('/trips/${item.id}'),
-                        ),
+                      cardBuilder: (item) => EntityCard(
+                        title: item.reference ?? '',
+                        icon: Icons.route_outlined,
+                        tone: IconTone.success,
+                        trailing: StatusBadge(status: item.status),
+                        subtitle: item.job?.reference,
+                        meta: [
+                          '${item.pickupCity ?? ''} → ${item.deliveryCity ?? ''}',
+                          [item.truck?.plateNumber, item.driver?.name].where((value) => value != null && value.toString().trim().isNotEmpty).join(' · '),
+                        ],
+                        onTap: () => context.go('/trips/${item.id}'),
                       ),
                     ),
                     PaginationBar(

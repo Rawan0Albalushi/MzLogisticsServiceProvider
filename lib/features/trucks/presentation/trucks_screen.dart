@@ -8,7 +8,10 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/truck.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../core/theme/page_visuals.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/entity_card.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
@@ -37,8 +40,7 @@ class TrucksScreen extends ConsumerWidget {
       return const NoPermissionState();
     }
     final locale = Localizations.localeOf(context).languageCode;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: Column(
         children: [
           PageHeader(
@@ -114,22 +116,20 @@ class TrucksScreen extends ConsumerWidget {
                               )
                             : const SizedBox.shrink(),
                       ],
-                      cardBuilder: (item) => Card(
-                        child: ListTile(
-                          title: Text(item.plateNumber ?? ''),
-                          subtitle: Text(
-                            [
-                              context.l10n.truckType(item.type, label: item.typeLabel),
-                              [item.make, item.model].where((value) => value != null && value.isNotEmpty).join(' '),
-                              '${Formatters.number(item.capacityTons, locale: locale)} ${context.tr('common.tons')}',
-                              item.assignedDriver?.name,
-                            ].where((value) => value != null && value.toString().trim().isNotEmpty).join(' · '),
-                          ),
-                          trailing: StatusBadge(status: item.status),
-                          onTap: session.permissions.can(AppPermissions.fleetManage)
-                              ? () => context.go('/trucks/${item.id}/edit')
-                              : null,
-                        ),
+                      cardBuilder: (item) => EntityCard(
+                        title: item.plateNumber ?? '',
+                        icon: Icons.fire_truck_outlined,
+                        tone: IconTone.teal,
+                        trailing: StatusBadge(status: item.status),
+                        meta: [
+                          context.l10n.truckType(item.type, label: item.typeLabel),
+                          [item.make, item.model].where((value) => value != null && value.isNotEmpty).join(' '),
+                          '${Formatters.number(item.capacityTons, locale: locale)} ${context.tr('common.tons')}',
+                          item.assignedDriver?.name ?? '',
+                        ],
+                        onTap: session.permissions.can(AppPermissions.fleetManage)
+                            ? () => context.go('/trucks/${item.id}/edit')
+                            : null,
                       ),
                     ),
                     PaginationBar(

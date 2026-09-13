@@ -6,6 +6,7 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/document.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
@@ -108,8 +109,7 @@ class DocumentsScreen extends ConsumerWidget {
       return true;
     }).toList();
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: ListView(
         children: [
           PageHeader(title: context.tr('documents.title'), subtitle: context.tr('documents.subtitle')),

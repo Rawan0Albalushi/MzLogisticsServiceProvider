@@ -5,6 +5,7 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/filter_bar.dart';
@@ -21,8 +22,7 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = Localizations.localeOf(context).languageCode;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: Column(
         children: [
           PageHeader(
@@ -67,9 +67,9 @@ class NotificationsScreen extends ConsumerWidget {
                           ),
                           isThreeLine: true,
                           leading: Icon(
-                            item.isUnread ? Icons.circle : Icons.circle_outlined,
-                            size: 12,
-                            color: item.isUnread ? AppColors.amber : AppColors.muted,
+                            item.isUnread ? Icons.notifications_active_rounded : Icons.notifications_outlined,
+                            size: 22,
+                            color: item.isUnread ? AppColors.coral : AppColors.muted,
                           ),
                           onTap: item.isUnread
                               ? () async {

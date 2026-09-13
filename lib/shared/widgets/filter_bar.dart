@@ -9,10 +9,10 @@ const Color _ink = AppColors.ink;
 const Color _muted = AppColors.muted;
 const Color _border = AppColors.border;
 const Color _card = AppColors.white;
-const Color _amber = AppColors.amber;
-const double _controlHeight = 36;
+const Color _accent = AppColors.teal;
+const double _controlHeight = 40;
 const double _gap = 8;
-const double _searchMin = 280;
+const double _searchMin = 220;
 const double _searchMax = 480;
 const double _selectWidth = 160;
 const double _dateRangeWidth = 240;
@@ -28,7 +28,7 @@ class FilterBar extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final specs = children.map(_specOf).toList();
+          final specs = children.map((child) => _specOf(child, constraints.maxWidth)).toList();
           final rows = _pack(specs, constraints.maxWidth);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,10 +55,11 @@ class FilterBar extends StatelessWidget {
     );
   }
 
-  _FilterSpec _specOf(Widget child) {
+  _FilterSpec _specOf(Widget child, double maxWidth) {
+    final searchMin = maxWidth < 360 ? maxWidth : (maxWidth < 600 ? 160.0 : _searchMin);
     if (child is FilterSearchField) {
       if (child.grow) {
-        return _FilterSpec(child: child, grow: true, minWidth: _searchMin);
+        return _FilterSpec(child: child, grow: true, minWidth: searchMin);
       }
       final width = child.width ?? 180;
       return _FilterSpec(child: child, grow: false, minWidth: width);
@@ -97,13 +98,12 @@ class FilterBar extends StatelessWidget {
       final fixed = row
           .where((item) => !item.grow)
           .fold<double>(0, (sum, item) => sum + item.minWidth);
-      final growers = row.where((item) => item.grow).length;
+      final growItems = row.where((item) => item.grow).toList();
       var growWidth = _searchMin;
-      if (growers > 0) {
-        growWidth = ((maxWidth - fixed - gaps) / growers).clamp(
-          _searchMin,
-          _searchMax,
-        );
+      if (growItems.isNotEmpty) {
+        final floor = growItems.map((item) => item.minWidth).reduce((a, b) => a < b ? a : b);
+        final available = ((maxWidth - fixed - gaps) / growItems.length).clamp(0.0, _searchMax);
+        growWidth = available < floor ? available : available.clamp(floor, _searchMax);
       }
       return [
         for (final item in row)
@@ -702,9 +702,9 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? _amber
+          ? _accent
           : inRange
-          ? AppColors.accentSoft
+          ? AppColors.tealSoft
           : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
@@ -713,7 +713,7 @@ class _DayCell extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: today && !selected ? Border.all(color: _amber) : null,
+            border: today && !selected ? Border.all(color: _accent) : null,
           ),
           child: Center(
             child: Text(
@@ -745,11 +745,11 @@ class _AdminControl extends StatelessWidget {
       decoration: BoxDecoration(
         color: _card,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: focused ? _amber : _border),
+        border: Border.all(color: focused ? _accent : _border),
         boxShadow: focused
             ? const [
                 BoxShadow(
-                  color: Color(0x594F46E5),
+                  color: AppColors.focusRing,
                   blurRadius: 0,
                   spreadRadius: 2,
                 ),

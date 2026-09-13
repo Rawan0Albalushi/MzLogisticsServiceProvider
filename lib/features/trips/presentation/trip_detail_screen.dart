@@ -5,11 +5,14 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_exception.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
+import '../../../core/theme/page_visuals.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import '../../../shared/widgets/info_grid.dart';
 import '../../../shared/widgets/location_preview.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
@@ -26,14 +29,16 @@ class TripDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
     final locale = Localizations.localeOf(context).languageCode;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: AsyncBody(
         value: ref.watch(tripDetailProvider(id)),
         onRetry: () => ref.invalidate(tripDetailProvider(id)),
         builder: (trip) {
+          final routeLabel = '${trip.pickupCity ?? ''} → ${trip.deliveryCity ?? ''}';
           return ListView(
             children: [
+              DetailBackLink(label: context.tr('trips.backToList'), path: '/trips'),
+              const SizedBox(height: 4),
               PageHeader(
                 title: trip.reference ?? context.tr('trips.detailTitle'),
                 subtitle: context.tr('trips.notAJob'),
@@ -43,68 +48,156 @@ class TripDetailScreen extends ConsumerWidget {
                     AppButton(
                       label: context.tr('common.assign'),
                       amber: true,
+                      icon: Icons.assignment_ind_outlined,
                       onPressed: () => showAssignSheet(context, ref, trip: trip),
                     ),
                 ],
               ),
               const SizedBox(height: 16),
-              SectionCard(
-                title: context.tr('trips.detailTitle'),
-                child: Column(
-                  children: [
-                    InfoRow(label: context.tr('trips.sequence'), value: '${trip.sequence ?? ''}'),
-                    LocationPreview(
-                      title: context.tr('shipments.pickup'),
-                      address: trip.pickupAddress,
-                      city: trip.pickupCity,
-                      lat: trip.pickupLat,
-                      lng: trip.pickupLng,
-                    ),
-                    LocationPreview(
-                      title: context.tr('shipments.delivery'),
-                      address: trip.deliveryAddress,
-                      city: trip.deliveryCity,
-                      lat: trip.deliveryLat,
-                      lng: trip.deliveryLng,
-                    ),
-                    InfoRow(label: context.tr('trips.planned'), value: Formatters.number(trip.plannedQuantity, locale: locale)),
-                    InfoRow(label: context.tr('jobs.delivered'), value: Formatters.number(trip.deliveredQuantity, locale: locale)),
-                    if (trip.otpCode != null) InfoRow(label: context.tr('trips.otp'), value: trip.otpCode!),
-                    if (trip.etaAt != null) InfoRow(label: context.tr('trips.eta'), value: Formatters.dateTime(trip.etaAt, locale: locale)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              SectionCard(
-                title: context.tr('trips.assignedTo'),
-                child: Column(
-                  children: [
-                    InfoRow(label: context.tr('common.truck'), value: trip.truck?.plateNumber ?? '—'),
-                    InfoRow(label: context.tr('common.driver'), value: trip.driver?.name ?? '—'),
-                    if (trip.job != null)
-                      TextButton(
-                        onPressed: () => context.go('/jobs/${trip.job!.id}'),
-                        child: Text(context.tr('trips.openJob')),
-                      ),
-                  ],
-                ),
-              ),
-              if (trip.proofOfDelivery != null) ...[
-                const SizedBox(height: 12),
-                SectionCard(
-                  title: context.tr('trips.pod'),
+              ResponsiveSplit(
+                primary: SectionCard(
+                  title: context.tr('trips.detailTitle'),
+                  icon: Icons.route_outlined,
+                  tone: IconTone.success,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      InfoRow(label: context.tr('auth.name'), value: trip.proofOfDelivery!.receiverName ?? '—'),
-                      InfoRow(label: context.tr('common.quantity'), value: Formatters.number(trip.proofOfDelivery!.receivedQuantity, locale: locale)),
+                      DetailHero(
+                        title: trip.reference ?? context.tr('trips.detailTitle'),
+                        subtitle: routeLabel.trim() == '→' ? null : routeLabel,
+                        icon: Icons.route_outlined,
+                        tone: IconTone.success,
+                        chips: [
+                          StatusBadge(status: trip.status),
+                          if (trip.sequence != null)
+                            DetailChip(
+                              label: '${context.tr('trips.sequence')} ${trip.sequence}',
+                              icon: Icons.format_list_numbered_rounded,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      InfoGrid(
+                        fields: [
+                          InfoField(
+                            label: context.tr('trips.sequence'),
+                            value: '${trip.sequence ?? ''}',
+                            icon: Icons.format_list_numbered_rounded,
+                          ),
+                          InfoField(
+                            label: context.tr('trips.planned'),
+                            value: Formatters.number(trip.plannedQuantity, locale: locale),
+                            icon: Icons.inventory_2_outlined,
+                            tone: IconTone.info,
+                          ),
+                          InfoField(
+                            label: context.tr('jobs.delivered'),
+                            value: Formatters.number(trip.deliveredQuantity, locale: locale),
+                            icon: Icons.done_all_rounded,
+                            tone: IconTone.success,
+                          ),
+                          if (trip.otpCode != null)
+                            InfoField(
+                              label: context.tr('trips.otp'),
+                              value: trip.otpCode!,
+                              icon: Icons.pin_outlined,
+                              tone: IconTone.warning,
+                            ),
+                          if (trip.etaAt != null)
+                            InfoField(
+                              label: context.tr('trips.eta'),
+                              value: Formatters.dateTime(trip.etaAt, locale: locale),
+                              icon: Icons.schedule_outlined,
+                              tone: IconTone.warning,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      LocationPreview(
+                        title: context.tr('shipments.pickup'),
+                        address: trip.pickupAddress,
+                        city: trip.pickupCity,
+                        lat: trip.pickupLat,
+                        lng: trip.pickupLng,
+                      ),
+                      LocationPreview(
+                        title: context.tr('shipments.delivery'),
+                        address: trip.deliveryAddress,
+                        city: trip.deliveryCity,
+                        lat: trip.deliveryLat,
+                        lng: trip.deliveryLng,
+                      ),
                     ],
                   ),
                 ),
-              ],
+                secondary: Column(
+                  children: [
+                    SectionCard(
+                      title: context.tr('trips.assignedTo'),
+                      icon: Icons.badge_outlined,
+                      tone: IconTone.teal,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          InfoGrid(
+                            fields: [
+                              InfoField(
+                                label: context.tr('common.truck'),
+                                value: trip.truck?.plateNumber ?? '—',
+                                icon: Icons.fire_truck_outlined,
+                                tone: IconTone.teal,
+                              ),
+                              InfoField(
+                                label: context.tr('common.driver'),
+                                value: trip.driver?.name ?? '—',
+                                icon: Icons.badge_outlined,
+                                tone: IconTone.success,
+                              ),
+                            ],
+                          ),
+                          if (trip.job != null) ...[
+                            const SizedBox(height: 12),
+                            AppButton(
+                              label: context.tr('trips.openJob'),
+                              outlined: true,
+                              icon: Icons.work_outline_rounded,
+                              onPressed: () => context.go('/jobs/${trip.job!.id}'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (trip.proofOfDelivery != null) ...[
+                      const SizedBox(height: 12),
+                      SectionCard(
+                        title: context.tr('trips.pod'),
+                        icon: Icons.verified_outlined,
+                        tone: IconTone.success,
+                        child: InfoGrid(
+                          fields: [
+                            InfoField(
+                              label: context.tr('auth.name'),
+                              value: trip.proofOfDelivery!.receiverName ?? '—',
+                              icon: Icons.person_outline_rounded,
+                            ),
+                            InfoField(
+                              label: context.tr('common.quantity'),
+                              value: Formatters.number(trip.proofOfDelivery!.receivedQuantity, locale: locale),
+                              icon: Icons.inventory_2_outlined,
+                              tone: IconTone.success,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
               if (session.permissions.can(AppPermissions.tripsUpdate) && trip.nextStatus != null) ...[
                 const SizedBox(height: 16),
                 AppButton(
                   label: '${context.tr('trips.nextStatus')}: ${context.l10n.status(trip.nextStatus)}',
+                  icon: Icons.fast_forward_rounded,
                   onPressed: () async {
                     try {
                       await ref.read(tripRepositoryProvider).updateStatus(id, trip.nextStatus!);

@@ -7,7 +7,10 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/shipment.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../core/theme/page_visuals.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/entity_card.dart';
 import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
@@ -43,8 +46,7 @@ class ShipmentsScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final orgId = session.user?.organizationId;
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: Column(
         children: [
           PageHeader(
@@ -124,31 +126,19 @@ class ShipmentsScreen extends ConsumerWidget {
                         StatusBadge(status: item.status),
                         _quoteAction(context, session, item, orgId),
                       ],
-                      cardBuilder: (item) => Card(
-                        child: InkWell(
-                          onTap: () => context.go('/shipments/${item.id}'),
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(child: Text(item.reference ?? '', style: const TextStyle(fontWeight: FontWeight.w600))),
-                                    StatusBadge(status: item.status),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(item.customer?.name ?? '—'),
-                                Text('${item.pickupCity ?? ''} → ${item.deliveryCity ?? ''}'),
-                                Text('${item.cargoType ?? ''} · ${Formatters.number(item.quantity, locale: locale)} ${item.quantityUnit ?? ''} · ${Formatters.number(item.weightTons, locale: locale)} ${context.tr('common.tons')}'),
-                                Text(Formatters.date(item.requiredDate, locale: locale)),
-                                const SizedBox(height: 10),
-                                _quoteAction(context, session, item, orgId),
-                              ],
-                            ),
-                          ),
-                        ),
+                      cardBuilder: (item) => EntityCard(
+                        title: item.reference ?? '',
+                        icon: Icons.local_shipping_outlined,
+                        tone: IconTone.teal,
+                        trailing: StatusBadge(status: item.status),
+                        subtitle: item.customer?.name ?? '—',
+                        meta: [
+                          '${item.pickupCity ?? ''} → ${item.deliveryCity ?? ''}',
+                          '${item.cargoType ?? ''} · ${Formatters.number(item.quantity, locale: locale)} ${item.quantityUnit ?? ''} · ${Formatters.number(item.weightTons, locale: locale)} ${context.tr('common.tons')}',
+                          Formatters.date(item.requiredDate, locale: locale),
+                        ],
+                        footer: _quoteAction(context, session, item, orgId),
+                        onTap: () => context.go('/shipments/${item.id}'),
                       ),
                     ),
                     PaginationBar(

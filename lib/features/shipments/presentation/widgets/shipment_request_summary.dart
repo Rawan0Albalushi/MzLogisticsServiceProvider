@@ -6,6 +6,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../shared/models/shipment.dart';
 import '../../../../shared/utils/quantity_units.dart';
 import '../../../../shared/widgets/location_preview.dart';
+import '../../../../core/theme/page_visuals.dart';
 import '../../../../shared/widgets/section_card.dart';
 
 class ShipmentRequestSummary extends StatelessWidget {
@@ -55,6 +56,8 @@ class ShipmentRequestSummary extends StatelessWidget {
 
     return SectionCard(
       title: context.tr('shipments.requestSummary'),
+      icon: Icons.inventory_2_outlined,
+      tone: IconTone.teal,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

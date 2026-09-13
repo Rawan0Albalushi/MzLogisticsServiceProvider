@@ -8,6 +8,7 @@ import '../../core/permissions/app_permissions.dart';
 import '../../core/theme/app_colors.dart';
 import '../providers/session_provider.dart';
 import 'app_button.dart';
+import 'app_page.dart';
 import 'confirm_dialog.dart';
 import 'section_card.dart';
 import 'status_badge.dart';
@@ -74,8 +75,8 @@ class _AccountRestrictedViewState extends ConsumerState<AccountRestrictedView> {
     final organization = session.user?.organization;
     final canViewCompany = session.permissions.can(AppPermissions.companyManage);
 
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
+      child: ListView(
       children: [
         Text(
           context.tr(_titleKey(session)),
@@ -137,6 +138,7 @@ class _AccountRestrictedViewState extends ConsumerState<AccountRestrictedView> {
           ),
         ),
       ],
+      ),
     );
   }
 }

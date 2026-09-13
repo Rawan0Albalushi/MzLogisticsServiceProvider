@@ -5,6 +5,7 @@ import '../../../core/api/api_exception.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/l10n/locale_controller.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
@@ -44,8 +45,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final session = ref.watch(sessionProvider);
     final locale = ref.watch(localeControllerProvider);
     final locked = !session.canOperate;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: ListView(
         children: [
           PageHeader(title: context.tr('profile.title')),

@@ -7,6 +7,7 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/validators.dart';
 import '../../../shared/models/truck_type.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
@@ -31,8 +32,7 @@ class TruckTypesScreen extends ConsumerWidget {
       return const NoPermissionState();
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: Column(
         children: [
           PageHeader(

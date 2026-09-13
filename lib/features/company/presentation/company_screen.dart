@@ -6,6 +6,7 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../shared/models/organization.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
@@ -72,8 +73,7 @@ class _CompanyScreenState extends ConsumerState<CompanyScreen> {
       return const NoPermissionState();
     }
     final id = session.user!.organizationId!;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: AsyncBody(
         value: ref.watch(organizationProvider(id)),
         onRetry: () => ref.invalidate(organizationProvider(id)),

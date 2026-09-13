@@ -8,8 +8,11 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/quotation.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../core/theme/page_visuals.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import '../../../shared/widgets/entity_card.dart';
 import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
@@ -41,8 +44,7 @@ class QuotationsScreen extends ConsumerWidget {
       return const NoPermissionState();
     }
     final locale = Localizations.localeOf(context).languageCode;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: Column(
         children: [
           PageHeader(
@@ -113,30 +115,19 @@ class QuotationsScreen extends ConsumerWidget {
                         StatusBadge(status: item.status),
                         _WithdrawButton(quotation: item),
                       ],
-                      cardBuilder: (item) => Card(
-                        child: InkWell(
-                          onTap: () => context.go('/quotations/${item.id}'),
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(child: Text(item.reference ?? '', style: const TextStyle(fontWeight: FontWeight.w600))),
-                                    StatusBadge(status: item.status),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(item.shipment?.reference ?? ''),
-                                Text(Formatters.money(item.totalPrice, currency: item.currency, locale: locale)),
-                                Text('${item.truckCount ?? 0} ${context.tr('common.trucks')} · ${item.tripCount ?? 0} ${context.tr('common.trips')}'),
-                                Text(Formatters.date(item.validUntil, locale: locale)),
-                                _WithdrawButton(quotation: item),
-                              ],
-                            ),
-                          ),
-                        ),
+                      cardBuilder: (item) => EntityCard(
+                        title: item.reference ?? '',
+                        icon: Icons.request_quote_outlined,
+                        tone: IconTone.info,
+                        trailing: StatusBadge(status: item.status),
+                        subtitle: item.shipment?.reference ?? '',
+                        meta: [
+                          Formatters.money(item.totalPrice, currency: item.currency, locale: locale),
+                          '${item.truckCount ?? 0} ${context.tr('common.trucks')} · ${item.tripCount ?? 0} ${context.tr('common.trips')}',
+                          Formatters.date(item.validUntil, locale: locale),
+                        ],
+                        footer: _WithdrawButton(quotation: item),
+                        onTap: () => context.go('/quotations/${item.id}'),
                       ),
                     ),
                     PaginationBar(

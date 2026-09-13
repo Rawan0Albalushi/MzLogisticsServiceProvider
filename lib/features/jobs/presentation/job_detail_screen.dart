@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_localizations.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/formatters.dart';
 import '../../../core/permissions/app_permissions.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/page_visuals.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/entity_card.dart';
+import '../../../shared/widgets/info_grid.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -24,14 +28,16 @@ class JobDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
     final locale = Localizations.localeOf(context).languageCode;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: AsyncBody(
         value: ref.watch(jobDetailProvider(id)),
         onRetry: () => ref.invalidate(jobDetailProvider(id)),
         builder: (job) {
+          final progress = ((job.progressPercent ?? 0) / 100).clamp(0.0, 1.0);
           return ListView(
             children: [
+              DetailBackLink(label: context.tr('jobs.backToList'), path: '/jobs'),
+              const SizedBox(height: 4),
               PageHeader(
                 title: job.reference ?? context.tr('jobs.detailTitle'),
                 subtitle: context.tr('jobs.notATrip'),
@@ -41,58 +47,116 @@ class JobDetailScreen extends ConsumerWidget {
                     AppButton(
                       label: context.tr('jobs.assignFleet'),
                       amber: true,
+                      icon: Icons.assignment_ind_outlined,
                       onPressed: () => showAssignSheet(context, ref, job: job),
                     ),
                 ],
               ),
               const SizedBox(height: 16),
-              LinearProgressIndicator(
-                value: ((job.progressPercent ?? 0) / 100).clamp(0, 1),
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(8),
-                color: AppColors.amber,
-                backgroundColor: AppColors.chipBg,
-              ),
-              const SizedBox(height: 16),
-              SectionCard(
-                title: context.tr('jobs.detailTitle'),
-                child: Column(
-                  children: [
-                    InfoRow(label: context.tr('common.customer'), value: job.customer?.name ?? '—'),
-                    InfoRow(label: context.tr('jobs.progress'), value: Formatters.percent(job.progressPercent)),
-                    InfoRow(label: context.tr('jobs.totalQuantity'), value: Formatters.number(job.totalQuantity, locale: locale)),
-                    InfoRow(label: context.tr('jobs.delivered'), value: Formatters.number(job.deliveredQuantity, locale: locale)),
-                    InfoRow(label: context.tr('quotations.totalPrice'), value: Formatters.money(job.totalPrice, currency: job.currency, locale: locale)),
-                    if (job.quotation != null) ...[
-                      InfoRow(
-                        label: context.tr('quotations.truckCount'),
-                        value: '${job.quotation!.dispatchTruckCount}',
+              ResponsiveSplit(
+                primary: SectionCard(
+                  title: context.tr('jobs.detailTitle'),
+                  icon: Icons.work_outline_rounded,
+                  tone: IconTone.warning,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      DetailHero(
+                        title: job.reference ?? context.tr('jobs.detailTitle'),
+                        subtitle: Formatters.percent(job.progressPercent),
+                        icon: Icons.work_outline_rounded,
+                        tone: IconTone.warning,
+                        chips: [
+                          StatusBadge(status: job.status),
+                          if (job.customer?.name != null)
+                            DetailChip(label: job.customer!.name!, icon: Icons.apartment_outlined),
+                        ],
                       ),
-                      InfoRow(
-                        label: context.tr('quotations.truckType'),
-                        value: context.l10n.truckType(job.quotation!.truckType, label: job.quotation!.truckTypeLabel),
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 10,
+                          color: AppColors.teal,
+                          backgroundColor: AppColors.chipBg,
+                        ),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              SectionCard(
-                title: context.tr('jobs.tripsInJob'),
-                child: job.trips.isEmpty
-                    ? Text(context.tr('trips.empty'))
-                    : Column(
-                        children: [
-                          for (final trip in job.trips)
-                            ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text('${context.tr('trips.sequence')} ${trip.sequence ?? ''} · ${trip.reference ?? ''}'),
-                              subtitle: Text('${trip.pickupCity ?? ''} → ${trip.deliveryCity ?? ''}'),
-                              trailing: StatusBadge(status: trip.status),
-                              onTap: () => context.go('/trips/${trip.id}'),
+                      const SizedBox(height: 16),
+                      InfoGrid(
+                        fields: [
+                          InfoField(
+                            label: context.tr('common.customer'),
+                            value: job.customer?.name ?? '—',
+                            icon: Icons.apartment_outlined,
+                            tone: IconTone.info,
+                          ),
+                          InfoField(
+                            label: context.tr('jobs.progress'),
+                            value: Formatters.percent(job.progressPercent),
+                            icon: Icons.trending_up_rounded,
+                            tone: IconTone.teal,
+                          ),
+                          InfoField(
+                            label: context.tr('jobs.totalQuantity'),
+                            value: Formatters.number(job.totalQuantity, locale: locale),
+                            icon: Icons.inventory_2_outlined,
+                          ),
+                          InfoField(
+                            label: context.tr('jobs.delivered'),
+                            value: Formatters.number(job.deliveredQuantity, locale: locale),
+                            icon: Icons.done_all_rounded,
+                            tone: IconTone.success,
+                          ),
+                          InfoField(
+                            label: context.tr('quotations.totalPrice'),
+                            value: Formatters.money(job.totalPrice, currency: job.currency, locale: locale),
+                            icon: Icons.payments_outlined,
+                            tone: IconTone.success,
+                          ),
+                          if (job.quotation != null)
+                            InfoField(
+                              label: context.tr('quotations.truckCount'),
+                              value: '${job.quotation!.dispatchTruckCount}',
+                              icon: Icons.fire_truck_outlined,
+                              tone: IconTone.teal,
+                            ),
+                          if (job.quotation != null)
+                            InfoField(
+                              label: context.tr('quotations.truckType'),
+                              value: context.l10n.truckType(job.quotation!.truckType, label: job.quotation!.truckTypeLabel),
+                              icon: Icons.category_outlined,
                             ),
                         ],
                       ),
+                    ],
+                  ),
+                ),
+                secondary: SectionCard(
+                  title: context.tr('jobs.tripsInJob'),
+                  icon: Icons.route_outlined,
+                  tone: IconTone.success,
+                  child: job.trips.isEmpty
+                      ? Text(context.tr('trips.empty'), style: const TextStyle(color: AppColors.muted))
+                      : Column(
+                          children: [
+                            for (var i = 0; i < job.trips.length; i++) ...[
+                              if (i > 0) const SizedBox(height: 10),
+                              EntityCard(
+                                title: job.trips[i].reference ?? '${context.tr('trips.sequence')} ${job.trips[i].sequence ?? ''}',
+                                icon: Icons.route_outlined,
+                                tone: IconTone.success,
+                                trailing: StatusBadge(status: job.trips[i].status),
+                                subtitle: '${context.tr('trips.sequence')} ${job.trips[i].sequence ?? ''}',
+                                meta: [
+                                  '${job.trips[i].pickupCity ?? ''} → ${job.trips[i].deliveryCity ?? ''}',
+                                ],
+                                onTap: () => context.go('/trips/${job.trips[i].id}'),
+                              ),
+                            ],
+                          ],
+                        ),
+                ),
               ),
             ],
           );

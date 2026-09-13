@@ -8,8 +8,12 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/quotation.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../core/theme/page_visuals.dart';
+import '../../../shared/widgets/icon_well.dart';
+import '../../../shared/widgets/info_grid.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -28,8 +32,7 @@ class ShipmentDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
     final locale = Localizations.localeOf(context).languageCode;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: AsyncBody(
         value: ref.watch(shipmentDetailProvider(id)),
         onRetry: () => ref.invalidate(shipmentDetailProvider(id)),
@@ -47,14 +50,7 @@ class ShipmentDetailScreen extends ConsumerWidget {
 
           return ListView(
             children: [
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  onPressed: () => context.go('/shipments'),
-                  icon: const Icon(Icons.arrow_back, size: 18),
-                  label: Text(context.tr('shipments.backToList')),
-                ),
-              ),
+              DetailBackLink(label: context.tr('shipments.backToList'), path: '/shipments'),
               const SizedBox(height: 4),
               PageHeader(
                 title: item.reference ?? context.tr('shipments.detailTitle'),
@@ -105,13 +101,13 @@ class _QuotedBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F2EC),
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.successSoft,
+        borderRadius: BorderRadius.circular(AppColors.radius),
         border: Border.all(color: AppColors.success.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle_outline, size: 18, color: AppColors.success),
+          const IconWell(icon: Icons.check_circle_outline, tone: IconTone.success, size: IconWellSize.sm),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -144,6 +140,8 @@ class _QuotationsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SectionCard(
       title: context.tr('shipments.quotesOnRequest'),
+      icon: Icons.request_quote_outlined,
+      tone: IconTone.info,
       child: quotations.isEmpty
           ? _QuotationsEmpty(canQuote: canQuote, onQuote: onQuote)
           : Column(
@@ -174,7 +172,7 @@ class _QuotationsEmpty extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         children: [
-          const Icon(Icons.request_quote_outlined, size: 28, color: AppColors.muted),
+          const IconWell(icon: Icons.request_quote_outlined, tone: IconTone.info),
           const SizedBox(height: 10),
           Text(
             context.tr('shipments.noQuotations'),
@@ -223,6 +221,12 @@ class _QuotationTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            IconWell(
+              icon: Icons.request_quote_outlined,
+              tone: ownQuote ? IconTone.info : IconTone.muted,
+              size: IconWellSize.sm,
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

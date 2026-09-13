@@ -9,7 +9,10 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
 import '../../../shared/models/user.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../core/theme/page_visuals.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/entity_card.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
@@ -40,8 +43,7 @@ class DriversScreen extends ConsumerWidget {
       return const NoPermissionState();
     }
     final locale = Localizations.localeOf(context).languageCode;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: Column(
         children: [
           PageHeader(
@@ -105,16 +107,16 @@ class DriversScreen extends ConsumerWidget {
                         Text(Formatters.dateTime(item.lastLoginAt, locale: locale)),
                         StatusBadge(status: item.driverProfile?.status),
                       ],
-                      cardBuilder: (item) => Card(
-                        child: ListTile(
-                          title: Text(item.name ?? ''),
-                          subtitle: Text(
-                            [item.email, item.phone, item.driverProfile?.licenseNumber]
-                                .where((value) => value != null && value.isNotEmpty)
-                                .join(' · '),
-                          ),
-                          trailing: StatusBadge(status: item.driverProfile?.status),
-                        ),
+                      cardBuilder: (item) => EntityCard(
+                        title: item.name ?? '',
+                        icon: Icons.badge_outlined,
+                        tone: IconTone.success,
+                        trailing: StatusBadge(status: item.driverProfile?.status),
+                        meta: [
+                          item.email ?? '',
+                          item.phone ?? '',
+                          item.driverProfile?.licenseNumber ?? '',
+                        ],
                       ),
                     ),
                     PaginationBar(

@@ -8,7 +8,10 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/validators.dart';
 import '../../../shared/models/equipment.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../core/theme/page_visuals.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/entity_card.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
@@ -38,8 +41,7 @@ class EquipmentScreen extends ConsumerWidget {
     if (!session.permissions.can(AppPermissions.fleetView)) {
       return const NoPermissionState();
     }
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: Column(
         children: [
           PageHeader(
@@ -96,12 +98,13 @@ class EquipmentScreen extends ConsumerWidget {
                         Text('${item.quantity ?? 0}'),
                         StatusBadge(status: item.status),
                       ],
-                      cardBuilder: (item) => Card(
-                        child: ListTile(
-                          title: Text(item.name ?? ''),
-                          subtitle: Text('${item.type ?? ''} · ${item.quantity ?? 0}'),
-                          trailing: StatusBadge(status: item.status),
-                        ),
+                      cardBuilder: (item) => EntityCard(
+                        title: item.name ?? '',
+                        icon: Icons.handyman_outlined,
+                        tone: IconTone.info,
+                        trailing: StatusBadge(status: item.status),
+                        subtitle: item.type,
+                        meta: ['${item.quantity ?? 0}'],
                       ),
                     ),
                     PaginationBar(

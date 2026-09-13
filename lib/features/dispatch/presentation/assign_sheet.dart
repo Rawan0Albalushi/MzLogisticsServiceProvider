@@ -9,10 +9,13 @@ import '../../../shared/models/trip.dart';
 import '../../../shared/models/truck.dart';
 import '../../../shared/models/user.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/page_visuals.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import '../../../shared/widgets/icon_well.dart';
 import '../../fleet/presentation/fleet_screen.dart';
 import '../../jobs/presentation/jobs_screen.dart';
 import '../../trips/presentation/trips_screen.dart';
@@ -67,6 +70,10 @@ Future<void> showAssignSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
+    backgroundColor: AppColors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
     builder: (context) => AssignTripSheet(plan: plan),
   );
 }
@@ -112,30 +119,71 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
     final quotedType = _plan.truckType;
     final quotedCapacity = _plan.truckCapacityTons;
 
+    final sheetHeight = MediaQuery.sizeOf(context).height * (MediaQuery.sizeOf(context).width < 600 ? 0.88 : 0.75);
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
       child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.75,
+        height: sheetHeight,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(context.tr('dispatch.queue'), style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              context.tr('dispatch.fleetPlan', {
-                'count': '${_plan.quotedTruckCount}',
-                'needed': '${_plan.trips.length}',
-              }),
+            Row(
+              children: [
+                const IconWell(
+                  icon: Icons.assignment_ind_outlined,
+                  tone: IconTone.warning,
+                  size: IconWellSize.md,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('dispatch.queue'),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        _plan.job?.reference ?? _plan.trips.first.reference ?? '',
+                        style: const TextStyle(color: AppColors.muted, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            if (quotedType != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                context.tr('dispatch.fleetPlanType', {
-                  'type': context.l10n.truckType(quotedType, label: _plan.truckTypeLabel),
-                  'capacity': Formatters.number(quotedCapacity, locale: locale),
-                }),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.tealSoft,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border),
               ),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('dispatch.fleetPlan', {
+                      'count': '${_plan.quotedTruckCount}',
+                      'needed': '${_plan.trips.length}',
+                    }),
+                    style: const TextStyle(height: 1.45),
+                  ),
+                  if (quotedType != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      context.tr('dispatch.fleetPlanType', {
+                        'type': context.l10n.truckType(quotedType, label: _plan.truckTypeLabel),
+                        'capacity': Formatters.number(quotedCapacity, locale: locale),
+                      }),
+                      style: const TextStyle(color: AppColors.muted, height: 1.4),
+                    ),
+                  ],
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
             Expanded(
               child: trucks.when(
@@ -148,63 +196,88 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
                     data: (driverPage) {
                       return ListView.separated(
                         itemCount: _plan.trips.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 16),
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final trip = _plan.trips[index];
                           final planned = trip.plannedQuantity ?? 0;
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                context.tr('dispatch.slotTitle', {
-                                  'n': '${index + 1}',
-                                  'trip': trip.reference ?? '',
-                                }),
-                                style: const TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                context.tr('dispatch.capacityHint', {
-                                  'quantity': Formatters.number(planned, locale: locale),
-                                }),
-                              ),
-                              const SizedBox(height: 8),
-                              AppDropdown<int>(
-                                key: ValueKey('dispatch-truck-$index-${_truckIds[index]}'),
-                                label: context.tr('dispatch.selectTruck'),
-                                value: _truckIds[index],
-                                required: true,
-                                items: [
-                                  for (final truck in truckPage.items)
-                                    DropdownMenuItem(
-                                      value: truck.id,
-                                      child: Text(_truckLabel(context, truck, trip, quotedType)),
+                          return Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const IconWell(
+                                      icon: Icons.fire_truck_outlined,
+                                      tone: IconTone.teal,
+                                      size: IconWellSize.sm,
                                     ),
-                                ],
-                                onChanged: (value) => setState(() {
-                                  _truckIds[index] = value;
-                                  _error = _validate(truckPage.items, driverPage.items);
-                                }),
-                              ),
-                              const SizedBox(height: 12),
-                              AppDropdown<int>(
-                                key: ValueKey('dispatch-driver-$index-${_driverIds[index]}'),
-                                label: context.tr('dispatch.selectDriver'),
-                                value: _driverIds[index],
-                                required: true,
-                                items: [
-                                  for (final driver in driverPage.items)
-                                    DropdownMenuItem(
-                                      value: driver.id,
-                                      child: Text(_driverLabel(context, driver)),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            context.tr('dispatch.slotTitle', {
+                                              'n': '${index + 1}',
+                                              'trip': trip.reference ?? '',
+                                            }),
+                                            style: const TextStyle(fontWeight: FontWeight.w700),
+                                          ),
+                                          Text(
+                                            context.tr('dispatch.capacityHint', {
+                                              'quantity': Formatters.number(planned, locale: locale),
+                                            }),
+                                            style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                ],
-                                onChanged: (value) => setState(() {
-                                  _driverIds[index] = value;
-                                  _error = _validate(truckPage.items, driverPage.items);
-                                }),
-                              ),
-                            ],
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                AppDropdown<int>(
+                                  key: ValueKey('dispatch-truck-$index-${_truckIds[index]}'),
+                                  label: context.tr('dispatch.selectTruck'),
+                                  value: _truckIds[index],
+                                  required: true,
+                                  items: [
+                                    for (final truck in truckPage.items)
+                                      DropdownMenuItem(
+                                        value: truck.id,
+                                        child: Text(_truckLabel(context, truck, trip, quotedType)),
+                                      ),
+                                  ],
+                                  onChanged: (value) => setState(() {
+                                    _truckIds[index] = value;
+                                    _error = _validate(truckPage.items, driverPage.items);
+                                  }),
+                                ),
+                                const SizedBox(height: 12),
+                                AppDropdown<int>(
+                                  key: ValueKey('dispatch-driver-$index-${_driverIds[index]}'),
+                                  label: context.tr('dispatch.selectDriver'),
+                                  value: _driverIds[index],
+                                  required: true,
+                                  items: [
+                                    for (final driver in driverPage.items)
+                                      DropdownMenuItem(
+                                        value: driver.id,
+                                        child: Text(_driverLabel(context, driver)),
+                                      ),
+                                  ],
+                                  onChanged: (value) => setState(() {
+                                    _driverIds[index] = value;
+                                    _error = _validate(truckPage.items, driverPage.items);
+                                  }),
+                                ),
+                              ],
+                            ),
                           );
                         },
                       );
@@ -215,13 +288,32 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: Color(0xFF8B2E2E))),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.dangerSoft,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.danger.withValues(alpha: 0.28)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, size: 18, color: AppColors.danger),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(_error!, style: const TextStyle(color: AppColors.danger, height: 1.4)),
+                    ),
+                  ],
+                ),
+              ),
             ],
             const SizedBox(height: 16),
             AppButton(
               label: _plan.isMulti
                   ? context.tr('dispatch.assignAll', {'count': '${_plan.trips.length}'})
                   : context.tr('common.assign'),
+              amber: true,
+              icon: Icons.assignment_turned_in_outlined,
               expanded: true,
               loading: _loading,
               onPressed: _ready

@@ -5,14 +5,15 @@ import '../../../core/api/paginated.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/theme/page_visuals.dart';
 import '../../../shared/widgets/metric_card.dart';
 import '../../../shared/models/invoice.dart';
 import '../../../shared/models/payment.dart';
 import '../../../shared/models/settlement.dart';
 import '../../../shared/models/wallet.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
@@ -142,8 +143,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen>
     if (!canAny) {
       return const NoPermissionState();
     }
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: Column(
         children: [
           PageHeader(
@@ -160,8 +160,6 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen>
             child: TabBar(
               controller: _tabs,
               isScrollable: true,
-              labelColor: AppColors.navy,
-              indicatorColor: AppColors.amber,
               tabs: [
                 Tab(text: context.tr('finance.ledger')),
                 Tab(text: context.tr('finance.payments')),
@@ -213,21 +211,17 @@ class _WalletHeader extends ConsumerWidget {
                 ? 5
                 : constraints.maxWidth >= 720
                 ? 3
-                : 2;
+                : constraints.maxWidth >= 420
+                ? 2
+                : 1;
             final itemWidth =
                 (constraints.maxWidth - (12 * (columns - 1))) / columns;
             final cards = [
-              (context.tr('finance.available'), wallet?.availableBalance ?? 0),
-              (context.tr('finance.pending'), wallet?.pendingBalance ?? 0),
-              (context.tr('finance.reserved'), wallet?.reservedBalance ?? 0),
-              (
-                context.tr('finance.lifetimeEarned'),
-                wallet?.lifetimeEarned ?? 0,
-              ),
-              (
-                context.tr('finance.lifetimeWithdrawn'),
-                wallet?.lifetimeWithdrawn ?? 0,
-              ),
+              (context.tr('finance.available'), wallet?.availableBalance ?? 0, Icons.account_balance_wallet_outlined, IconTone.success),
+              (context.tr('finance.pending'), wallet?.pendingBalance ?? 0, Icons.hourglass_bottom_outlined, IconTone.warning),
+              (context.tr('finance.reserved'), wallet?.reservedBalance ?? 0, Icons.lock_outline, IconTone.coral),
+              (context.tr('finance.lifetimeEarned'), wallet?.lifetimeEarned ?? 0, Icons.trending_up_rounded, IconTone.teal),
+              (context.tr('finance.lifetimeWithdrawn'), wallet?.lifetimeWithdrawn ?? 0, Icons.south_west_rounded, IconTone.info),
             ];
             return Wrap(
               spacing: 12,
@@ -243,6 +237,8 @@ class _WalletHeader extends ConsumerWidget {
                         currency: currency,
                         locale: locale,
                       ),
+                      icon: card.$3,
+                      tone: card.$4,
                     ),
                   ),
               ],

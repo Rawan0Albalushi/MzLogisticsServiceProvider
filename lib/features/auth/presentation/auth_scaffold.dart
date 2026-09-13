@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/l10n/locale_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/icon_well.dart';
 
 class AuthScaffold extends ConsumerWidget {
   const AuthScaffold({
@@ -94,17 +95,10 @@ class _CompactAuthHeader extends StatelessWidget {
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 12, 10),
+        padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
         child: Row(
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                gradient: AppColors.accentGradient,
-                shape: BoxShape.circle,
-              ),
-            ),
+            const BrandMark(size: 32),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -169,7 +163,7 @@ class _AuthFormPane extends StatelessWidget {
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: AppColors.white,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppColors.radius),
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Padding(
@@ -206,8 +200,8 @@ class _BrandPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final wide = MediaQuery.sizeOf(context).width >= 1100;
 
-    return ColoredBox(
-      color: AppColors.navy,
+    return DecoratedBox(
+      decoration: const BoxDecoration(gradient: AppColors.sidebarGradient),
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < AuthScaffold._minUsableSize ||
@@ -245,7 +239,9 @@ class _BrandPanel extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 40),
+                    const BrandMark(size: 48),
+                    const SizedBox(height: 20),
                     Text(
                       context.tr('app.name'),
                       style: (wide
@@ -262,14 +258,14 @@ class _BrandPanel extends ConsumerWidget {
                       width: 40,
                       height: 3,
                       decoration: BoxDecoration(
-                        gradient: AppColors.accentGradient,
+                        color: AppColors.coral,
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       context.tr('app.tagline'),
-                      style: const TextStyle(color: AppColors.navyMuted, fontSize: 16, height: 1.45),
+                      style: const TextStyle(color: AppColors.onSidebarMuted, fontSize: 16, height: 1.45),
                     ),
                     const SizedBox(height: 36),
                     _BrandPoint(icon: Icons.apartment_outlined, text: context.tr('auth.brandPointWorkspace')),
@@ -299,12 +295,12 @@ class _BrandPoint extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppColors.amber),
+        Icon(icon, size: 18, color: AppColors.coral),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(color: AppColors.navyMuted, height: 1.5, fontSize: 13.5),
+            style: const TextStyle(color: AppColors.onSidebarMuted, height: 1.5, fontSize: 13.5),
           ),
         ),
       ],

@@ -9,6 +9,7 @@ import '../../../core/utils/validators.dart';
 import '../../../shared/models/truck.dart';
 import '../../../shared/models/truck_type.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
@@ -113,8 +114,7 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
   Widget build(BuildContext context) {
     final editing = widget.truckId != null;
     final form = _form(context);
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: editing
           ? AsyncBody(
               value: ref.watch(trucksProvider),

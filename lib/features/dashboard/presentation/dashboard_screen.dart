@@ -4,11 +4,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/page_visuals.dart';
+import '../../../core/utils/breakpoints.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/dashboard.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/account_restricted_view.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/icon_well.dart';
 import '../../../shared/widgets/metric_card.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
@@ -29,8 +34,7 @@ class DashboardScreen extends ConsumerWidget {
       return const AccountRestrictedView();
     }
     final locale = Localizations.localeOf(context).languageCode;
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: AsyncBody(
         value: ref.watch(dashboardProvider),
         onRetry: () => ref.invalidate(dashboardProvider),
@@ -44,27 +48,23 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final width = constraints.maxWidth;
-                  final columns = width >= 1400
-                      ? 4
-                      : width >= 900
-                      ? 3
-                      : 2;
-                  final itemWidth = (width - (12 * (columns - 1))) / columns;
+                  final columns = Breakpoints.metricColumns(constraints.maxWidth);
+                  final gap = 12.0;
+                  final itemWidth = (constraints.maxWidth - (gap * (columns - 1))) / columns;
                   final cards = <Widget?>[
-                    _metric(context, context.tr('dashboard.openRequests'), '${data.shipmentsOpen}', Icons.local_shipping_outlined, '/shipments', AppPermissions.shipmentsView, session),
-                    _metric(context, context.tr('dashboard.pendingQuotations'), '${data.quotationsPending}', Icons.request_quote_outlined, '/quotations', AppPermissions.quotationsView, session),
-                    _metric(context, context.tr('dashboard.activeJobs'), '${data.jobsActive}', Icons.work_outline, '/jobs', AppPermissions.jobsView, session),
-                    _metric(context, context.tr('dashboard.activeTrips'), '${data.tripsActive}', Icons.route_outlined, '/trips', AppPermissions.tripsView, session),
-                    _metric(context, context.tr('dashboard.inTransit'), '${data.tripsInTransit}', Icons.moving, '/trips', AppPermissions.tripsView, session),
-                    _metric(context, context.tr('dashboard.available'), Formatters.money(data.walletAvailable, locale: locale), Icons.account_balance_wallet_outlined, '/finance', AppPermissions.walletsView, session),
-                    _metric(context, context.tr('dashboard.pendingWallet'), Formatters.money(data.walletPending, locale: locale), Icons.hourglass_bottom_outlined, '/finance', AppPermissions.walletsView, session),
-                    _metric(context, context.tr('dashboard.commission'), Formatters.money(data.commissionAmount, locale: locale), Icons.account_balance_outlined, '/finance', AppPermissions.paymentsView, session),
-                    _metric(context, context.tr('dashboard.invoices'), '${data.invoicesCount}', Icons.receipt_long_outlined, '/finance', AppPermissions.invoicesView, session),
+                    _metric(context, context.tr('dashboard.openRequests'), '${data.shipmentsOpen}', Icons.local_shipping_outlined, IconTone.teal, '/shipments', AppPermissions.shipmentsView, session),
+                    _metric(context, context.tr('dashboard.pendingQuotations'), '${data.quotationsPending}', Icons.request_quote_outlined, IconTone.info, '/quotations', AppPermissions.quotationsView, session),
+                    _metric(context, context.tr('dashboard.activeJobs'), '${data.jobsActive}', Icons.work_outline_rounded, IconTone.warning, '/jobs', AppPermissions.jobsView, session),
+                    _metric(context, context.tr('dashboard.activeTrips'), '${data.tripsActive}', Icons.route_outlined, IconTone.success, '/trips', AppPermissions.tripsView, session),
+                    _metric(context, context.tr('dashboard.inTransit'), '${data.tripsInTransit}', Icons.moving, IconTone.teal, '/trips', AppPermissions.tripsView, session),
+                    _metric(context, context.tr('dashboard.available'), Formatters.money(data.walletAvailable, locale: locale), Icons.account_balance_wallet_outlined, IconTone.coral, '/finance', AppPermissions.walletsView, session),
+                    _metric(context, context.tr('dashboard.pendingWallet'), Formatters.money(data.walletPending, locale: locale), Icons.hourglass_bottom_outlined, IconTone.warning, '/finance', AppPermissions.walletsView, session),
+                    _metric(context, context.tr('dashboard.commission'), Formatters.money(data.commissionAmount, locale: locale), Icons.account_balance_outlined, IconTone.success, '/finance', AppPermissions.paymentsView, session),
+                    _metric(context, context.tr('dashboard.invoices'), '${data.invoicesCount}', Icons.receipt_long_outlined, IconTone.info, '/finance', AppPermissions.invoicesView, session),
                   ].whereType<Widget>().toList();
                   return Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
+                    spacing: gap,
+                    runSpacing: gap,
                     children: [
                       for (final card in cards)
                         SizedBox(width: itemWidth, child: card),
@@ -73,17 +73,32 @@ class DashboardScreen extends ConsumerWidget {
                 },
               ),
               const SizedBox(height: 20),
-              Text(context.tr('app.companyFleetNote'), style: Theme.of(context).textTheme.bodySmall),
+              Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: AppColors.muted),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      context.tr('app.companyFleetNote'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
               if (session.permissions.can(AppPermissions.jobsView))
                 SectionCard(
                   title: context.tr('dashboard.recentJobs'),
+                  icon: Icons.work_outline_rounded,
+                  tone: IconTone.warning,
                   child: const _DashboardJobs(),
                 ),
               const SizedBox(height: 12),
               if (session.permissions.can(AppPermissions.tripsAssign))
                 SectionCard(
                   title: context.tr('dashboard.unassignedTrips'),
+                  icon: Icons.assignment_ind_outlined,
+                  tone: IconTone.coral,
                   child: const _DashboardUnassigned(),
                 ),
             ],
@@ -98,6 +113,7 @@ class DashboardScreen extends ConsumerWidget {
     String label,
     String value,
     IconData icon,
+    IconTone tone,
     String path,
     String permission,
     SessionState session,
@@ -109,6 +125,7 @@ class DashboardScreen extends ConsumerWidget {
       label: label,
       value: value,
       icon: icon,
+      tone: tone,
       onTap: () => context.go(path),
     );
   }
@@ -124,7 +141,7 @@ class _DashboardJobs extends ConsumerWidget {
       value: jobs,
       onRetry: () => ref.invalidate(jobsProvider),
       isEmpty: (data) => data.isEmpty,
-      empty: EmptyState(message: context.tr('jobs.empty')),
+      empty: EmptyState(message: context.tr('jobs.empty'), icon: Icons.work_outline_rounded),
       builder: (data) {
         final items = data.items.take(4).toList();
         return Column(
@@ -132,6 +149,11 @@ class _DashboardJobs extends ConsumerWidget {
             for (final job in items)
               ListTile(
                 contentPadding: EdgeInsets.zero,
+                leading: const IconWell(
+                  icon: Icons.work_outline_rounded,
+                  tone: IconTone.warning,
+                  size: IconWellSize.sm,
+                ),
                 title: Text(job.reference ?? ''),
                 subtitle: Text(job.customer?.name ?? context.tr('common.customer')),
                 trailing: Text(Formatters.percent(job.progressPercent)),
@@ -154,13 +176,18 @@ class _DashboardUnassigned extends ConsumerWidget {
       value: trips,
       onRetry: () => ref.invalidate(unassignedTripsProvider),
       isEmpty: (data) => data.isEmpty,
-      empty: EmptyState(message: context.tr('dispatch.empty')),
+      empty: EmptyState(message: context.tr('dispatch.empty'), icon: Icons.assignment_ind_outlined),
       builder: (data) {
         return Column(
           children: [
             for (final trip in data.items.take(4))
               ListTile(
                 contentPadding: EdgeInsets.zero,
+                leading: const IconWell(
+                  icon: Icons.route_outlined,
+                  tone: IconTone.coral,
+                  size: IconWellSize.sm,
+                ),
                 title: Text(trip.reference ?? ''),
                 subtitle: Text('${trip.pickupCity ?? ''} → ${trip.deliveryCity ?? ''}'),
                 onTap: () => context.go('/dispatch'),

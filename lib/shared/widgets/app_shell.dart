@@ -6,15 +6,21 @@ import '../../core/l10n/app_localizations.dart';
 import '../../core/l10n/locale_controller.dart';
 import '../../core/permissions/app_permissions.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/page_visuals.dart';
 import '../../core/utils/breakpoints.dart';
 import '../providers/session_provider.dart';
 import 'confirm_dialog.dart';
+import 'icon_well.dart';
+
+enum NavSection { operations, fleet, finance, account }
 
 class NavDestination {
   const NavDestination({
     required this.path,
     required this.labelKey,
     required this.icon,
+    required this.selectedIcon,
+    this.section = NavSection.operations,
     this.permission,
     this.anyPermissions,
   });
@@ -22,33 +28,146 @@ class NavDestination {
   final String path;
   final String labelKey;
   final IconData icon;
+  final IconData selectedIcon;
+  final NavSection section;
   final String? permission;
   final List<String>? anyPermissions;
 }
 
 const sidebarDestinations = <NavDestination>[
-  NavDestination(path: '/dashboard', labelKey: 'nav.dashboard', icon: Icons.space_dashboard_outlined, permission: AppPermissions.dashboardView),
-  NavDestination(path: '/shipments', labelKey: 'nav.shipments', icon: Icons.local_shipping_outlined, permission: AppPermissions.shipmentsView),
-  NavDestination(path: '/quotations', labelKey: 'nav.quotations', icon: Icons.request_quote_outlined, permission: AppPermissions.quotationsView),
-  NavDestination(path: '/jobs', labelKey: 'nav.jobs', icon: Icons.work_outline, permission: AppPermissions.jobsView),
-  NavDestination(path: '/trips', labelKey: 'nav.trips', icon: Icons.route_outlined, permission: AppPermissions.tripsView),
-  NavDestination(path: '/dispatch', labelKey: 'nav.dispatch', icon: Icons.assignment_ind_outlined, permission: AppPermissions.tripsAssign),
-  NavDestination(path: '/fleet', labelKey: 'nav.fleet', icon: Icons.agriculture_outlined, permission: AppPermissions.fleetView),
-  NavDestination(path: '/trucks', labelKey: 'nav.trucks', icon: Icons.fire_truck_outlined, permission: AppPermissions.fleetView),
-  NavDestination(path: '/truck-types', labelKey: 'nav.truckTypes', icon: Icons.category_outlined, permission: AppPermissions.fleetManage),
-  NavDestination(path: '/equipment', labelKey: 'nav.equipment', icon: Icons.handyman_outlined, permission: AppPermissions.fleetView),
-  NavDestination(path: '/drivers', labelKey: 'nav.drivers', icon: Icons.badge_outlined, permission: AppPermissions.driversView),
-  NavDestination(path: '/documents', labelKey: 'nav.documents', icon: Icons.folder_outlined, permission: AppPermissions.fleetView),
+  NavDestination(
+    path: '/dashboard',
+    labelKey: 'nav.dashboard',
+    icon: Icons.space_dashboard_outlined,
+    selectedIcon: Icons.space_dashboard_rounded,
+    permission: AppPermissions.dashboardView,
+  ),
+  NavDestination(
+    path: '/shipments',
+    labelKey: 'nav.shipments',
+    icon: Icons.local_shipping_outlined,
+    selectedIcon: Icons.local_shipping_rounded,
+    permission: AppPermissions.shipmentsView,
+  ),
+  NavDestination(
+    path: '/quotations',
+    labelKey: 'nav.quotations',
+    icon: Icons.request_quote_outlined,
+    selectedIcon: Icons.request_quote_rounded,
+    permission: AppPermissions.quotationsView,
+  ),
+  NavDestination(
+    path: '/jobs',
+    labelKey: 'nav.jobs',
+    icon: Icons.work_outline_rounded,
+    selectedIcon: Icons.work_rounded,
+    permission: AppPermissions.jobsView,
+  ),
+  NavDestination(
+    path: '/trips',
+    labelKey: 'nav.trips',
+    icon: Icons.route_outlined,
+    selectedIcon: Icons.route_rounded,
+    permission: AppPermissions.tripsView,
+  ),
+  NavDestination(
+    path: '/dispatch',
+    labelKey: 'nav.dispatch',
+    icon: Icons.assignment_ind_outlined,
+    selectedIcon: Icons.assignment_ind_rounded,
+    permission: AppPermissions.tripsAssign,
+  ),
+  NavDestination(
+    path: '/fleet',
+    labelKey: 'nav.fleet',
+    icon: Icons.agriculture_outlined,
+    selectedIcon: Icons.agriculture_rounded,
+    section: NavSection.fleet,
+    permission: AppPermissions.fleetView,
+  ),
+  NavDestination(
+    path: '/trucks',
+    labelKey: 'nav.trucks',
+    icon: Icons.fire_truck_outlined,
+    selectedIcon: Icons.fire_truck,
+    section: NavSection.fleet,
+    permission: AppPermissions.fleetView,
+  ),
+  NavDestination(
+    path: '/truck-types',
+    labelKey: 'nav.truckTypes',
+    icon: Icons.category_outlined,
+    selectedIcon: Icons.category_rounded,
+    section: NavSection.fleet,
+    permission: AppPermissions.fleetManage,
+  ),
+  NavDestination(
+    path: '/equipment',
+    labelKey: 'nav.equipment',
+    icon: Icons.handyman_outlined,
+    selectedIcon: Icons.handyman_rounded,
+    section: NavSection.fleet,
+    permission: AppPermissions.fleetView,
+  ),
+  NavDestination(
+    path: '/drivers',
+    labelKey: 'nav.drivers',
+    icon: Icons.badge_outlined,
+    selectedIcon: Icons.badge_rounded,
+    section: NavSection.fleet,
+    permission: AppPermissions.driversView,
+  ),
+  NavDestination(
+    path: '/documents',
+    labelKey: 'nav.documents',
+    icon: Icons.folder_outlined,
+    selectedIcon: Icons.folder_rounded,
+    section: NavSection.fleet,
+    permission: AppPermissions.fleetView,
+  ),
   NavDestination(
     path: '/finance',
     labelKey: 'nav.finance',
     icon: Icons.account_balance_outlined,
-    anyPermissions: [AppPermissions.paymentsView, AppPermissions.invoicesView, AppPermissions.settlementsView, AppPermissions.walletsView],
+    selectedIcon: Icons.account_balance_rounded,
+    section: NavSection.finance,
+    anyPermissions: [
+      AppPermissions.paymentsView,
+      AppPermissions.invoicesView,
+      AppPermissions.settlementsView,
+      AppPermissions.walletsView,
+    ],
   ),
-  NavDestination(path: '/notifications', labelKey: 'nav.notifications', icon: Icons.notifications_outlined),
-  NavDestination(path: '/company', labelKey: 'nav.company', icon: Icons.apartment_outlined, permission: AppPermissions.companyManage),
-  NavDestination(path: '/users', labelKey: 'nav.users', icon: Icons.groups_outlined, permission: AppPermissions.usersManage),
-  NavDestination(path: '/profile', labelKey: 'nav.profile', icon: Icons.person_outline),
+  NavDestination(
+    path: '/notifications',
+    labelKey: 'nav.notifications',
+    icon: Icons.notifications_outlined,
+    selectedIcon: Icons.notifications_rounded,
+    section: NavSection.account,
+  ),
+  NavDestination(
+    path: '/company',
+    labelKey: 'nav.company',
+    icon: Icons.apartment_outlined,
+    selectedIcon: Icons.apartment_rounded,
+    section: NavSection.account,
+    permission: AppPermissions.companyManage,
+  ),
+  NavDestination(
+    path: '/users',
+    labelKey: 'nav.users',
+    icon: Icons.groups_outlined,
+    selectedIcon: Icons.groups_rounded,
+    section: NavSection.account,
+    permission: AppPermissions.usersManage,
+  ),
+  NavDestination(
+    path: '/profile',
+    labelKey: 'nav.profile',
+    icon: Icons.person_outline_rounded,
+    selectedIcon: Icons.person_rounded,
+    section: NavSection.account,
+  ),
 ];
 
 List<NavDestination> visibleDestinations(SessionState session) {
@@ -69,6 +188,15 @@ List<NavDestination> visibleDestinations(SessionState session) {
     }
     return true;
   }).toList();
+}
+
+String navSectionLabel(NavSection section) {
+  return switch (section) {
+    NavSection.operations => 'nav.operations',
+    NavSection.fleet => 'nav.fleet',
+    NavSection.finance => 'nav.finance',
+    NavSection.account => 'nav.account',
+  };
 }
 
 class AppShell extends ConsumerWidget {
@@ -134,10 +262,22 @@ class AppShell extends ConsumerWidget {
       appBar: showAppBar
           ? AppBar(
               titleSpacing: 8,
-              title: Text(
-                context.tr(_titleKey(location)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              title: Row(
+                children: [
+                  Icon(
+                    PageVisuals.of(location).icon,
+                    size: 20,
+                    color: AppColors.teal800,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      context.tr(_titleKey(location)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
               actions: [
                 if (showAppBarActions) ...[
@@ -173,6 +313,7 @@ class AppShell extends ConsumerWidget {
                 for (final item in mobileTabs)
                   NavigationDestination(
                     icon: Icon(item.icon),
+                    selectedIcon: Icon(item.selectedIcon),
                     label: context.tr(item.labelKey),
                   ),
               ],
@@ -189,7 +330,15 @@ class AppShell extends ConsumerWidget {
         tabs.add(match.first);
       }
     }
-    tabs.add(const NavDestination(path: '/more', labelKey: 'nav.more', icon: Icons.more_horiz));
+    tabs.add(
+      const NavDestination(
+        path: '/more',
+        labelKey: 'nav.more',
+        icon: Icons.apps_outlined,
+        selectedIcon: Icons.apps_rounded,
+        section: NavSection.account,
+      ),
+    );
     return tabs;
   }
 
@@ -244,15 +393,22 @@ class _TopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(sessionProvider).user;
+    final initials = _initials(user?.name ?? '');
     return Container(
       height: 64,
-      padding: EdgeInsets.symmetric(horizontal: Breakpoints.isLarge(context) ? 32 : 24),
+      padding: EdgeInsets.symmetric(horizontal: Breakpoints.isLarge(context) ? 32 : 20),
       decoration: const BoxDecoration(
         color: AppColors.white,
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
+          IconWell(
+            icon: PageVisuals.of(location).icon,
+            tone: PageVisuals.of(location).tone,
+            size: IconWellSize.sm,
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               context.tr(_desktopTitle(location)),
@@ -285,26 +441,44 @@ class _TopBar extends ConsumerWidget {
                     const SizedBox(width: 8),
                     InkWell(
                       onTap: () => context.go('/profile'),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 220),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              user?.name ?? '',
-                              style: const TextStyle(fontWeight: FontWeight.w600, height: 1.3),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                      borderRadius: BorderRadius.circular(24),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: AppColors.tealSoft,
+                            child: Text(
+                              initials,
+                              style: const TextStyle(
+                                color: AppColors.teal800,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
                             ),
-                            Text(
-                              user?.organization?.name ?? user?.primaryRole ?? '',
-                              style: const TextStyle(color: AppColors.muted, fontSize: 12, height: 1.3),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                          ),
+                          const SizedBox(width: 8),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 180),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user?.name ?? '',
+                                  style: const TextStyle(fontWeight: FontWeight.w600, height: 1.3),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                Text(
+                                  user?.organization?.name ?? user?.primaryRole ?? '',
+                                  style: const TextStyle(color: AppColors.muted, fontSize: 12, height: 1.3),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -315,6 +489,13 @@ class _TopBar extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+    if (parts.isEmpty) return 'MZ';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
   }
 
   String _desktopTitle(String location) {
@@ -352,95 +533,113 @@ class _Sidebar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(sessionProvider).user;
-    return Material(
-      color: AppColors.sidebar,
-      child: SafeArea(
-        child: SizedBox(
-          width: inDrawer ? null : Breakpoints.sidebarWidth(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.accentGradient,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        'MZ',
-                        style: TextStyle(
-                          color: AppColors.onAccent,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                          height: 1,
+    final sections = NavSection.values
+        .map((section) => (section: section, items: items.where((item) => item.section == section).toList()))
+        .where((group) => group.items.isNotEmpty)
+        .toList();
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(gradient: AppColors.sidebarGradient),
+      child: Material(
+        color: Colors.transparent,
+        child: SafeArea(
+          child: SizedBox(
+            width: inDrawer ? null : Breakpoints.sidebarWidth(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                  child: Row(
+                    children: [
+                      const BrandMark(),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.tr('app.name'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              context.tr('app.tagline'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: AppColors.onSidebarMuted, fontSize: 11),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      context.tr('app.name'),
-                      style: const TextStyle(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      context.tr('app.tagline'),
-                      style: const TextStyle(color: AppColors.navyMuted, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  children: [
-                    for (final item in items)
-                      _SideItem(
-                        item: item,
-                        selected: location == item.path || location.startsWith('${item.path}/'),
-                      ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: TextButton.icon(
-                  onPressed: () async {
-                    final confirmed = await showConfirmDialog(
-                      context,
-                      message: context.tr('common.logoutConfirm'),
-                      confirmLabel: context.tr('nav.logout'),
-                    );
-                    if (confirmed && context.mounted) {
-                      await ref.read(sessionProvider.notifier).logout();
-                    }
-                  },
-                  icon: const Icon(Icons.logout, color: AppColors.navyMuted),
-                  label: Text(
-                    context.tr('nav.logout'),
-                    style: const TextStyle(color: AppColors.navyMuted),
+                    ],
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                child: Text(
-                  user?.organization?.name ?? '',
-                  style: const TextStyle(color: AppColors.navyMuted, fontSize: 12),
+                const Divider(height: 1, color: Color(0x14FFFFFF)),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(10, 12, 10, 16),
+                    children: [
+                      for (final group in sections) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                          child: Text(
+                            context.tr(navSectionLabel(group.section)).toUpperCase(),
+                            style: const TextStyle(
+                              color: AppColors.onSidebarMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
+                        for (final item in group.items)
+                          _SideItem(
+                            item: item,
+                            selected: location == item.path || location.startsWith('${item.path}/'),
+                          ),
+                        const SizedBox(height: 8),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                const Divider(height: 1, color: Color(0x14FFFFFF)),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final confirmed = await showConfirmDialog(
+                        context,
+                        message: context.tr('common.logoutConfirm'),
+                        confirmLabel: context.tr('nav.logout'),
+                      );
+                      if (confirmed && context.mounted) {
+                        await ref.read(sessionProvider.notifier).logout();
+                      }
+                    },
+                    icon: const Icon(Icons.logout, color: AppColors.onSidebarMuted),
+                    label: Text(
+                      context.tr('nav.logout'),
+                      style: const TextStyle(color: AppColors.onSidebarMuted),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Text(
+                    user?.organization?.name ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppColors.onSidebarMuted, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -465,25 +664,30 @@ class _SideItem extends StatelessWidget {
             Navigator.of(context).pop();
           }
         },
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? AppColors.sidebarHover : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            color: selected ? const Color(0x22FFFFFF) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
             border: selected
-                ? const Border(left: BorderSide(color: AppColors.amber, width: 3))
+                ? const BorderDirectional(start: BorderSide(color: AppColors.coral, width: 3))
                 : null,
           ),
           child: Row(
             children: [
-              Icon(item.icon, size: 18, color: selected ? AppColors.amber : AppColors.navyMuted),
+              Icon(
+                selected ? item.selectedIcon : item.icon,
+                size: 18,
+                color: selected ? AppColors.coral : AppColors.onSidebarMuted,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   context.tr(item.labelKey),
                   style: TextStyle(
-                    color: selected ? AppColors.white : AppColors.navyMuted,
+                    color: selected ? AppColors.white : AppColors.onSidebarMuted,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),

@@ -15,6 +15,7 @@ import '../../../shared/models/shipment.dart';
 import '../../../shared/models/truck.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/utils/quantity_units.dart';
+import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
@@ -348,13 +349,9 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
   @override
   Widget build(BuildContext context) {
     if (!ref.watch(sessionProvider).canOperate) {
-      return const Padding(
-        padding: EdgeInsets.all(20),
-        child: PendingReviewBanner(),
-      );
+      return const AppPage(child: PendingReviewBanner());
     }
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return AppPage(
       child: AsyncBody(
         value: ref.watch(shipmentDetailProvider(widget.shipmentId)),
         onRetry: () => ref.invalidate(shipmentDetailProvider(widget.shipmentId)),
