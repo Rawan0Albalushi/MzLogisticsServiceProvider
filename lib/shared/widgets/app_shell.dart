@@ -76,11 +76,17 @@ class AppShell extends ConsumerWidget {
 
   final Widget child;
 
+  static const double _minUsableSize = 48;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
     final items = visibleDestinations(session);
     final location = GoRouterState.of(context).uri.path;
+    final size = MediaQuery.sizeOf(context);
+    if (size.width < _minUsableSize || size.height < _minUsableSize) {
+      return const ColoredBox(color: AppColors.surface);
+    }
     final desktop = Breakpoints.isDesktop(context);
 
     if (desktop) {
@@ -121,24 +127,35 @@ class AppShell extends ConsumerWidget {
 
     final mobileTabs = _mobileTabs(items);
     final currentIndex = _mobileIndex(mobileTabs, location);
+    final showAppBar = size.width >= 160;
+    final showAppBarActions = size.width >= 280;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr(_titleKey(location))),
-        actions: [
-          if (!session.isAccountRestricted)
-            IconButton(
-              tooltip: context.tr('nav.notifications'),
-              onPressed: () => context.go('/notifications'),
-              icon: const Icon(Icons.notifications_outlined),
-            ),
-          IconButton(
-            tooltip: context.tr('nav.language'),
-            onPressed: () => ref.read(localeControllerProvider.notifier).toggle(),
-            icon: const Icon(Icons.language),
-          ),
-        ],
-      ),
+      appBar: showAppBar
+          ? AppBar(
+              titleSpacing: 8,
+              title: Text(
+                context.tr(_titleKey(location)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              actions: [
+                if (showAppBarActions) ...[
+                  if (!session.isAccountRestricted)
+                    IconButton(
+                      tooltip: context.tr('nav.notifications'),
+                      onPressed: () => context.go('/notifications'),
+                      icon: const Icon(Icons.notifications_outlined),
+                    ),
+                  IconButton(
+                    tooltip: context.tr('nav.language'),
+                    onPressed: () => ref.read(localeControllerProvider.notifier).toggle(),
+                    icon: const Icon(Icons.language),
+                  ),
+                ],
+              ],
+            )
+          : null,
       drawer: Drawer(child: _Sidebar(items: items, location: location, inDrawer: true)),
       body: ColoredBox(color: AppColors.surface, child: child),
       bottomNavigationBar: mobileTabs.length < 2
@@ -245,39 +262,53 @@ class _TopBar extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 12),
-          TextButton.icon(
-            onPressed: () => ref.read(localeControllerProvider.notifier).toggle(),
-            icon: const Icon(Icons.language, size: 18),
-            label: Text(context.tr('nav.language')),
-          ),
-          if (!ref.watch(sessionProvider).isAccountRestricted)
-            IconButton(
-              tooltip: context.tr('nav.notifications'),
-              onPressed: () => context.go('/notifications'),
-              icon: const Icon(Icons.notifications_outlined),
-            ),
-          const SizedBox(width: 8),
-          InkWell(
-            onTap: () => context.go('/profile'),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 220),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    user?.name ?? '',
-                    style: const TextStyle(fontWeight: FontWeight.w600, height: 1.3),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  Text(
-                    user?.organization?.name ?? user?.primaryRole ?? '',
-                    style: const TextStyle(color: AppColors.muted, fontSize: 12, height: 1.3),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ],
+          Flexible(
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerEnd,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => ref.read(localeControllerProvider.notifier).toggle(),
+                      icon: const Icon(Icons.language, size: 18),
+                      label: Text(context.tr('nav.language')),
+                    ),
+                    if (!ref.watch(sessionProvider).isAccountRestricted)
+                      IconButton(
+                        tooltip: context.tr('nav.notifications'),
+                        onPressed: () => context.go('/notifications'),
+                        icon: const Icon(Icons.notifications_outlined),
+                      ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () => context.go('/profile'),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              user?.name ?? '',
+                              style: const TextStyle(fontWeight: FontWeight.w600, height: 1.3),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                            Text(
+                              user?.organization?.name ?? user?.primaryRole ?? '',
+                              style: const TextStyle(color: AppColors.muted, fontSize: 12, height: 1.3),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

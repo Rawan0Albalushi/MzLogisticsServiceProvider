@@ -40,8 +40,12 @@ class Trip {
     this.deliveredQuantity,
     this.pickupAddress,
     this.pickupCity,
+    this.pickupLat,
+    this.pickupLng,
     this.deliveryAddress,
     this.deliveryCity,
+    this.deliveryLat,
+    this.deliveryLng,
     this.etaAt,
     this.otpCode,
     this.assignedAt,
@@ -60,8 +64,12 @@ class Trip {
   final double? deliveredQuantity;
   final String? pickupAddress;
   final String? pickupCity;
+  final double? pickupLat;
+  final double? pickupLng;
   final String? deliveryAddress;
   final String? deliveryCity;
+  final double? deliveryLat;
+  final double? deliveryLng;
   final String? etaAt;
   final String? otpCode;
   final String? assignedAt;
@@ -98,8 +106,12 @@ class Trip {
       deliveredQuantity: asDouble(json['delivered_quantity']),
       pickupAddress: asString(json['pickup_address']),
       pickupCity: asString(json['pickup_city']),
+      pickupLat: asDouble(json['pickup_lat']),
+      pickupLng: asDouble(json['pickup_lng']),
       deliveryAddress: asString(json['delivery_address']),
       deliveryCity: asString(json['delivery_city']),
+      deliveryLat: asDouble(json['delivery_lat']),
+      deliveryLng: asDouble(json['delivery_lng']),
       etaAt: asString(json['eta_at']),
       otpCode: asString(json['otp_code']),
       assignedAt: asString(json['assigned_at']),

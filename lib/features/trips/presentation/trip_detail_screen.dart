@@ -10,6 +10,7 @@ import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import '../../../shared/widgets/location_preview.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -52,8 +53,20 @@ class TripDetailScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     InfoRow(label: context.tr('trips.sequence'), value: '${trip.sequence ?? ''}'),
-                    InfoRow(label: context.tr('shipments.pickup'), value: '${trip.pickupCity ?? ''} · ${trip.pickupAddress ?? ''}'),
-                    InfoRow(label: context.tr('shipments.delivery'), value: '${trip.deliveryCity ?? ''} · ${trip.deliveryAddress ?? ''}'),
+                    LocationPreview(
+                      title: context.tr('shipments.pickup'),
+                      address: trip.pickupAddress,
+                      city: trip.pickupCity,
+                      lat: trip.pickupLat,
+                      lng: trip.pickupLng,
+                    ),
+                    LocationPreview(
+                      title: context.tr('shipments.delivery'),
+                      address: trip.deliveryAddress,
+                      city: trip.deliveryCity,
+                      lat: trip.deliveryLat,
+                      lng: trip.deliveryLng,
+                    ),
                     InfoRow(label: context.tr('trips.planned'), value: Formatters.number(trip.plannedQuantity, locale: locale)),
                     InfoRow(label: context.tr('jobs.delivered'), value: Formatters.number(trip.deliveredQuantity, locale: locale)),
                     if (trip.otpCode != null) InfoRow(label: context.tr('trips.otp'), value: trip.otpCode!),

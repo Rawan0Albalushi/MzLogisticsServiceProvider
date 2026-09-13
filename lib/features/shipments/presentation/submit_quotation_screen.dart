@@ -23,7 +23,9 @@ import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../quotations/presentation/quotations_screen.dart';
 import '../../truck_types/presentation/truck_type_providers.dart';
+import '../domain/quote_transport_planner.dart';
 import 'shipment_detail_screen.dart';
+import 'widgets/shipment_request_summary.dart';
 
 final quoteFleetTrucksProvider = FutureProvider.autoDispose((ref) {
   return ref.watch(fleetRepositoryProvider).trucks(page: 1, perPage: 100);
@@ -50,9 +52,12 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
   final _conditions = TextEditingController();
   String? _truckType;
   var _loading = false;
-  var _prefilled = false;
   var _qtyTouched = false;
   var _capacityTouched = false;
+  var _trucksTouched = false;
+  var _tripsTouched = false;
+  var _durationTouched = false;
+  String? _appliedPlanKey;
   Shipment? _shipment;
 
   void _setControllerText(TextEditingController controller, String value) {
@@ -121,48 +126,127 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
     return rounded.toStringAsFixed(2);
   }
 
-  void _prefill(Shipment shipment) {
-    if (_prefilled) {
+  List<double> _fleetCapacities(List<Truck> trucks) {
+    return trucks
+        .where((item) => item.type == _truckType && !item.isUnavailable)
+        .map((item) => item.capacityTons ?? 0)
+        .where((capacity) => capacity > 0)
+        .toList();
+  }
+
+  String _planSourceKey(Shipment shipment, List<Truck> trucks) {
+    return '${shipment.id}|${_truckType ?? ''}|${_fleetCapacities(trucks).join(',')}';
+  }
+
+  QuoteTransportSuggestion? _suggestionOf(Shipment shipment, List<Truck> trucks) {
+    return QuoteTransportPlanner.suggest(
+      quantity: shipment.quantity ?? 0,
+      weightTons: shipment.weightTons ?? 0,
+      quantityUnit: shipment.quantityUnit,
+      fleetCapacities: _fleetCapacities(trucks),
+      manualCapacityTons: _capacityTouched ? _capacityValue : null,
+    );
+  }
+
+  void _writeSuggestion(QuoteTransportSuggestion suggestion, {required bool force}) {
+    if (force || !_capacityTouched) {
+      _setControllerText(_capacity, _formatInput(suggestion.capacityTons));
+    }
+    if (force || !_trucksTouched) {
+      _setControllerText(_truckCount, '${suggestion.truckCount}');
+    }
+    if (force || !_tripsTouched) {
+      _setControllerText(_tripCount, '${suggestion.tripCount}');
+    }
+    if (force || !_qtyTouched) {
+      _setControllerText(_qtyPerTrip, _formatInput(suggestion.quantityPerTrip));
+    }
+    if (force || !_durationTouched) {
+      _setControllerText(_duration, '${suggestion.durationDays}');
+    }
+  }
+
+  void _scheduleAutoPlan(Shipment shipment, List<Truck> trucks) {
+    if (_truckType == null || _truckType!.isEmpty) {
       return;
     }
-    _prefilled = true;
-    _shipment = shipment;
-    final quantity = shipment.quantity ?? 0;
-    final weight = shipment.weightTons ?? 0;
-    if (_qtyPerTrip.text.trim().isEmpty && quantity > 0) {
-      _setControllerText(_qtyPerTrip, _formatInput(quantity));
+    final key = _planSourceKey(shipment, trucks);
+    if (key == _appliedPlanKey) {
+      return;
     }
-    if (_capacity.text.trim().isEmpty && weight > 0) {
-      _setControllerText(_capacity, _formatInput(weight));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _applyAutoPlan(shipment, trucks);
+    });
+  }
+
+  void _applyAutoPlan(Shipment shipment, List<Truck> trucks) {
+    final key = _planSourceKey(shipment, trucks);
+    if (key == _appliedPlanKey) {
+      return;
     }
+    _appliedPlanKey = key;
+    final suggestion = _suggestionOf(shipment, trucks);
+    if (suggestion == null) {
+      setState(() {});
+      return;
+    }
+    _writeSuggestion(suggestion, force: false);
     setState(() {});
   }
 
-  void _applySuggestedSplit() {
-    final shipment = _shipment;
-    if (shipment == null) {
+  void _applySuggestionNow(Shipment shipment, List<Truck> trucks) {
+    final suggestion = _suggestionOf(shipment, trucks);
+    if (suggestion == null) {
       return;
     }
-    final trips = _plannedTrips;
-    if (!_qtyTouched) {
-      final quantity = shipment.quantity ?? 0;
-      if (quantity > 0) {
-        _setControllerText(_qtyPerTrip, _formatInput(quantity / trips));
-      }
-    }
-    if (!_capacityTouched) {
-      final weight = shipment.weightTons ?? 0;
-      if (weight > 0) {
-        _setControllerText(_capacity, _formatInput(weight / trips));
-      }
-    }
+    _trucksTouched = false;
+    _tripsTouched = false;
+    _qtyTouched = false;
+    _capacityTouched = false;
+    _durationTouched = false;
+    _writeSuggestion(suggestion, force: true);
+    setState(() {});
   }
 
-  void _onPlanChanged({bool fromTrucks = false}) {
+  void _splitQuantityAcrossTrips() {
+    if (_qtyTouched) {
+      return;
+    }
+    final quantity = _shipment?.quantity ?? 0;
+    final trips = _plannedTrips;
+    if (quantity <= 0 || trips <= 0) {
+      return;
+    }
+    _setControllerText(_qtyPerTrip, _formatInput(QuoteTransportPlanner.splitQuantity(quantity, trips)));
+  }
+
+  void _onPlanChanged({bool fromTrucks = false, bool fromTrips = false}) {
     if (fromTrucks) {
+      _trucksTouched = true;
+      if (!_tripsTouched) {
+        final shipment = _shipment;
+        final capacity = _capacityValue;
+        final loads = shipment == null || capacity <= 0
+            ? _plannedTrucks
+            : QuoteTransportPlanner.loadsNeeded(
+                quantity: shipment.quantity ?? 0,
+                weightTons: shipment.weightTons ?? 0,
+                quantityUnit: shipment.quantityUnit,
+                capacityTons: capacity,
+              );
+        _setControllerText(_tripCount, '${math.max(_plannedTrucks, loads)}');
+      } else {
+        _syncTripsToPlan();
+      }
+    }
+    if (fromTrips) {
+      _tripsTouched = true;
       _syncTripsToPlan();
     }
-    _applySuggestedSplit();
+    _splitQuantityAcrossTrips();
     setState(() {});
   }
 
@@ -175,7 +259,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
     return _plannedTrips == 0 ? 0 : weight / _plannedTrips;
   }
 
-  _QuotePlan _planOf(Shipment shipment, List<Truck> trucks) {
+  _QuotePlan _planOf(Shipment shipment, List<Truck> trucks, QuoteTransportSuggestion? suggestion) {
     final trips = _plannedTrips;
     final requiredQty = shipment.quantity ?? 0;
     final plannedQty = _qtyPerTripValue * trips;
@@ -196,6 +280,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
       fleetMaxCapacity: maxCapacity,
       neededTrips: _neededTripCount(shipment),
       unit: shipment.quantityUnit,
+      suggestion: suggestion,
     );
   }
 
@@ -220,6 +305,10 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
     }
     if (!plan.covers || plan.overshoot) {
       showAppSnack(context, context.tr('quotations.submitBlocked'));
+      return;
+    }
+    if (!plan.capacityOk) {
+      showAppSnack(context, context.tr('quotations.submitBlockedCapacity'));
       return;
     }
     _syncTripsToPlan();
@@ -270,21 +359,16 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
         value: ref.watch(shipmentDetailProvider(widget.shipmentId)),
         onRetry: () => ref.invalidate(shipmentDetailProvider(widget.shipmentId)),
         builder: (shipment) {
-          if (!_prefilled) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                _prefill(shipment);
-              }
-            });
-          }
           _shipment = shipment;
           final trucks = ref.watch(quoteFleetTrucksProvider).maybeWhen(
                 data: (page) => page.items,
                 orElse: () => const <Truck>[],
               );
-          final plan = _planOf(shipment, trucks);
-          final summary = _RequestSummary(shipment: shipment);
-          final form = _quoteForm(shipment, plan);
+          _scheduleAutoPlan(shipment, trucks);
+          final suggestion = _suggestionOf(shipment, trucks);
+          final plan = _planOf(shipment, trucks, suggestion);
+          final summary = ShipmentRequestSummary(shipment: shipment);
+          final form = _quoteForm(shipment, plan, trucks);
           final subtitleParts = [
             shipment.reference,
             shipment.customer?.name,
@@ -341,7 +425,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
     );
   }
 
-  Widget _quoteForm(Shipment shipment, _QuotePlan plan) {
+  Widget _quoteForm(Shipment shipment, _QuotePlan plan, List<Truck> trucks) {
     final unit = QuantityUnits.label(context, shipment.quantityUnit);
     return Form(
       key: _formKey,
@@ -354,7 +438,11 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
               children: [
                 _typeDropdown(context),
                 const SizedBox(height: 8),
-                _FleetHint(plan: plan, locale: Localizations.localeOf(context).languageCode),
+                _FleetHint(
+                  plan: plan,
+                  locale: Localizations.localeOf(context).languageCode,
+                  onApply: plan.suggestion == null ? null : () => _applySuggestionNow(shipment, trucks),
+                ),
                 const SizedBox(height: 16),
                 AppTextField(
                   label: context.tr('quotations.truckCapacity'),
@@ -402,7 +490,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                     LengthLimitingTextInputFormatter(2),
                   ],
                   validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
-                  onChanged: (_) => _onPlanChanged(),
+                  onChanged: (_) => _onPlanChanged(fromTrips: true),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
@@ -419,7 +507,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  context.tr('quotations.qtyPerTripHint', {'unit': unit}),
+                  context.tr('quotations.qtyPerTripHint'),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
                         height: 1.45,
@@ -458,6 +546,9 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                   showRequiredHint: false,
                   keyboardType: TextInputType.number,
                   validator: (value) => AppValidators.positiveInt(value, context.tr('validation.positive')),
+                  onChanged: (_) {
+                    _durationTouched = true;
+                  },
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
@@ -492,7 +583,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
         if (value != null && value != _truckType) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              setState(() => _truckType = value);
+              _selectTruckType(value);
             }
           });
         }
@@ -504,10 +595,25 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
             for (final type in types)
               DropdownMenuItem(value: type.code, child: Text(type.displayName(context.l10n.isRtl))),
           ],
-          onChanged: (selected) => setState(() => _truckType = selected ?? _truckType),
+          onChanged: (selected) => _selectTruckType(selected ?? _truckType),
         );
       },
     );
+  }
+
+  void _selectTruckType(String? type) {
+    if (type == null || type == _truckType) {
+      return;
+    }
+    setState(() {
+      _truckType = type;
+      _appliedPlanKey = null;
+      _trucksTouched = false;
+      _tripsTouched = false;
+      _qtyTouched = false;
+      _capacityTouched = false;
+      _durationTouched = false;
+    });
   }
 }
 
@@ -523,6 +629,7 @@ class _QuotePlan {
     required this.fleetMaxCapacity,
     required this.neededTrips,
     this.unit,
+    this.suggestion,
   });
 
   final double requiredQuantity;
@@ -535,6 +642,7 @@ class _QuotePlan {
   final double fleetMaxCapacity;
   final int neededTrips;
   final String? unit;
+  final QuoteTransportSuggestion? suggestion;
 
   bool get covers => plannedQuantity + 0.0001 >= requiredQuantity && requiredQuantity > 0;
 
@@ -551,6 +659,19 @@ class _QuotePlan {
 
   bool get fleetOk => fleetCount == 0 || truckCount <= fleetCount;
 
+  bool get followsSuggestion {
+    final suggested = suggestion;
+    if (suggested == null) {
+      return true;
+    }
+    return suggested.matches(
+      truckCount: truckCount,
+      tripCount: tripCount,
+      capacityTons: capacity,
+      quantityPerTrip: tripCount <= 0 ? plannedQuantity : plannedQuantity / tripCount,
+    );
+  }
+
   _PlanTone get tone {
     if (!covers || overshoot) {
       return _PlanTone.danger;
@@ -564,81 +685,59 @@ class _QuotePlan {
 
 enum _PlanTone { ok, warning, danger }
 
-class _RequestSummary extends StatelessWidget {
-  const _RequestSummary({required this.shipment});
-
-  final Shipment shipment;
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).languageCode;
-    final unit = QuantityUnits.label(context, shipment.quantityUnit);
-    final route = '${shipment.pickupCity ?? '—'} → ${shipment.deliveryCity ?? '—'}';
-    return SectionCard(
-      title: context.tr('shipments.requestSummary'),
-      child: Column(
-        children: [
-          InfoRow(label: context.tr('common.reference'), value: shipment.reference ?? '—'),
-          if (shipment.customer?.name != null)
-            InfoRow(label: context.tr('common.customer'), value: shipment.customer!.name ?? '—'),
-          InfoRow(label: context.tr('shipments.cargo'), value: shipment.cargoType ?? '—'),
-          if (shipment.cargoDescription != null && shipment.cargoDescription!.isNotEmpty)
-            InfoRow(label: context.tr('common.details'), value: shipment.cargoDescription!),
-          InfoRow(
-            label: context.tr('shipments.weight'),
-            value: '${Formatters.number(shipment.weightTons, locale: locale)} ${context.tr('common.tons')}',
-          ),
-          if (!QuantityUnits.isTons(shipment.quantityUnit))
-            InfoRow(
-              label: context.tr('common.quantity'),
-              value: '${Formatters.number(shipment.quantity, locale: locale)} $unit',
-            ),
-          if (shipment.volumeCbm != null)
-            InfoRow(
-              label: context.tr('shipments.volume'),
-              value: '${Formatters.number(shipment.volumeCbm, locale: locale)} ${context.tr('common.cbm')}',
-            ),
-          InfoRow(label: context.tr('shipments.route'), value: route),
-          InfoRow(
-            label: context.tr('shipments.pickup'),
-            value: '${shipment.pickupCity ?? ''} · ${shipment.pickupAddress ?? ''}',
-          ),
-          InfoRow(
-            label: context.tr('shipments.delivery'),
-            value: '${shipment.deliveryCity ?? ''} · ${shipment.deliveryAddress ?? ''}',
-          ),
-          InfoRow(
-            label: context.tr('common.requiredDate'),
-            value: Formatters.date(shipment.requiredDate, locale: locale),
-          ),
-          if (shipment.notes != null && shipment.notes!.isNotEmpty)
-            InfoRow(label: context.tr('common.notes'), value: shipment.notes!),
-        ],
-      ),
-    );
-  }
-}
-
 class _FleetHint extends StatelessWidget {
-  const _FleetHint({required this.plan, required this.locale});
+  const _FleetHint({required this.plan, required this.locale, this.onApply});
 
   final _QuotePlan plan;
   final String locale;
+  final VoidCallback? onApply;
 
   @override
   Widget build(BuildContext context) {
-    if (plan.fleetCount == 0) {
-      return Text(
-        context.tr('quotations.fleetHintNone'),
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted, height: 1.45),
-      );
-    }
-    return Text(
-      context.tr('quotations.fleetHint', {
-        'count': '${plan.fleetCount}',
-        'capacity': Formatters.number(plan.fleetMaxCapacity, locale: locale),
-      }),
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted, height: 1.45),
+    final suggestion = plan.suggestion;
+    final unit = QuantityUnits.label(context, plan.unit);
+    final hint = plan.fleetCount == 0
+        ? context.tr('quotations.fleetHintNone')
+        : context.tr('quotations.fleetHint', {
+            'count': '${plan.fleetCount}',
+            'capacity': Formatters.number(plan.fleetMaxCapacity, locale: locale),
+          });
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          hint,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted, height: 1.45),
+        ),
+        if (suggestion != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            context.tr('quotations.planSuggestion', {
+              'trucks': '${suggestion.truckCount}',
+              'trips': '${suggestion.tripCount}',
+              'qty': Formatters.number(suggestion.quantityPerTrip, locale: locale),
+              'unit': unit,
+              'capacity': Formatters.number(suggestion.capacityTons, locale: locale),
+            }),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.ink,
+                  fontWeight: FontWeight.w600,
+                  height: 1.45,
+                ),
+          ),
+          if (onApply != null && !plan.followsSuggestion) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AppButton(
+                label: context.tr('quotations.applySuggestion'),
+                outlined: true,
+                onPressed: onApply,
+              ),
+            ),
+          ],
+        ],
+      ],
     );
   }
 }
@@ -679,6 +778,11 @@ class _PlanStatus extends StatelessWidget {
         })
       else
         context.tr('quotations.coverageOk'),
+      if (plan.suggestion != null && !plan.followsSuggestion)
+        context.tr('quotations.planSuggestionHint', {
+          'trucks': '${plan.suggestion!.truckCount}',
+          'trips': '${plan.suggestion!.tripCount}',
+        }),
       if (plan.tripCount > plan.neededTrips)
         context.tr('quotations.tripsHint', {'count': '${plan.neededTrips}'}),
       plan.capacityOk
