@@ -7,14 +7,38 @@ import '../../../core/utils/formatters.dart';
 import '../../../shared/models/document.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../company/presentation/company_screen.dart';
 import '../../fleet/presentation/fleet_screen.dart';
 
+final documentSearchProvider = StateProvider<String>((ref) => '');
+final documentCategoryProvider = StateProvider<String?>((ref) => null);
+final documentExpiryProvider = StateProvider<String?>((ref) => null);
+
 class DocumentsScreen extends ConsumerWidget {
   const DocumentsScreen({super.key});
+
+  String _expiryBucket(String? date) {
+    if (date == null || date.isEmpty) {
+      return 'valid';
+    }
+    final parsed = DateTime.tryParse(date);
+    if (parsed == null) {
+      return 'valid';
+    }
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
+    if (parsed.isBefore(startOfToday)) {
+      return 'expired';
+    }
+    if (parsed.difference(startOfToday).inDays <= 30) {
+      return 'expiringSoon';
+    }
+    return 'valid';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -60,21 +84,66 @@ class DocumentsScreen extends ConsumerWidget {
       ));
     }
 
+    final search = ref.watch(documentSearchProvider).trim().toLowerCase();
+    final category = ref.watch(documentCategoryProvider);
+    final expiry = ref.watch(documentExpiryProvider);
+    final categoryLabel = {
+      'insurance': context.tr('documents.insurance'),
+      'license': context.tr('documents.license'),
+      'companyDocs': context.tr('documents.companyDocs'),
+    };
+    final visible = items.where((item) {
+      if (category != null && item.category != categoryLabel[category]) {
+        return false;
+      }
+      if (expiry != null && _expiryBucket(item.expiresAt) != expiry) {
+        return false;
+      }
+      if (search.isNotEmpty) {
+        final haystack = '${item.title} ${item.category} ${item.owner ?? ''}'.toLowerCase();
+        if (!haystack.contains(search)) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: ListView(
         children: [
           PageHeader(title: context.tr('documents.title'), subtitle: context.tr('documents.subtitle')),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          FilterBar(
+            children: [
+              FilterSearchField(
+                onChanged: (value) => ref.read(documentSearchProvider.notifier).state = value,
+              ),
+              FilterSelect(
+                options: const ['insurance', 'license', 'companyDocs'],
+                value: category,
+                onChanged: (value) => ref.read(documentCategoryProvider.notifier).state = value,
+                labelOf: (value) => context.tr('documents.$value'),
+                allLabel: context.tr('common.allTypes'),
+              ),
+              FilterSelect(
+                options: const ['valid', 'expiringSoon', 'expired'],
+                value: expiry,
+                onChanged: (value) => ref.read(documentExpiryProvider.notifier).state = value,
+                labelOf: (value) => context.tr('documents.$value'),
+                allLabel: context.tr('common.allStatuses'),
+              ),
+            ],
+          ),
           if (trucks.isLoading || drivers.isLoading)
             const LoadingState()
-          else if (items.isEmpty)
+          else if (visible.isEmpty)
             EmptyState(message: context.tr('documents.empty'))
           else
             SectionCard(
               child: Column(
                 children: [
-                  for (final item in items)
+                  for (final item in visible)
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(item.title),

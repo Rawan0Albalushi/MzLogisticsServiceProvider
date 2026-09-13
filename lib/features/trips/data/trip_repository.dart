@@ -14,11 +14,19 @@ class TripRepository {
     int perPage = 15,
     String? status,
     int? jobId,
+    String? search,
+    String? city,
+    String? dateFrom,
+    String? dateTo,
   }) async {
     final response = await _api.get(ApiEndpoints.trips, query: {
       'page': page,
       'per_page': perPage,
       if (status != null && status.isNotEmpty) 'status': status,
+      if (search != null && search.isNotEmpty) 'search': search,
+      if (city != null && city.isNotEmpty) 'city': city,
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
       'job_id': ?jobId,
     });
     return Paginated.fromResponse(response, Trip.fromJson);

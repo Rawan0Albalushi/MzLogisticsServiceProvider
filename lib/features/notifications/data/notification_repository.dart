@@ -8,10 +8,11 @@ class NotificationRepository {
 
   final ApiClient _api;
 
-  Future<Paginated<AppNotification>> list({int page = 1}) async {
+  Future<Paginated<AppNotification>> list({int page = 1, String? status}) async {
     final response = await _api.get(ApiEndpoints.notifications, query: {
       'page': page,
       'per_page': 20,
+      if (status != null && status.isNotEmpty) 'status': status,
     });
     return Paginated.fromResponse(response, AppNotification.fromJson);
   }

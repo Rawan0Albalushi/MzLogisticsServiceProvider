@@ -72,6 +72,19 @@
     "create": "Create",
     "edit": "Edit",
     "search": "Search",
+    "searchPlaceholder": "Search records",
+    "searchReference": "Search by reference or name",
+    "cityPlaceholder": "City",
+    "allStatuses": "All statuses",
+    "allTypes": "All types",
+    "allSources": "All sources",
+    "allMethods": "All methods",
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "dateRange": "Date range",
+    "clearDateRange": "Clear dates",
+    "dateRangePickStart": "Select the start date",
+    "dateRangePickEnd": "Select the end date",
     "filter": "Filter",
     "status": "Status",
     "actions": "Actions",
@@ -183,7 +196,12 @@
     "org_pending": "Pending review",
     "org_active": "Active",
     "org_suspended": "Suspended",
-    "org_rejected": "Rejected"
+    "org_rejected": "Rejected",
+    "customer": "Customer",
+    "provider": "Provider",
+    "commission": "Commission",
+    "thawani": "Thawani",
+    "cash": "Cash"
   },
   "truckType": {
     "flatbed": "Flatbed",
@@ -388,7 +406,8 @@
     "empty": "No drivers have been added to the company.",
     "companyStaff": "Drivers are company staff. They do not operate as independent providers.",
     "password": "Temporary password",
-    "saved": "Driver added to the company."
+    "saved": "Driver added to the company.",
+    "lastLogin": "Last login"
   },
   "finance": {
     "title": "Finance",
@@ -414,7 +433,9 @@
     "method": "Method",
     "due": "Due",
     "issued": "Issued",
-    "settledAt": "Settled"
+    "settledAt": "Settled",
+    "paidAt": "Paid at",
+    "gateway": "Gateway"
   },
   "company": {
     "title": "Company settings",
@@ -441,7 +462,8 @@
   "notifications": {
     "title": "Notifications",
     "empty": "No notifications.",
-    "unread": "Unread"
+    "unread": "Unread",
+    "read": "Read"
   },
   "profile": {
     "title": "Profile",
@@ -457,7 +479,10 @@
     "insurance": "Truck insurance",
     "license": "Driver license",
     "expires": "Expires",
-    "companyDocs": "Company documents"
+    "companyDocs": "Company documents",
+    "expiringSoon": "Expiring soon",
+    "expired": "Expired",
+    "valid": "Valid"
   },
   "validation": {
     "email": "Enter a valid email address.",

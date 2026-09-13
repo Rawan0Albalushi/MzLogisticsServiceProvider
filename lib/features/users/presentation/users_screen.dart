@@ -5,9 +5,12 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../company/presentation/company_screen.dart';
+
+final companyUserSearchProvider = StateProvider<String>((ref) => '');
 
 class UsersScreen extends ConsumerWidget {
   const UsersScreen({super.key});
@@ -65,14 +68,28 @@ class UsersScreen extends ConsumerWidget {
               value: ref.watch(organizationProvider(orgId)),
               onRetry: () => ref.invalidate(organizationProvider(orgId)),
               builder: (org) {
-                if (org.users.isEmpty) {
+                final search = ref.watch(companyUserSearchProvider).trim().toLowerCase();
+                final users = org.users.where((user) {
+                  if (search.isEmpty) {
+                    return true;
+                  }
+                  return '${user.name ?? ''} ${user.email ?? ''} ${user.userType ?? ''}'.toLowerCase().contains(search);
+                }).toList();
+                if (users.isEmpty) {
                   return EmptyState(message: context.tr('users.empty'));
                 }
                 return SectionCard(
                   title: context.tr('nav.users'),
                   child: Column(
                     children: [
-                      for (final user in org.users)
+                      FilterBar(
+                        children: [
+                          FilterSearchField(
+                            onChanged: (value) => ref.read(companyUserSearchProvider.notifier).state = value,
+                          ),
+                        ],
+                      ),
+                      for (final user in users)
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text(user.name ?? ''),

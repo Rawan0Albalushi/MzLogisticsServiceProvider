@@ -8,17 +8,27 @@ import '../../../core/utils/formatters.dart';
 import '../../../shared/models/shipment.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 
 final shipmentSearchProvider = StateProvider<String>((ref) => '');
+final shipmentCityProvider = StateProvider<String>((ref) => '');
+final shipmentStatusProvider = StateProvider<String?>((ref) => null);
+final shipmentDateFromProvider = StateProvider<String?>((ref) => null);
+final shipmentDateToProvider = StateProvider<String?>((ref) => null);
 final shipmentPageProvider = StateProvider<int>((ref) => 1);
 
 final shipmentsProvider = FutureProvider.autoDispose((ref) {
-  final search = ref.watch(shipmentSearchProvider);
-  final page = ref.watch(shipmentPageProvider);
-  return ref.watch(shipmentRepositoryProvider).list(page: page, search: search);
+  return ref.watch(shipmentRepositoryProvider).list(
+        page: ref.watch(shipmentPageProvider),
+        search: ref.watch(shipmentSearchProvider),
+        city: ref.watch(shipmentCityProvider),
+        status: ref.watch(shipmentStatusProvider),
+        dateFrom: ref.watch(shipmentDateFromProvider),
+        dateTo: ref.watch(shipmentDateToProvider),
+      );
 });
 
 class ShipmentsScreen extends ConsumerWidget {
@@ -40,18 +50,44 @@ class ShipmentsScreen extends ConsumerWidget {
           PageHeader(
             title: context.tr('shipments.title'),
             subtitle: context.tr('shipments.subtitle'),
-            trailing: SizedBox(
-              width: 260,
-              child: TextField(
-                decoration: InputDecoration(hintText: context.tr('common.search'), prefixIcon: const Icon(Icons.search)),
+          ),
+          const SizedBox(height: 12),
+          FilterBar(
+            children: [
+              FilterSearchField(
+                hint: context.tr('common.searchReference'),
                 onChanged: (value) {
                   ref.read(shipmentSearchProvider.notifier).state = value;
                   ref.read(shipmentPageProvider.notifier).state = 1;
                 },
               ),
-            ),
+              FilterSearchField(
+                hint: context.tr('common.cityPlaceholder'),
+                onChanged: (value) {
+                  ref.read(shipmentCityProvider.notifier).state = value;
+                  ref.read(shipmentPageProvider.notifier).state = 1;
+                },
+              ),
+              FilterSelect(
+                options: const ['published', 'awarded', 'cancelled', 'expired'],
+                value: ref.watch(shipmentStatusProvider),
+                onChanged: (value) {
+                  ref.read(shipmentStatusProvider.notifier).state = value;
+                  ref.read(shipmentPageProvider.notifier).state = 1;
+                },
+                labelOf: context.l10n.status,
+              ),
+              FilterDateRange(
+                from: ref.watch(shipmentDateFromProvider),
+                to: ref.watch(shipmentDateToProvider),
+                onChanged: (from, to) {
+                  ref.read(shipmentDateFromProvider.notifier).state = from;
+                  ref.read(shipmentDateToProvider.notifier).state = to;
+                  ref.read(shipmentPageProvider.notifier).state = 1;
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
           Expanded(
             child: AsyncBody(
               value: ref.watch(shipmentsProvider),
@@ -65,20 +101,26 @@ class ShipmentsScreen extends ConsumerWidget {
                       items: data.items,
                       columns: [
                         DataColumnSpec(context.tr('common.reference')),
+                        DataColumnSpec(context.tr('common.customer')),
                         DataColumnSpec(context.tr('shipments.cargo')),
                         DataColumnSpec(context.tr('shipments.pickup')),
                         DataColumnSpec(context.tr('shipments.delivery')),
                         DataColumnSpec(context.tr('common.quantity')),
+                        DataColumnSpec(context.tr('shipments.weight')),
+                        DataColumnSpec(context.tr('common.requiredDate')),
                         DataColumnSpec(context.tr('common.status')),
                         DataColumnSpec(context.tr('common.actions')),
                       ],
                       onRowTap: (item) => context.go('/shipments/${item.id}'),
                       rowCells: (item) => [
                         Text(item.reference ?? ''),
+                        Text(item.customer?.name ?? '—'),
                         Text(item.cargoType ?? ''),
                         Text(item.pickupCity ?? ''),
                         Text(item.deliveryCity ?? ''),
                         Text('${Formatters.number(item.quantity, locale: locale)} ${item.quantityUnit ?? ''}'),
+                        Text('${Formatters.number(item.weightTons, locale: locale)} ${context.tr('common.tons')}'),
+                        Text(Formatters.date(item.requiredDate, locale: locale)),
                         StatusBadge(status: item.status),
                         _quoteAction(context, session, item, orgId),
                       ],
@@ -97,8 +139,10 @@ class ShipmentsScreen extends ConsumerWidget {
                                   ],
                                 ),
                                 const SizedBox(height: 8),
+                                Text(item.customer?.name ?? '—'),
                                 Text('${item.pickupCity ?? ''} → ${item.deliveryCity ?? ''}'),
-                                Text('${item.cargoType ?? ''} · ${Formatters.number(item.weightTons, locale: locale)} ${context.tr('common.tons')}'),
+                                Text('${item.cargoType ?? ''} · ${Formatters.number(item.quantity, locale: locale)} ${item.quantityUnit ?? ''} · ${Formatters.number(item.weightTons, locale: locale)} ${context.tr('common.tons')}'),
+                                Text(Formatters.date(item.requiredDate, locale: locale)),
                                 const SizedBox(height: 10),
                                 _quoteAction(context, session, item, orgId),
                               ],

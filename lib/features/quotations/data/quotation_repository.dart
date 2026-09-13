@@ -9,11 +9,20 @@ class QuotationRepository {
 
   final ApiClient _api;
 
-  Future<Paginated<Quotation>> list({int page = 1, String? status}) async {
+  Future<Paginated<Quotation>> list({
+    int page = 1,
+    String? status,
+    String? search,
+    String? dateFrom,
+    String? dateTo,
+  }) async {
     final response = await _api.get(ApiEndpoints.quotations, query: {
       'page': page,
       'per_page': 15,
       if (status != null && status.isNotEmpty) 'status': status,
+      if (search != null && search.isNotEmpty) 'search': search,
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
     });
     return Paginated.fromResponse(response, Quotation.fromJson);
   }

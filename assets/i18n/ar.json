@@ -72,6 +72,19 @@
     "create": "إنشاء",
     "edit": "تعديل",
     "search": "بحث",
+    "searchPlaceholder": "ابحث في السجلات",
+    "searchReference": "ابحث بالمرجع أو الاسم",
+    "cityPlaceholder": "المدينة",
+    "allStatuses": "كل الحالات",
+    "allTypes": "كل الأنواع",
+    "allSources": "كل المصادر",
+    "allMethods": "كل الطرق",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "dateRange": "نطاق التاريخ",
+    "clearDateRange": "مسح التواريخ",
+    "dateRangePickStart": "اختر تاريخ البداية",
+    "dateRangePickEnd": "اختر تاريخ النهاية",
     "filter": "تصفية",
     "status": "الحالة",
     "actions": "إجراءات",
@@ -183,7 +196,12 @@
     "org_pending": "قيد المراجعة",
     "org_active": "نشط",
     "org_suspended": "موقوف",
-    "org_rejected": "مرفوض"
+    "org_rejected": "مرفوض",
+    "customer": "عميل",
+    "provider": "مزود خدمة",
+    "commission": "عمولة",
+    "thawani": "ثواني",
+    "cash": "نقداً"
   },
   "truckType": {
     "flatbed": "سطحة",
@@ -388,7 +406,8 @@
     "empty": "لم يُضف أي سائقين إلى الشركة.",
     "companyStaff": "السائقون موظفون في الشركة، وليسوا مزودين مستقلين.",
     "password": "كلمة مرور مؤقتة",
-    "saved": "تمت إضافة السائق إلى الشركة."
+    "saved": "تمت إضافة السائق إلى الشركة.",
+    "lastLogin": "آخر دخول"
   },
   "finance": {
     "title": "المالية",
@@ -414,7 +433,9 @@
     "method": "الطريقة",
     "due": "الاستحقاق",
     "issued": "تاريخ الإصدار",
-    "settledAt": "تاريخ التسوية"
+    "settledAt": "تاريخ التسوية",
+    "paidAt": "تاريخ الدفع",
+    "gateway": "بوابة الدفع"
   },
   "company": {
     "title": "إعدادات الشركة",
@@ -441,7 +462,8 @@
   "notifications": {
     "title": "الإشعارات",
     "empty": "لا توجد إشعارات.",
-    "unread": "غير مقروء"
+    "unread": "غير مقروء",
+    "read": "مقروء"
   },
   "profile": {
     "title": "الملف الشخصي",
@@ -457,7 +479,10 @@
     "insurance": "تأمين الشاحنة",
     "license": "رخصة السائق",
     "expires": "تنتهي في",
-    "companyDocs": "وثائق الشركة"
+    "companyDocs": "وثائق الشركة",
+    "expiringSoon": "قاربة على الانتهاء",
+    "expired": "منتهية",
+    "valid": "سارية"
   },
   "validation": {
     "email": "أدخلوا بريداً إلكترونياً صالحاً.",

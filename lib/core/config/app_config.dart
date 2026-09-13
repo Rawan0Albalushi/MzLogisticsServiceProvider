@@ -40,4 +40,43 @@ class AppConfig {
     'maintenance',
     'inactive',
   ];
+  static const List<String> driverStatuses = [
+    'available',
+    'on_trip',
+    'inactive',
+  ];
+  static const List<String> paymentMethods = [
+    'thawani',
+    'cash',
+  ];
+  static const List<String> paymentStatuses = [
+    'pending',
+    'processing',
+    'completed',
+    'failed',
+    'refunded',
+  ];
+  static const List<String> invoiceStatuses = [
+    'issued',
+    'paid',
+    'void',
+  ];
+  static const List<String> invoiceTypes = [
+    'customer',
+    'provider',
+    'commission',
+  ];
+  static const List<String> settlementStatuses = [
+    'pending',
+    'processing',
+    'completed',
+  ];
+  static const List<String> walletTransactionTypes = [
+    'job_earning',
+    'earning_released',
+    'payout_reserved',
+    'payout_completed',
+    'payout_rejected',
+    'adjustment',
+  ];
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/paginated.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../core/theme/app_colors.dart';
@@ -13,20 +14,70 @@ import '../../../shared/models/settlement.dart';
 import '../../../shared/models/wallet.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 
+final paymentStatusProvider = StateProvider<String?>((ref) => null);
+final paymentMethodProvider = StateProvider<String?>((ref) => null);
+final paymentSearchProvider = StateProvider<String>((ref) => '');
+final paymentDateFromProvider = StateProvider<String?>((ref) => null);
+final paymentDateToProvider = StateProvider<String?>((ref) => null);
+final paymentPageProvider = StateProvider<int>((ref) => 1);
+final invoiceStatusProvider = StateProvider<String?>((ref) => null);
+final invoiceTypeProvider = StateProvider<String?>((ref) => null);
+final invoiceSearchProvider = StateProvider<String>((ref) => '');
+final invoiceDateFromProvider = StateProvider<String?>((ref) => null);
+final invoiceDateToProvider = StateProvider<String?>((ref) => null);
+final invoicePageProvider = StateProvider<int>((ref) => 1);
+final settlementStatusProvider = StateProvider<String?>((ref) => null);
+final settlementSearchProvider = StateProvider<String>((ref) => '');
+final settlementDateFromProvider = StateProvider<String?>((ref) => null);
+final settlementDateToProvider = StateProvider<String?>((ref) => null);
+final settlementPageProvider = StateProvider<int>((ref) => 1);
+final ledgerTypeProvider = StateProvider<String?>((ref) => null);
+final ledgerSearchProvider = StateProvider<String>((ref) => '');
+final ledgerDateFromProvider = StateProvider<String?>((ref) => null);
+final ledgerDateToProvider = StateProvider<String?>((ref) => null);
+final ledgerPageProvider = StateProvider<int>((ref) => 1);
+
 final paymentsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(financeRepositoryProvider).payments();
+  return ref
+      .watch(financeRepositoryProvider)
+      .payments(
+        page: ref.watch(paymentPageProvider),
+        status: ref.watch(paymentStatusProvider),
+        method: ref.watch(paymentMethodProvider),
+        search: ref.watch(paymentSearchProvider),
+        dateFrom: ref.watch(paymentDateFromProvider),
+        dateTo: ref.watch(paymentDateToProvider),
+      );
 });
 
 final invoicesProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(financeRepositoryProvider).invoices();
+  return ref
+      .watch(financeRepositoryProvider)
+      .invoices(
+        page: ref.watch(invoicePageProvider),
+        status: ref.watch(invoiceStatusProvider),
+        type: ref.watch(invoiceTypeProvider),
+        search: ref.watch(invoiceSearchProvider),
+        dateFrom: ref.watch(invoiceDateFromProvider),
+        dateTo: ref.watch(invoiceDateToProvider),
+      );
 });
 
 final settlementsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(financeRepositoryProvider).settlements();
+  return ref
+      .watch(financeRepositoryProvider)
+      .settlements(
+        page: ref.watch(settlementPageProvider),
+        status: ref.watch(settlementStatusProvider),
+        search: ref.watch(settlementSearchProvider),
+        dateFrom: ref.watch(settlementDateFromProvider),
+        dateTo: ref.watch(settlementDateToProvider),
+      );
 });
 
 final walletProvider = FutureProvider.autoDispose((ref) {
@@ -36,9 +87,24 @@ final walletProvider = FutureProvider.autoDispose((ref) {
 final walletLedgerProvider = FutureProvider.autoDispose((ref) async {
   final wallet = await ref.watch(walletProvider.future);
   if (wallet == null) {
-    return const Paginated<WalletTransaction>(items: [], currentPage: 1, lastPage: 1, perPage: 15, total: 0);
+    return const Paginated<WalletTransaction>(
+      items: [],
+      currentPage: 1,
+      lastPage: 1,
+      perPage: 15,
+      total: 0,
+    );
   }
-  return ref.watch(financeRepositoryProvider).walletTransactions(wallet.id);
+  return ref
+      .watch(financeRepositoryProvider)
+      .walletTransactions(
+        wallet.id,
+        page: ref.watch(ledgerPageProvider),
+        type: ref.watch(ledgerTypeProvider),
+        search: ref.watch(ledgerSearchProvider),
+        dateFrom: ref.watch(ledgerDateFromProvider),
+        dateTo: ref.watch(ledgerDateToProvider),
+      );
 });
 
 class FinanceScreen extends ConsumerStatefulWidget {
@@ -48,7 +114,8 @@ class FinanceScreen extends ConsumerStatefulWidget {
   ConsumerState<FinanceScreen> createState() => _FinanceScreenState();
 }
 
-class _FinanceScreenState extends ConsumerState<FinanceScreen> with SingleTickerProviderStateMixin {
+class _FinanceScreenState extends ConsumerState<FinanceScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabs;
 
   @override
@@ -79,7 +146,10 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> with SingleTicker
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          PageHeader(title: context.tr('finance.title'), subtitle: context.tr('finance.subtitle')),
+          PageHeader(
+            title: context.tr('finance.title'),
+            subtitle: context.tr('finance.subtitle'),
+          ),
           if (permissions.can(AppPermissions.walletsView)) ...[
             const SizedBox(height: 16),
             const _WalletHeader(),
@@ -105,10 +175,18 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> with SingleTicker
             child: TabBarView(
               controller: _tabs,
               children: [
-                permissions.can(AppPermissions.walletsView) ? const _LedgerTab() : const NoPermissionState(),
-                permissions.can(AppPermissions.paymentsView) ? const _PaymentsTab() : const NoPermissionState(),
-                permissions.can(AppPermissions.invoicesView) ? const _InvoicesTab() : const NoPermissionState(),
-                permissions.can(AppPermissions.settlementsView) ? const _SettlementsTab() : const NoPermissionState(),
+                permissions.can(AppPermissions.walletsView)
+                    ? const _LedgerTab()
+                    : const NoPermissionState(),
+                permissions.can(AppPermissions.paymentsView)
+                    ? const _PaymentsTab()
+                    : const NoPermissionState(),
+                permissions.can(AppPermissions.invoicesView)
+                    ? const _InvoicesTab()
+                    : const NoPermissionState(),
+                permissions.can(AppPermissions.settlementsView)
+                    ? const _SettlementsTab()
+                    : const NoPermissionState(),
               ],
             ),
           ),
@@ -134,15 +212,22 @@ class _WalletHeader extends ConsumerWidget {
             final columns = constraints.maxWidth >= 1100
                 ? 5
                 : constraints.maxWidth >= 720
-                    ? 3
-                    : 2;
-            final itemWidth = (constraints.maxWidth - (12 * (columns - 1))) / columns;
+                ? 3
+                : 2;
+            final itemWidth =
+                (constraints.maxWidth - (12 * (columns - 1))) / columns;
             final cards = [
               (context.tr('finance.available'), wallet?.availableBalance ?? 0),
               (context.tr('finance.pending'), wallet?.pendingBalance ?? 0),
               (context.tr('finance.reserved'), wallet?.reservedBalance ?? 0),
-              (context.tr('finance.lifetimeEarned'), wallet?.lifetimeEarned ?? 0),
-              (context.tr('finance.lifetimeWithdrawn'), wallet?.lifetimeWithdrawn ?? 0),
+              (
+                context.tr('finance.lifetimeEarned'),
+                wallet?.lifetimeEarned ?? 0,
+              ),
+              (
+                context.tr('finance.lifetimeWithdrawn'),
+                wallet?.lifetimeWithdrawn ?? 0,
+              ),
             ];
             return Wrap(
               spacing: 12,
@@ -153,7 +238,11 @@ class _WalletHeader extends ConsumerWidget {
                     width: itemWidth,
                     child: MetricCard(
                       label: card.$1,
-                      value: Formatters.money(card.$2, currency: currency, locale: locale),
+                      value: Formatters.money(
+                        card.$2,
+                        currency: currency,
+                        locale: locale,
+                      ),
                     ),
                   ),
               ],
@@ -171,48 +260,100 @@ class _LedgerTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = Localizations.localeOf(context).languageCode;
-    return AsyncBody(
-      value: ref.watch(walletLedgerProvider),
-      onRetry: () => ref.invalidate(walletLedgerProvider),
-      isEmpty: (data) => data.isEmpty,
-      empty: EmptyState(message: context.tr('finance.emptyLedger')),
-      builder: (data) {
-        return ListView(
+    return Column(
+      children: [
+        FilterBar(
           children: [
-            ResponsiveDataView<WalletTransaction>(
-              items: data.items,
-              columns: [
-                DataColumnSpec(context.tr('common.reference')),
-                DataColumnSpec(context.tr('common.type')),
-                DataColumnSpec(context.tr('finance.amount')),
-                DataColumnSpec(context.tr('nav.jobs')),
-                DataColumnSpec(context.tr('finance.payments')),
-                DataColumnSpec(context.tr('common.createdAt')),
-              ],
-              rowCells: (item) => [
-                Text(item.reference ?? ''),
-                StatusBadge(status: item.type),
-                Text(Formatters.money(item.amount, currency: item.currency, locale: locale)),
-                Text(item.jobReference ?? '—'),
-                Text(item.paymentReference ?? '—'),
-                Text(Formatters.dateTime(item.createdAt, locale: locale)),
-              ],
-              cardBuilder: (item) => Card(
-                child: ListTile(
-                  title: Text(item.reference ?? ''),
-                  subtitle: Text(
-                    [
-                      item.jobReference,
-                      Formatters.money(item.amount, currency: item.currency, locale: locale),
-                    ].whereType<String>().join(' · '),
-                  ),
-                  trailing: StatusBadge(status: item.type),
-                ),
-              ),
+            FilterSearchField(
+              hint: context.tr('common.searchReference'),
+              onChanged: (value) {
+                ref.read(ledgerSearchProvider.notifier).state = value;
+                ref.read(ledgerPageProvider.notifier).state = 1;
+              },
+            ),
+            FilterSelect(
+              options: AppConfig.walletTransactionTypes,
+              value: ref.watch(ledgerTypeProvider),
+              onChanged: (value) {
+                ref.read(ledgerTypeProvider.notifier).state = value;
+                ref.read(ledgerPageProvider.notifier).state = 1;
+              },
+              labelOf: context.l10n.status,
+              allLabel: context.tr('common.allTypes'),
+            ),
+            FilterDateRange(
+              from: ref.watch(ledgerDateFromProvider),
+              to: ref.watch(ledgerDateToProvider),
+              onChanged: (from, to) {
+                ref.read(ledgerDateFromProvider.notifier).state = from;
+                ref.read(ledgerDateToProvider.notifier).state = to;
+                ref.read(ledgerPageProvider.notifier).state = 1;
+              },
             ),
           ],
-        );
-      },
+        ),
+        Expanded(
+          child: AsyncBody(
+            value: ref.watch(walletLedgerProvider),
+            onRetry: () => ref.invalidate(walletLedgerProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(message: context.tr('finance.emptyLedger')),
+            builder: (data) {
+              return ListView(
+                children: [
+                  ResponsiveDataView<WalletTransaction>(
+                    items: data.items,
+                    columns: [
+                      DataColumnSpec(context.tr('common.reference')),
+                      DataColumnSpec(context.tr('common.type')),
+                      DataColumnSpec(context.tr('finance.amount')),
+                      DataColumnSpec(context.tr('nav.jobs')),
+                      DataColumnSpec(context.tr('finance.payments')),
+                      DataColumnSpec(context.tr('common.createdAt')),
+                    ],
+                    rowCells: (item) => [
+                      Text(item.reference ?? ''),
+                      StatusBadge(status: item.type),
+                      Text(
+                        Formatters.money(
+                          item.amount,
+                          currency: item.currency,
+                          locale: locale,
+                        ),
+                      ),
+                      Text(item.jobReference ?? '—'),
+                      Text(item.paymentReference ?? '—'),
+                      Text(Formatters.dateTime(item.createdAt, locale: locale)),
+                    ],
+                    cardBuilder: (item) => Card(
+                      child: ListTile(
+                        title: Text(item.reference ?? ''),
+                        subtitle: Text(
+                          [
+                            item.jobReference,
+                            Formatters.money(
+                              item.amount,
+                              currency: item.currency,
+                              locale: locale,
+                            ),
+                          ].whereType<String>().join(' · '),
+                        ),
+                        trailing: StatusBadge(status: item.type),
+                      ),
+                    ),
+                  ),
+                  PaginationBar(
+                    currentPage: data.currentPage,
+                    lastPage: data.lastPage,
+                    onPage: (page) =>
+                        ref.read(ledgerPageProvider.notifier).state = page,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -223,43 +364,122 @@ class _PaymentsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = Localizations.localeOf(context).languageCode;
-    return AsyncBody(
-      value: ref.watch(paymentsProvider),
-      onRetry: () => ref.invalidate(paymentsProvider),
-      isEmpty: (data) => data.isEmpty,
-      empty: EmptyState(message: context.tr('finance.emptyPayments')),
-      builder: (data) {
-        return ListView(
+    return Column(
+      children: [
+        FilterBar(
           children: [
-            ResponsiveDataView<Payment>(
-              items: data.items,
-              columns: [
-                DataColumnSpec(context.tr('common.reference')),
-                DataColumnSpec(context.tr('finance.amount')),
-                DataColumnSpec(context.tr('finance.providerAmount')),
-                DataColumnSpec(context.tr('finance.commission')),
-                DataColumnSpec(context.tr('finance.method')),
-                DataColumnSpec(context.tr('common.status')),
-              ],
-              rowCells: (item) => [
-                Text(item.reference ?? ''),
-                Text(Formatters.money(item.amount, currency: item.currency, locale: locale)),
-                Text(Formatters.money(item.providerAmount, currency: item.currency, locale: locale)),
-                Text(Formatters.money(item.commissionAmount, currency: item.currency, locale: locale)),
-                Text(item.method ?? '—'),
-                StatusBadge(status: item.status),
-              ],
-              cardBuilder: (item) => Card(
-                child: ListTile(
-                  title: Text(item.reference ?? ''),
-                  subtitle: Text(Formatters.money(item.providerAmount, currency: item.currency, locale: locale)),
-                  trailing: StatusBadge(status: item.status),
-                ),
-              ),
+            FilterSearchField(
+              hint: context.tr('common.searchReference'),
+              onChanged: (value) {
+                ref.read(paymentSearchProvider.notifier).state = value;
+                ref.read(paymentPageProvider.notifier).state = 1;
+              },
+            ),
+            FilterSelect(
+              options: AppConfig.paymentStatuses,
+              value: ref.watch(paymentStatusProvider),
+              onChanged: (value) {
+                ref.read(paymentStatusProvider.notifier).state = value;
+                ref.read(paymentPageProvider.notifier).state = 1;
+              },
+              labelOf: context.l10n.status,
+            ),
+            FilterSelect(
+              options: AppConfig.paymentMethods,
+              value: ref.watch(paymentMethodProvider),
+              onChanged: (value) {
+                ref.read(paymentMethodProvider.notifier).state = value;
+                ref.read(paymentPageProvider.notifier).state = 1;
+              },
+              labelOf: context.l10n.status,
+              allLabel: context.tr('common.allMethods'),
+            ),
+            FilterDateRange(
+              from: ref.watch(paymentDateFromProvider),
+              to: ref.watch(paymentDateToProvider),
+              onChanged: (from, to) {
+                ref.read(paymentDateFromProvider.notifier).state = from;
+                ref.read(paymentDateToProvider.notifier).state = to;
+                ref.read(paymentPageProvider.notifier).state = 1;
+              },
             ),
           ],
-        );
-      },
+        ),
+        Expanded(
+          child: AsyncBody(
+            value: ref.watch(paymentsProvider),
+            onRetry: () => ref.invalidate(paymentsProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(message: context.tr('finance.emptyPayments')),
+            builder: (data) {
+              return ListView(
+                children: [
+                  ResponsiveDataView<Payment>(
+                    items: data.items,
+                    columns: [
+                      DataColumnSpec(context.tr('common.reference')),
+                      DataColumnSpec(context.tr('finance.amount')),
+                      DataColumnSpec(context.tr('finance.providerAmount')),
+                      DataColumnSpec(context.tr('finance.commission')),
+                      DataColumnSpec(context.tr('finance.method')),
+                      DataColumnSpec(context.tr('finance.gateway')),
+                      DataColumnSpec(context.tr('finance.paidAt')),
+                      DataColumnSpec(context.tr('common.status')),
+                    ],
+                    rowCells: (item) => [
+                      Text(item.reference ?? ''),
+                      Text(
+                        Formatters.money(
+                          item.amount,
+                          currency: item.currency,
+                          locale: locale,
+                        ),
+                      ),
+                      Text(
+                        Formatters.money(
+                          item.providerAmount,
+                          currency: item.currency,
+                          locale: locale,
+                        ),
+                      ),
+                      Text(
+                        Formatters.money(
+                          item.commissionAmount,
+                          currency: item.currency,
+                          locale: locale,
+                        ),
+                      ),
+                      Text(item.method ?? '—'),
+                      Text(item.gateway ?? '—'),
+                      Text(Formatters.dateTime(item.paidAt, locale: locale)),
+                      StatusBadge(status: item.status),
+                    ],
+                    cardBuilder: (item) => Card(
+                      child: ListTile(
+                        title: Text(item.reference ?? ''),
+                        subtitle: Text(
+                          [
+                            Formatters.money(item.providerAmount, currency: item.currency, locale: locale),
+                            item.method,
+                            Formatters.dateTime(item.paidAt, locale: locale),
+                          ].where((value) => value != null && value.isNotEmpty && value != '—').join(' · '),
+                        ),
+                        trailing: StatusBadge(status: item.status),
+                      ),
+                    ),
+                  ),
+                  PaginationBar(
+                    currentPage: data.currentPage,
+                    lastPage: data.lastPage,
+                    onPage: (page) =>
+                        ref.read(paymentPageProvider.notifier).state = page,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -270,43 +490,110 @@ class _InvoicesTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = Localizations.localeOf(context).languageCode;
-    return AsyncBody(
-      value: ref.watch(invoicesProvider),
-      onRetry: () => ref.invalidate(invoicesProvider),
-      isEmpty: (data) => data.isEmpty,
-      empty: EmptyState(message: context.tr('finance.emptyInvoices')),
-      builder: (data) {
-        return ListView(
+    return Column(
+      children: [
+        FilterBar(
           children: [
-            ResponsiveDataView<Invoice>(
-              items: data.items,
-              columns: [
-                DataColumnSpec(context.tr('common.reference')),
-                DataColumnSpec(context.tr('common.type')),
-                DataColumnSpec(context.tr('finance.amount')),
-                DataColumnSpec(context.tr('finance.issued')),
-                DataColumnSpec(context.tr('finance.due')),
-                DataColumnSpec(context.tr('common.status')),
-              ],
-              rowCells: (item) => [
-                Text(item.reference ?? ''),
-                Text(item.type ?? ''),
-                Text(Formatters.money(item.amount, currency: item.currency, locale: locale)),
-                Text(Formatters.date(item.issuedAt, locale: locale)),
-                Text(Formatters.date(item.dueAt, locale: locale)),
-                StatusBadge(status: item.status),
-              ],
-              cardBuilder: (item) => Card(
-                child: ListTile(
-                  title: Text(item.reference ?? ''),
-                  subtitle: Text(Formatters.money(item.amount, currency: item.currency, locale: locale)),
-                  trailing: StatusBadge(status: item.status),
-                ),
-              ),
+            FilterSearchField(
+              hint: context.tr('common.searchReference'),
+              onChanged: (value) {
+                ref.read(invoiceSearchProvider.notifier).state = value;
+                ref.read(invoicePageProvider.notifier).state = 1;
+              },
+            ),
+            FilterSelect(
+              options: AppConfig.invoiceTypes,
+              value: ref.watch(invoiceTypeProvider),
+              onChanged: (value) {
+                ref.read(invoiceTypeProvider.notifier).state = value;
+                ref.read(invoicePageProvider.notifier).state = 1;
+              },
+              labelOf: context.l10n.status,
+              allLabel: context.tr('common.allTypes'),
+            ),
+            FilterSelect(
+              options: AppConfig.invoiceStatuses,
+              value: ref.watch(invoiceStatusProvider),
+              onChanged: (value) {
+                ref.read(invoiceStatusProvider.notifier).state = value;
+                ref.read(invoicePageProvider.notifier).state = 1;
+              },
+              labelOf: context.l10n.status,
+            ),
+            FilterDateRange(
+              from: ref.watch(invoiceDateFromProvider),
+              to: ref.watch(invoiceDateToProvider),
+              onChanged: (from, to) {
+                ref.read(invoiceDateFromProvider.notifier).state = from;
+                ref.read(invoiceDateToProvider.notifier).state = to;
+                ref.read(invoicePageProvider.notifier).state = 1;
+              },
             ),
           ],
-        );
-      },
+        ),
+        Expanded(
+          child: AsyncBody(
+            value: ref.watch(invoicesProvider),
+            onRetry: () => ref.invalidate(invoicesProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(message: context.tr('finance.emptyInvoices')),
+            builder: (data) {
+              return ListView(
+                children: [
+                  ResponsiveDataView<Invoice>(
+                    items: data.items,
+                    columns: [
+                      DataColumnSpec(context.tr('common.reference')),
+                      DataColumnSpec(context.tr('common.type')),
+                      DataColumnSpec(context.tr('finance.amount')),
+                      DataColumnSpec(context.tr('common.job')),
+                      DataColumnSpec(context.tr('finance.payments')),
+                      DataColumnSpec(context.tr('finance.issued')),
+                      DataColumnSpec(context.tr('finance.due')),
+                      DataColumnSpec(context.tr('common.status')),
+                    ],
+                    rowCells: (item) => [
+                      Text(item.reference ?? ''),
+                      Text(item.type ?? ''),
+                      Text(
+                        Formatters.money(
+                          item.amount,
+                          currency: item.currency,
+                          locale: locale,
+                        ),
+                      ),
+                      Text(item.job?.reference ?? '—'),
+                      Text(item.payment?.reference ?? '—'),
+                      Text(Formatters.date(item.issuedAt, locale: locale)),
+                      Text(Formatters.date(item.dueAt, locale: locale)),
+                      StatusBadge(status: item.status),
+                    ],
+                    cardBuilder: (item) => Card(
+                      child: ListTile(
+                        title: Text(item.reference ?? ''),
+                        subtitle: Text(
+                          [
+                            Formatters.money(item.amount, currency: item.currency, locale: locale),
+                            item.job?.reference,
+                            Formatters.date(item.dueAt, locale: locale),
+                          ].where((value) => value != null && value.toString().isNotEmpty).join(' · '),
+                        ),
+                        trailing: StatusBadge(status: item.status),
+                      ),
+                    ),
+                  ),
+                  PaginationBar(
+                    currentPage: data.currentPage,
+                    lastPage: data.lastPage,
+                    onPage: (page) =>
+                        ref.read(invoicePageProvider.notifier).state = page,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -317,43 +604,108 @@ class _SettlementsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = Localizations.localeOf(context).languageCode;
-    return AsyncBody(
-      value: ref.watch(settlementsProvider),
-      onRetry: () => ref.invalidate(settlementsProvider),
-      isEmpty: (data) => data.isEmpty,
-      empty: EmptyState(message: context.tr('finance.emptySettlements')),
-      builder: (data) {
-        return ListView(
+    return Column(
+      children: [
+        FilterBar(
           children: [
-            ResponsiveDataView<Settlement>(
-              items: data.items,
-              columns: [
-                DataColumnSpec(context.tr('common.reference')),
-                DataColumnSpec(context.tr('finance.amount')),
-                DataColumnSpec(context.tr('finance.net')),
-                DataColumnSpec(context.tr('finance.period')),
-                DataColumnSpec(context.tr('common.status')),
-              ],
-              rowCells: (item) => [
-                Text(item.reference ?? ''),
-                Text(Formatters.money(item.amount, currency: item.currency, locale: locale)),
-                Text(Formatters.money(item.netAmount, currency: item.currency, locale: locale)),
-                Text('${Formatters.date(item.periodStart, locale: locale)} – ${Formatters.date(item.periodEnd, locale: locale)}'),
-                StatusBadge(status: item.status),
-              ],
-              cardBuilder: (item) => Card(
-                child: ListTile(
-                  title: Text(item.reference ?? ''),
-                  subtitle: Text(
-                    '${Formatters.money(item.netAmount, currency: item.currency, locale: locale)} · ${Formatters.date(item.periodStart, locale: locale)}',
-                  ),
-                  trailing: StatusBadge(status: item.status),
-                ),
-              ),
+            FilterSearchField(
+              hint: context.tr('common.searchReference'),
+              onChanged: (value) {
+                ref.read(settlementSearchProvider.notifier).state = value;
+                ref.read(settlementPageProvider.notifier).state = 1;
+              },
+            ),
+            FilterSelect(
+              options: AppConfig.settlementStatuses,
+              value: ref.watch(settlementStatusProvider),
+              onChanged: (value) {
+                ref.read(settlementStatusProvider.notifier).state = value;
+                ref.read(settlementPageProvider.notifier).state = 1;
+              },
+              labelOf: context.l10n.status,
+            ),
+            FilterDateRange(
+              from: ref.watch(settlementDateFromProvider),
+              to: ref.watch(settlementDateToProvider),
+              onChanged: (from, to) {
+                ref.read(settlementDateFromProvider.notifier).state = from;
+                ref.read(settlementDateToProvider.notifier).state = to;
+                ref.read(settlementPageProvider.notifier).state = 1;
+              },
             ),
           ],
-        );
-      },
+        ),
+        Expanded(
+          child: AsyncBody(
+            value: ref.watch(settlementsProvider),
+            onRetry: () => ref.invalidate(settlementsProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(message: context.tr('finance.emptySettlements')),
+            builder: (data) {
+              return ListView(
+                children: [
+                  ResponsiveDataView<Settlement>(
+                    items: data.items,
+                    columns: [
+                      DataColumnSpec(context.tr('common.reference')),
+                      DataColumnSpec(context.tr('finance.amount')),
+                      DataColumnSpec(context.tr('finance.commission')),
+                      DataColumnSpec(context.tr('finance.net')),
+                      DataColumnSpec(context.tr('finance.period')),
+                      DataColumnSpec(context.tr('finance.settledAt')),
+                      DataColumnSpec(context.tr('common.status')),
+                    ],
+                    rowCells: (item) => [
+                      Text(item.reference ?? ''),
+                      Text(
+                        Formatters.money(
+                          item.amount,
+                          currency: item.currency,
+                          locale: locale,
+                        ),
+                      ),
+                      Text(
+                        Formatters.money(
+                          item.commissionAmount,
+                          currency: item.currency,
+                          locale: locale,
+                        ),
+                      ),
+                      Text(
+                        Formatters.money(
+                          item.netAmount,
+                          currency: item.currency,
+                          locale: locale,
+                        ),
+                      ),
+                      Text(
+                        '${Formatters.date(item.periodStart, locale: locale)} – ${Formatters.date(item.periodEnd, locale: locale)}',
+                      ),
+                      Text(Formatters.dateTime(item.settledAt, locale: locale)),
+                      StatusBadge(status: item.status),
+                    ],
+                    cardBuilder: (item) => Card(
+                      child: ListTile(
+                        title: Text(item.reference ?? ''),
+                        subtitle: Text(
+                          '${Formatters.money(item.netAmount, currency: item.currency, locale: locale)} · ${Formatters.date(item.periodStart, locale: locale)}',
+                        ),
+                        trailing: StatusBadge(status: item.status),
+                      ),
+                    ),
+                  ),
+                  PaginationBar(
+                    currentPage: data.currentPage,
+                    lastPage: data.lastPage,
+                    onPage: (page) =>
+                        ref.read(settlementPageProvider.notifier).state = page,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

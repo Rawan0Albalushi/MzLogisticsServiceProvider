@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_exception.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
@@ -12,14 +13,21 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../fleet/presentation/fleet_screen.dart';
 
 final driverPageProvider = StateProvider<int>((ref) => 1);
+final driverSearchProvider = StateProvider<String>((ref) => '');
+final driverStatusProvider = StateProvider<String?>((ref) => null);
 final driversListProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(fleetRepositoryProvider).drivers(page: ref.watch(driverPageProvider));
+  return ref.watch(fleetRepositoryProvider).drivers(
+        page: ref.watch(driverPageProvider),
+        search: ref.watch(driverSearchProvider),
+        status: ref.watch(driverStatusProvider),
+      );
 });
 
 class DriversScreen extends ConsumerWidget {
@@ -48,7 +56,26 @@ class DriversScreen extends ConsumerWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          FilterBar(
+            children: [
+              FilterSearchField(
+                onChanged: (value) {
+                  ref.read(driverSearchProvider.notifier).state = value;
+                  ref.read(driverPageProvider.notifier).state = 1;
+                },
+              ),
+              FilterSelect(
+                options: AppConfig.driverStatuses,
+                value: ref.watch(driverStatusProvider),
+                onChanged: (value) {
+                  ref.read(driverStatusProvider.notifier).state = value;
+                  ref.read(driverPageProvider.notifier).state = 1;
+                },
+                labelOf: context.l10n.status,
+              ),
+            ],
+          ),
           Expanded(
             child: AsyncBody(
               value: ref.watch(driversListProvider),
@@ -63,22 +90,28 @@ class DriversScreen extends ConsumerWidget {
                       columns: [
                         DataColumnSpec(context.tr('auth.name')),
                         DataColumnSpec(context.tr('auth.email')),
+                        DataColumnSpec(context.tr('auth.phone')),
                         DataColumnSpec(context.tr('drivers.license')),
                         DataColumnSpec(context.tr('drivers.licenseExpiry')),
+                        DataColumnSpec(context.tr('drivers.lastLogin')),
                         DataColumnSpec(context.tr('common.status')),
                       ],
                       rowCells: (item) => [
                         Text(item.name ?? ''),
                         Text(item.email ?? ''),
+                        Text(item.phone ?? '—'),
                         Text(item.driverProfile?.licenseNumber ?? '—'),
                         Text(Formatters.date(item.driverProfile?.licenseExpiresAt, locale: locale)),
+                        Text(Formatters.dateTime(item.lastLoginAt, locale: locale)),
                         StatusBadge(status: item.driverProfile?.status),
                       ],
                       cardBuilder: (item) => Card(
                         child: ListTile(
                           title: Text(item.name ?? ''),
                           subtitle: Text(
-                            '${item.email ?? ''} · ${item.driverProfile?.licenseNumber ?? ''}',
+                            [item.email, item.phone, item.driverProfile?.licenseNumber]
+                                .where((value) => value != null && value.isNotEmpty)
+                                .join(' · '),
                           ),
                           trailing: StatusBadge(status: item.driverProfile?.status),
                         ),

@@ -7,10 +7,12 @@ import '../../../core/utils/formatters.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 
+final notificationStatusProvider = StateProvider<String?>((ref) => null);
 final notificationsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(notificationRepositoryProvider).list();
+  return ref.watch(notificationRepositoryProvider).list(status: ref.watch(notificationStatusProvider));
 });
 
 class NotificationsScreen extends ConsumerWidget {
@@ -36,7 +38,17 @@ class NotificationsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          FilterBar(
+            children: [
+              FilterSelect(
+                options: const ['unread', 'read'],
+                value: ref.watch(notificationStatusProvider),
+                onChanged: (value) => ref.read(notificationStatusProvider.notifier).state = value,
+                labelOf: (value) => context.tr('notifications.$value'),
+              ),
+            ],
+          ),
           Expanded(
             child: AsyncBody(
               value: ref.watch(notificationsProvider),

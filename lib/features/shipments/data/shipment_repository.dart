@@ -13,12 +13,18 @@ class ShipmentRepository {
     int page = 1,
     String? search,
     String? status,
+    String? city,
+    String? dateFrom,
+    String? dateTo,
   }) async {
     final response = await _api.get(ApiEndpoints.shipments, query: {
       'page': page,
       'per_page': 15,
       if (search != null && search.isNotEmpty) 'search': search,
       if (status != null && status.isNotEmpty) 'status': status,
+      if (city != null && city.isNotEmpty) 'city': city,
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
     });
     return Paginated.fromResponse(response, Shipment.fromJson);
   }

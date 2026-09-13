@@ -10,17 +10,24 @@ import '../../../shared/models/quotation.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 
 final quotationStatusProvider = StateProvider<String?>((ref) => null);
+final quotationSearchProvider = StateProvider<String>((ref) => '');
+final quotationDateFromProvider = StateProvider<String?>((ref) => null);
+final quotationDateToProvider = StateProvider<String?>((ref) => null);
 final quotationPageProvider = StateProvider<int>((ref) => 1);
 
 final quotationsProvider = FutureProvider.autoDispose((ref) {
   return ref.watch(quotationRepositoryProvider).list(
         page: ref.watch(quotationPageProvider),
         status: ref.watch(quotationStatusProvider),
+        search: ref.watch(quotationSearchProvider),
+        dateFrom: ref.watch(quotationDateFromProvider),
+        dateTo: ref.watch(quotationDateToProvider),
       );
 });
 
@@ -43,19 +50,35 @@ class QuotationsScreen extends ConsumerWidget {
             subtitle: context.tr('quotations.subtitle'),
           ),
           const SizedBox(height: 12),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: FilterChips(
-              options: const ['submitted', 'withdrawn', 'accepted', 'rejected', 'expired'],
-              selected: ref.watch(quotationStatusProvider),
-              onSelected: (value) {
-                ref.read(quotationStatusProvider.notifier).state = value;
-                ref.read(quotationPageProvider.notifier).state = 1;
-              },
-              labelOf: context.l10n.status,
-            ),
+          FilterBar(
+            children: [
+              FilterSearchField(
+                hint: context.tr('common.searchReference'),
+                onChanged: (value) {
+                  ref.read(quotationSearchProvider.notifier).state = value;
+                  ref.read(quotationPageProvider.notifier).state = 1;
+                },
+              ),
+              FilterSelect(
+                options: const ['submitted', 'withdrawn', 'accepted', 'rejected', 'expired'],
+                value: ref.watch(quotationStatusProvider),
+                onChanged: (value) {
+                  ref.read(quotationStatusProvider.notifier).state = value;
+                  ref.read(quotationPageProvider.notifier).state = 1;
+                },
+                labelOf: context.l10n.status,
+              ),
+              FilterDateRange(
+                from: ref.watch(quotationDateFromProvider),
+                to: ref.watch(quotationDateToProvider),
+                onChanged: (from, to) {
+                  ref.read(quotationDateFromProvider.notifier).state = from;
+                  ref.read(quotationDateToProvider.notifier).state = to;
+                  ref.read(quotationPageProvider.notifier).state = 1;
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
           Expanded(
             child: AsyncBody(
               value: ref.watch(quotationsProvider),
@@ -72,6 +95,9 @@ class QuotationsScreen extends ConsumerWidget {
                         DataColumnSpec(context.tr('nav.shipments')),
                         DataColumnSpec(context.tr('quotations.totalPrice')),
                         DataColumnSpec(context.tr('quotations.truckType')),
+                        DataColumnSpec(context.tr('quotations.truckCount')),
+                        DataColumnSpec(context.tr('quotations.tripCount')),
+                        DataColumnSpec(context.tr('quotations.validUntil')),
                         DataColumnSpec(context.tr('common.status')),
                         DataColumnSpec(context.tr('common.actions')),
                       ],
@@ -81,6 +107,9 @@ class QuotationsScreen extends ConsumerWidget {
                         Text(item.shipment?.reference ?? ''),
                         Text(Formatters.money(item.totalPrice, currency: item.currency, locale: locale)),
                         Text(context.l10n.truckType(item.truckType, label: item.truckTypeLabel)),
+                        Text('${item.truckCount ?? 0}'),
+                        Text('${item.tripCount ?? 0}'),
+                        Text(Formatters.date(item.validUntil, locale: locale)),
                         StatusBadge(status: item.status),
                         _WithdrawButton(quotation: item),
                       ],
@@ -99,8 +128,10 @@ class QuotationsScreen extends ConsumerWidget {
                                   ],
                                 ),
                                 const SizedBox(height: 6),
+                                Text(item.shipment?.reference ?? ''),
                                 Text(Formatters.money(item.totalPrice, currency: item.currency, locale: locale)),
                                 Text('${item.truckCount ?? 0} ${context.tr('common.trucks')} · ${item.tripCount ?? 0} ${context.tr('common.trips')}'),
+                                Text(Formatters.date(item.validUntil, locale: locale)),
                                 _WithdrawButton(quotation: item),
                               ],
                             ),

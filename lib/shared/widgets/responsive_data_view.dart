@@ -48,6 +48,7 @@ class ResponsiveDataView<T> extends StatelessWidget {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
               child: DataTable(
+                showCheckboxColumn: false,
                 headingRowHeight: 44,
                 dataRowMinHeight: 52,
                 dataRowMaxHeight: 68,
@@ -57,9 +58,12 @@ class ResponsiveDataView<T> extends StatelessWidget {
                 rows: [
                   for (final item in items)
                     DataRow(
-                      onSelectChanged: onRowTap == null ? null : (_) => onRowTap!(item),
                       cells: [
-                        for (final cell in rowCells(item)) DataCell(cell),
+                        for (final cell in rowCells(item))
+                          DataCell(
+                            cell,
+                            onTap: onRowTap == null ? null : () => onRowTap!(item),
+                          ),
                       ],
                     ),
                 ],
@@ -115,38 +119,3 @@ class PaginationBar extends StatelessWidget {
   }
 }
 
-class FilterChips extends StatelessWidget {
-  const FilterChips({
-    super.key,
-    required this.options,
-    required this.selected,
-    required this.onSelected,
-    required this.labelOf,
-  });
-
-  final List<String> options;
-  final String? selected;
-  final ValueChanged<String?> onSelected;
-  final String Function(String value) labelOf;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        ChoiceChip(
-          label: Text(context.tr('common.all')),
-          selected: selected == null || selected!.isEmpty,
-          onSelected: (_) => onSelected(null),
-        ),
-        for (final option in options)
-          ChoiceChip(
-            label: Text(labelOf(option)),
-            selected: selected == option,
-            onSelected: (_) => onSelected(option),
-          ),
-      ],
-    );
-  }
-}

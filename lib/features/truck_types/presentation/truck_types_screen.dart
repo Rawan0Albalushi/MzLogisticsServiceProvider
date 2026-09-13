@@ -11,10 +11,15 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 import 'truck_type_providers.dart';
+
+final truckTypeSearchProvider = StateProvider<String>((ref) => '');
+final truckTypeStatusProvider = StateProvider<String?>((ref) => null);
+final truckTypeSourceProvider = StateProvider<String?>((ref) => null);
 
 class TruckTypesScreen extends ConsumerWidget {
   const TruckTypesScreen({super.key});
@@ -41,7 +46,28 @@ class TruckTypesScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          FilterBar(
+            children: [
+              FilterSearchField(
+                onChanged: (value) => ref.read(truckTypeSearchProvider.notifier).state = value,
+              ),
+              FilterSelect(
+                options: const ['active', 'inactive'],
+                value: ref.watch(truckTypeStatusProvider),
+                onChanged: (value) => ref.read(truckTypeStatusProvider.notifier).state = value,
+                labelOf: context.l10n.status,
+              ),
+              FilterSelect(
+                options: const ['platform', 'company'],
+                value: ref.watch(truckTypeSourceProvider),
+                onChanged: (value) => ref.read(truckTypeSourceProvider.notifier).state = value,
+                labelOf: (value) =>
+                    value == 'platform' ? context.tr('truckTypes.platform') : context.tr('truckTypes.company'),
+                allLabel: context.tr('common.allSources'),
+              ),
+            ],
+          ),
           Expanded(
             child: AsyncBody(
               value: ref.watch(managedTruckTypesProvider),
@@ -49,8 +75,35 @@ class TruckTypesScreen extends ConsumerWidget {
               isEmpty: (data) => data.isEmpty,
               empty: EmptyState(message: context.tr('truckTypes.empty')),
               builder: (data) {
+                final search = ref.watch(truckTypeSearchProvider).trim().toLowerCase();
+                final status = ref.watch(truckTypeStatusProvider);
+                final source = ref.watch(truckTypeSourceProvider);
+                final items = data.where((item) {
+                  if (search.isNotEmpty) {
+                    final haystack = '${item.name} ${item.nameAr} ${item.code}'.toLowerCase();
+                    if (!haystack.contains(search)) {
+                      return false;
+                    }
+                  }
+                  if (status == 'active' && !item.isActive) {
+                    return false;
+                  }
+                  if (status == 'inactive' && item.isActive) {
+                    return false;
+                  }
+                  if (source == 'platform' && !item.isPlatform) {
+                    return false;
+                  }
+                  if (source == 'company' && item.isPlatform) {
+                    return false;
+                  }
+                  return true;
+                }).toList();
+                if (items.isEmpty) {
+                  return EmptyState(message: context.tr('truckTypes.empty'));
+                }
                 return ResponsiveDataView<TruckTypeOption>(
-                  items: data,
+                  items: items,
                   columns: [
                     DataColumnSpec(context.tr('common.name')),
                     DataColumnSpec(context.tr('truckTypes.code')),

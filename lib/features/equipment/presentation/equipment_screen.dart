@@ -12,14 +12,21 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../fleet/presentation/fleet_screen.dart';
 
 final equipmentPageProvider = StateProvider<int>((ref) => 1);
+final equipmentSearchProvider = StateProvider<String>((ref) => '');
+final equipmentStatusProvider = StateProvider<String?>((ref) => null);
 final equipmentListProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(fleetRepositoryProvider).equipment(page: ref.watch(equipmentPageProvider));
+  return ref.watch(fleetRepositoryProvider).equipment(
+        page: ref.watch(equipmentPageProvider),
+        search: ref.watch(equipmentSearchProvider),
+        status: ref.watch(equipmentStatusProvider),
+      );
 });
 
 class EquipmentScreen extends ConsumerWidget {
@@ -46,7 +53,26 @@ class EquipmentScreen extends ConsumerWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          FilterBar(
+            children: [
+              FilterSearchField(
+                onChanged: (value) {
+                  ref.read(equipmentSearchProvider.notifier).state = value;
+                  ref.read(equipmentPageProvider.notifier).state = 1;
+                },
+              ),
+              FilterSelect(
+                options: AppConfig.equipmentStatuses,
+                value: ref.watch(equipmentStatusProvider),
+                onChanged: (value) {
+                  ref.read(equipmentStatusProvider.notifier).state = value;
+                  ref.read(equipmentPageProvider.notifier).state = 1;
+                },
+                labelOf: context.l10n.status,
+              ),
+            ],
+          ),
           Expanded(
             child: AsyncBody(
               value: ref.watch(equipmentListProvider),

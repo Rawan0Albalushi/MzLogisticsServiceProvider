@@ -8,17 +8,24 @@ import '../../../core/utils/formatters.dart';
 import '../../../shared/models/job.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 
 final jobStatusProvider = StateProvider<String?>((ref) => null);
+final jobSearchProvider = StateProvider<String>((ref) => '');
+final jobDateFromProvider = StateProvider<String?>((ref) => null);
+final jobDateToProvider = StateProvider<String?>((ref) => null);
 final jobPageProvider = StateProvider<int>((ref) => 1);
 
 final jobsProvider = FutureProvider.autoDispose((ref) {
   return ref.watch(jobRepositoryProvider).list(
         page: ref.watch(jobPageProvider),
         status: ref.watch(jobStatusProvider),
+        search: ref.watch(jobSearchProvider),
+        dateFrom: ref.watch(jobDateFromProvider),
+        dateTo: ref.watch(jobDateToProvider),
       );
 });
 
@@ -34,25 +41,42 @@ class JobsScreen extends ConsumerWidget {
     if (!ref.watch(sessionProvider).permissions.can(AppPermissions.jobsView)) {
       return const NoPermissionState();
     }
+    final locale = Localizations.localeOf(context).languageCode;
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           PageHeader(title: context.tr('jobs.title'), subtitle: context.tr('jobs.subtitle')),
           const SizedBox(height: 12),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: FilterChips(
-              options: const ['pending_dispatch', 'in_progress', 'completed', 'cancelled'],
-              selected: ref.watch(jobStatusProvider),
-              onSelected: (value) {
-                ref.read(jobStatusProvider.notifier).state = value;
-                ref.read(jobPageProvider.notifier).state = 1;
-              },
-              labelOf: context.l10n.status,
-            ),
+          FilterBar(
+            children: [
+              FilterSearchField(
+                hint: context.tr('common.searchReference'),
+                onChanged: (value) {
+                  ref.read(jobSearchProvider.notifier).state = value;
+                  ref.read(jobPageProvider.notifier).state = 1;
+                },
+              ),
+              FilterSelect(
+                options: const ['pending_dispatch', 'in_progress', 'completed', 'cancelled'],
+                value: ref.watch(jobStatusProvider),
+                onChanged: (value) {
+                  ref.read(jobStatusProvider.notifier).state = value;
+                  ref.read(jobPageProvider.notifier).state = 1;
+                },
+                labelOf: context.l10n.status,
+              ),
+              FilterDateRange(
+                from: ref.watch(jobDateFromProvider),
+                to: ref.watch(jobDateToProvider),
+                onChanged: (from, to) {
+                  ref.read(jobDateFromProvider.notifier).state = from;
+                  ref.read(jobDateToProvider.notifier).state = to;
+                  ref.read(jobPageProvider.notifier).state = 1;
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
           Expanded(
             child: AsyncBody(
               value: ref.watch(jobsProvider),
@@ -67,6 +91,10 @@ class JobsScreen extends ConsumerWidget {
                       columns: [
                         DataColumnSpec(context.tr('common.reference')),
                         DataColumnSpec(context.tr('common.customer')),
+                        DataColumnSpec(context.tr('nav.shipments')),
+                        DataColumnSpec(context.tr('quotations.totalPrice')),
+                        DataColumnSpec(context.tr('jobs.totalQuantity')),
+                        DataColumnSpec(context.tr('jobs.delivered')),
                         DataColumnSpec(context.tr('jobs.progress')),
                         DataColumnSpec(context.tr('nav.trips')),
                         DataColumnSpec(context.tr('common.status')),
@@ -75,6 +103,10 @@ class JobsScreen extends ConsumerWidget {
                       rowCells: (item) => [
                         Text(item.reference ?? ''),
                         Text(item.customer?.name ?? ''),
+                        Text(item.shipment?.reference ?? '—'),
+                        Text(Formatters.money(item.totalPrice, currency: item.currency, locale: locale)),
+                        Text(Formatters.number(item.totalQuantity, locale: locale)),
+                        Text(Formatters.number(item.deliveredQuantity, locale: locale)),
                         Text(Formatters.percent(item.progressPercent)),
                         Text('${item.trips.length}'),
                         StatusBadge(status: item.status),
@@ -83,7 +115,13 @@ class JobsScreen extends ConsumerWidget {
                         child: ListTile(
                           title: Text(item.reference ?? ''),
                           subtitle: Text(
-                            '${item.customer?.name ?? ''} · ${item.trips.length} ${context.tr('common.trips')} · ${Formatters.percent(item.progressPercent)}',
+                            [
+                              item.customer?.name,
+                              item.shipment?.reference,
+                              Formatters.money(item.totalPrice, currency: item.currency, locale: locale),
+                              '${item.trips.length} ${context.tr('common.trips')}',
+                              Formatters.percent(item.progressPercent),
+                            ].where((value) => value != null && value.toString().isNotEmpty).join(' · '),
                           ),
                           trailing: StatusBadge(status: item.status),
                           onTap: () => context.go('/jobs/${item.id}'),
