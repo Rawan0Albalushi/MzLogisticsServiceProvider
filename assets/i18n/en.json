@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "MZ Logistics",
+    "name": "MZ Logistics Services",
     "tagline": "Service provider operations",
     "companyFleetNote": "Drivers and trucks belong to your company. They are not independent service providers."
   },
@@ -36,7 +36,7 @@
     "password": "Password",
     "signIn": "Sign in",
     "registerTitle": "Register your company",
-    "registerSubtitle": "Create a service provider account. Your company will stay pending review until MZ Logistics verifies it.",
+    "registerSubtitle": "Create a service provider account. Your company will stay pending review until MZ Logistics Services verifies it.",
     "registerCta": "Register a company",
     "loginCta": "Already have an account? Sign in",
     "name": "Contact name",
@@ -47,10 +47,10 @@
     "confirmPassword": "Confirm password",
     "createAccount": "Create company account",
     "pendingReviewTitle": "Account pending review",
-    "pendingReview": "Your company is under review. You cannot use the workspace until MZ Logistics activates the account.",
+    "pendingReview": "Your company is under review. You cannot use the workspace until MZ Logistics Services activates the account.",
     "pendingReviewHint": "You can view submitted company details and sign out. All operational actions stay locked until approval.",
     "restrictedRejectedTitle": "Account rejected",
-    "restrictedRejected": "This company account was not approved. Contact MZ Logistics if you need more information.",
+    "restrictedRejected": "This company account was not approved. Contact MZ Logistics Services if you need more information.",
     "restrictedSuspendedTitle": "Account suspended",
     "restrictedSuspended": "This company account is suspended. Operational access is locked.",
     "refreshStatus": "Check account status",

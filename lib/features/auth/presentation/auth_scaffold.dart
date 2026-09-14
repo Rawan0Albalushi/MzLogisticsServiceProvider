@@ -102,10 +102,14 @@ class _CompactAuthHeader extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                context.tr('app.name'),
-                maxLines: 1,
+                context.tr('app.tagline'),
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  height: 1.25,
+                ),
               ),
             ),
             TextButton.icon(
@@ -240,18 +244,25 @@ class _BrandPanel extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    const BrandMark(size: 48),
-                    const SizedBox(height: 20),
-                    Text(
-                      context.tr('app.name'),
-                      style: (wide
-                              ? Theme.of(context).textTheme.headlineMedium
-                              : Theme.of(context).textTheme.titleLarge)
-                          ?.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w700,
-                        height: 1.3,
-                      ),
+                    Row(
+                      children: [
+                        const BrandMark(size: 48),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            context.tr('app.tagline'),
+                            style: (wide
+                                    ? Theme.of(context).textTheme.headlineMedium
+                                    : Theme.of(context).textTheme.titleLarge)
+                                ?.copyWith(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 28,
+                              height: 1.25,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 14),
                     Container(
@@ -261,11 +272,6 @@ class _BrandPanel extends ConsumerWidget {
                         color: AppColors.coral,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      context.tr('app.tagline'),
-                      style: const TextStyle(color: AppColors.onSidebarMuted, fontSize: 16, height: 1.45),
                     ),
                     const SizedBox(height: 36),
                     _BrandPoint(icon: Icons.apartment_outlined, text: context.tr('auth.brandPointWorkspace')),

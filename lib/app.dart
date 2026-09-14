@@ -15,7 +15,7 @@ class MzProviderApp extends ConsumerWidget {
     final locale = ref.watch(localeControllerProvider);
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'MZ Logistics',
+      title: 'MZ Logistics Services',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(locale),
       locale: locale,

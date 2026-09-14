@@ -553,28 +553,17 @@ class _Sidebar extends ConsumerWidget {
                   child: Row(
                     children: [
                       const BrandMark(),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              context.tr('app.name'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              context.tr('app.tagline'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: AppColors.onSidebarMuted, fontSize: 11),
-                            ),
-                          ],
+                        child: Text(
+                          context.tr('app.tagline'),
+                          style: const TextStyle(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                            height: 1.25,
+                            letterSpacing: 0.1,
+                          ),
                         ),
                       ),
                     ],
