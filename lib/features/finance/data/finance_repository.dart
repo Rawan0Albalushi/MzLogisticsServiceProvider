@@ -1,6 +1,7 @@
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/paginated.dart';
+import '../../../core/utils/json_utils.dart';
 import '../../../shared/models/invoice.dart';
 import '../../../shared/models/payment.dart';
 import '../../../shared/models/settlement.dart';
@@ -95,5 +96,12 @@ class FinanceRepository {
       if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
     });
     return Paginated.fromResponse(response, Settlement.fromJson);
+  }
+
+  Future<Settlement> requestWithdrawal({required double amount}) async {
+    final response = await _api.post(ApiEndpoints.requestSettlement, data: {
+      'amount': amount,
+    });
+    return Settlement.fromJson(asMap(response['data']));
   }
 }

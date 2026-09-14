@@ -41,6 +41,7 @@ class AppUser {
     this.organizationId,
     this.organization,
     this.roles = const [],
+    this.roleLabels = const [],
     this.permissions = const [],
     this.driverProfile,
     this.lastLoginAt,
@@ -56,6 +57,7 @@ class AppUser {
   final int? organizationId;
   final Organization? organization;
   final List<String> roles;
+  final List<String> roleLabels;
   final List<String> permissions;
   final DriverProfile? driverProfile;
   final String? lastLoginAt;
@@ -80,6 +82,7 @@ class AppUser {
           ? Organization.fromJson(asMap(json['organization']))
           : null,
       roles: asStringList(json['roles']),
+      roleLabels: asStringList(json['role_labels']),
       permissions: asStringList(json['permissions']),
       driverProfile: json['driver_profile'] is Map
           ? DriverProfile.fromJson(asMap(json['driver_profile']))
@@ -106,6 +109,7 @@ class AppUser {
       organizationId: organizationId,
       organization: organization ?? this.organization,
       roles: roles,
+      roleLabels: roleLabels,
       permissions: permissions ?? this.permissions,
       driverProfile: driverProfile,
       lastLoginAt: lastLoginAt,

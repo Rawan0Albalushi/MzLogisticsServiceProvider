@@ -19,9 +19,12 @@ class ApiEndpoints {
   static const payments = '/payments';
   static const invoices = '/invoices';
   static const settlements = '/settlements';
+  static const requestSettlement = '/settlements/request';
   static const wallets = '/wallets';
   static const notifications = '/notifications';
   static const organizations = '/organizations';
+  static const roles = '/roles';
+  static String role(String name) => '/roles/${Uri.encodeComponent(name)}';
 
   static String shipment(int id) => '/shipments/$id';
   static String shipmentQuotations(int id) => '/shipments/$id/quotations';

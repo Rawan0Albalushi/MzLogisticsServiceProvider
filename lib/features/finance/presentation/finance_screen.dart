@@ -13,12 +13,15 @@ import '../../../shared/models/payment.dart';
 import '../../../shared/models/settlement.dart';
 import '../../../shared/models/wallet.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
+import 'request_withdrawal_dialog.dart';
 
 final paymentStatusProvider = StateProvider<String?>((ref) => null);
 final paymentMethodProvider = StateProvider<String?>((ref) => null);
@@ -131,6 +134,36 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen>
     super.dispose();
   }
 
+  Future<void> _requestWithdrawal() async {
+    final Wallet? wallet;
+    try {
+      wallet = await ref.read(walletProvider.future);
+    } catch (_) {
+      if (mounted) {
+        showAppSnack(context, context.tr('common.error'));
+      }
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    if (wallet == null) {
+      showAppSnack(context, context.tr('finance.withdrawNoneAvailable'));
+      return;
+    }
+    final settlement = await showRequestWithdrawalDialog(context, wallet: wallet);
+    if (!mounted || settlement == null) {
+      return;
+    }
+    ref.invalidate(walletProvider);
+    ref.invalidate(walletLedgerProvider);
+    ref.invalidate(settlementsProvider);
+    showAppSnack(context, context.tr('finance.withdrawSuccess'));
+    if (ref.read(sessionProvider).permissions.can(AppPermissions.settlementsView)) {
+      _tabs.animateTo(3);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final permissions = ref.watch(sessionProvider).permissions;
@@ -149,6 +182,14 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen>
           PageHeader(
             title: context.tr('finance.title'),
             subtitle: context.tr('finance.subtitle'),
+            actions: [
+              if (permissions.can(AppPermissions.settlementsRequest))
+                AppButton(
+                  label: context.tr('finance.withdraw'),
+                  icon: Icons.south_west_rounded,
+                  onPressed: _requestWithdrawal,
+                ),
+            ],
           ),
           if (permissions.can(AppPermissions.walletsView)) ...[
             const SizedBox(height: 16),

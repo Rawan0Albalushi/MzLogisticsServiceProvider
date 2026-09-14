@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/api/api_exception.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/page_visuals.dart';
 import '../../../core/utils/breakpoints.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../shared/models/access_role.dart';
 import '../../../shared/models/user.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
+import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/entity_card.dart';
 import '../../../shared/widgets/filter_bar.dart';
 import '../../../shared/widgets/icon_well.dart';
@@ -20,6 +24,8 @@ import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../company/presentation/company_screen.dart';
+import 'create_role_dialog.dart';
+import 'role_providers.dart';
 
 final companyUserSearchProvider = StateProvider<String>((ref) => '');
 
@@ -31,175 +37,301 @@ class UsersScreen extends ConsumerStatefulWidget {
 }
 
 class _UsersScreenState extends ConsumerState<UsersScreen> {
-  late String _selectedRoleId;
-  var _didInitRole = false;
+  String? _selectedRoleName;
+  List<String> _checked = const [];
+  var _saving = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedRoleId = AppPermissions.roleGuides.first.id;
+  AccessRole? _selectedRole(AccessCatalog catalog) {
+    if (catalog.roles.isEmpty) {
+      return null;
+    }
+    return catalog.roles.cast<AccessRole?>().firstWhere(
+          (role) => role!.name == _selectedRoleName,
+          orElse: () => catalog.roles.first,
+        );
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_didInitRole) {
-      return;
-    }
-    _didInitRole = true;
-    final match = _matchingRole(ref.read(sessionProvider).user?.roles ?? const []);
-    if (match != null) {
-      _selectedRoleId = match.id;
-    }
+  void _selectRole(AccessRole role) {
+    setState(() {
+      _selectedRoleName = role.name;
+      _checked = List<String>.from(role.permissions);
+    });
   }
 
-  ProviderRoleGuide get _selected {
-    return AppPermissions.roleGuides.firstWhere(
-      (role) => role.id == _selectedRoleId,
-      orElse: () => AppPermissions.roleGuides.first,
-    );
+  List<PermissionGroup> _groups(AccessCatalog catalog) {
+    final allowed = catalog.permissions.toSet();
+    return AppPermissions.groups
+        .map(
+          (group) => PermissionGroup(
+            id: group.id,
+            keys: allowed.isEmpty ? group.keys : group.keys.where(allowed.contains).toList(),
+          ),
+        )
+        .where((group) => group.keys.isNotEmpty)
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
-    if (!session.permissions.can(AppPermissions.usersManage)) {
+    if (!session.permissions.can(AppPermissions.usersManage) && !session.permissions.can(AppPermissions.rolesManage)) {
       return const NoPermissionState();
     }
 
     final user = session.user;
     final orgId = user?.organizationId;
     final org = orgId == null ? null : ref.watch(organizationProvider(orgId));
-    final roster = org?.asData?.value.users ?? const <AppUser>[];
-    final locale = Localizations.localeOf(context).languageCode;
-    final yourRole = _matchingRole(user?.roles ?? const []);
-    final yourPermissions = (user?.permissions ?? const <String>[])
-        .where((permission) => AppPermissions.catalogKeys.contains(permission))
-        .toList();
+    final catalog = ref.watch(accessCatalogProvider);
+    final canCreate = session.permissions.can(AppPermissions.rolesManage);
 
     return AppPage(
-      child: ListView(
-        children: [
-          PageHeader(title: context.tr('users.title'), subtitle: context.tr('users.subtitle')),
-          const SizedBox(height: 12),
-          _Metrics(
-            roles: AppPermissions.roleGuides.length,
-            users: org?.asData?.value.users.length,
-            access: yourPermissions.length,
-          ),
-          const SizedBox(height: 16),
-          SectionCard(
-            title: context.tr('users.currentUser'),
-            icon: Icons.person_outline_rounded,
-            tone: IconTone.info,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DetailHero(
-                  title: user?.name?.trim().isNotEmpty == true ? user!.name! : '—',
-                  subtitle: user?.email,
-                  icon: Icons.verified_user_outlined,
-                  tone: IconTone.teal,
-                  chips: [
-                    if (yourRole != null)
-                      DetailChip(label: context.tr(yourRole.nameKey), icon: Icons.workspace_premium_outlined),
-                    DetailChip(
-                      label: _userTypeLabel(context, user?.userType),
-                      icon: Icons.badge_outlined,
-                    ),
-                    DetailChip(
-                      label: context.l10n.status(user?.isActive == false ? 'inactive' : 'active'),
-                      icon: user?.isActive == false ? Icons.pause_circle_outline : Icons.check_circle_outline,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                InfoGrid(
-                  fields: [
-                    InfoField(
-                      label: context.tr('users.roles'),
-                      value: (user?.roles.isNotEmpty ?? false) ? user!.roles.join(' · ') : '—',
-                      icon: Icons.shield_outlined,
-                      tone: IconTone.teal,
-                    ),
-                    InfoField(
-                      label: context.tr('users.kpiAccess'),
-                      value: '${yourPermissions.length}',
-                      icon: Icons.key_outlined,
-                      tone: IconTone.coral,
-                    ),
-                    InfoField(
-                      label: context.tr('users.lastLogin'),
-                      value: Formatters.dateTime(user?.lastLoginAt, locale: locale),
-                      icon: Icons.schedule_outlined,
-                    ),
-                  ],
-                ),
-                if (yourPermissions.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Text(
-                    context.tr('users.yourAccess'),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final permission in yourPermissions)
-                        DetailChip(
-                          label: context.tr(AppPermissions.permissionLabelKey(permission)),
-                          icon: Icons.check_rounded,
-                        ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final roleList = _RoleList(
-                selected: _selected,
-                sessionRoles: user?.roles ?? const [],
-                users: roster,
-                onSelect: (role) => setState(() => _selectedRoleId = role.id),
-              );
-              final matrix = _PermissionMatrix(role: _selected);
-
-              if (constraints.maxWidth < 960) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    roleList,
-                    const SizedBox(height: 12),
-                    matrix,
-                  ],
-                );
+      child: AsyncBody(
+        value: catalog,
+        onRetry: () => ref.invalidate(accessCatalogProvider),
+        builder: (data) {
+          final roster = org?.asData?.value.users ?? const <AppUser>[];
+          final locale = Localizations.localeOf(context).languageCode;
+          final selected = _selectedRole(data);
+          if (selected != null && _selectedRoleName != selected.name) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _selectRole(selected);
               }
+            });
+          } else if (selected != null && _checked.isEmpty && selected.permissions.isNotEmpty && _selectedRoleName == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                final match = _matchingRole(data.roles, user?.roles ?? const []);
+                _selectRole(match ?? selected);
+              }
+            });
+          }
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(width: 300, child: roleList),
-                  const SizedBox(width: 12),
-                  Expanded(child: matrix),
+          final yourRole = _matchingRole(data.roles, user?.roles ?? const []);
+          final yourPermissions = (user?.permissions ?? const <String>[])
+              .where((permission) => data.permissions.contains(permission) || AppPermissions.catalogKeys.contains(permission))
+              .toList();
+
+          return ListView(
+            children: [
+              PageHeader(
+                title: context.tr('users.title'),
+                subtitle: context.tr('users.subtitle'),
+                actions: [
+                  if (canCreate)
+                    AppButton(
+                      label: context.tr('users.createRole'),
+                      icon: Icons.add,
+                      onPressed: () => _createRole(data.permissions),
+                    ),
                 ],
-              );
-            },
-          ),
-          if (orgId != null) ...[
-            const SizedBox(height: 16),
-            AsyncBody(
-              value: org!,
-              onRetry: () => ref.invalidate(organizationProvider(orgId)),
-              builder: (organization) => _UserRoster(users: organization.users),
-            ),
-          ],
-        ],
+              ),
+              const SizedBox(height: 12),
+              _Metrics(
+                roles: data.roles.length,
+                users: org?.asData?.value.users.length,
+                access: yourPermissions.length,
+              ),
+              const SizedBox(height: 16),
+              SectionCard(
+                title: context.tr('users.currentUser'),
+                icon: Icons.person_outline_rounded,
+                tone: IconTone.info,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DetailHero(
+                      title: user?.name?.trim().isNotEmpty == true ? user!.name! : '—',
+                      subtitle: user?.email,
+                      icon: Icons.verified_user_outlined,
+                      tone: IconTone.teal,
+                      chips: [
+                        if (yourRole != null)
+                          DetailChip(label: _roleTitle(context, yourRole), icon: Icons.workspace_premium_outlined),
+                        DetailChip(
+                          label: _userTypeLabel(context, user?.userType),
+                          icon: Icons.badge_outlined,
+                        ),
+                        DetailChip(
+                          label: context.l10n.status(user?.isActive == false ? 'inactive' : 'active'),
+                          icon: user?.isActive == false ? Icons.pause_circle_outline : Icons.check_circle_outline,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    InfoGrid(
+                      fields: [
+                        InfoField(
+                          label: context.tr('users.roles'),
+                          value: (user?.roles.isNotEmpty ?? false)
+                              ? user!.roles.map((role) => _roleTitleForName(context, data.roles, role)).join(' · ')
+                              : '—',
+                          icon: Icons.shield_outlined,
+                          tone: IconTone.teal,
+                        ),
+                        InfoField(
+                          label: context.tr('users.kpiAccess'),
+                          value: '${yourPermissions.length}',
+                          icon: Icons.key_outlined,
+                          tone: IconTone.coral,
+                        ),
+                        InfoField(
+                          label: context.tr('users.lastLogin'),
+                          value: Formatters.dateTime(user?.lastLoginAt, locale: locale),
+                          icon: Icons.schedule_outlined,
+                        ),
+                      ],
+                    ),
+                    if (yourPermissions.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      Text(
+                        context.tr('users.yourAccess'),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final permission in yourPermissions)
+                            DetailChip(
+                              label: context.tr(AppPermissions.permissionLabelKey(permission)),
+                              icon: Icons.check_rounded,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final roleList = _RoleList(
+                    roles: data.roles,
+                    selected: selected,
+                    sessionRoles: user?.roles ?? const [],
+                    users: roster,
+                    onSelect: _selectRole,
+                  );
+                  final matrix = selected == null
+                      ? const SizedBox.shrink()
+                      : _PermissionMatrix(
+                          role: selected,
+                          groups: _groups(data),
+                          checked: _checked,
+                          saving: _saving,
+                          onToggle: (permission) {
+                            setState(() {
+                              _checked = _checked.contains(permission)
+                                  ? _checked.where((item) => item != permission).toList()
+                                  : [..._checked, permission];
+                            });
+                          },
+                          onToggleGroup: (keys) {
+                            setState(() {
+                              final allOn = keys.every(_checked.contains);
+                              _checked = allOn
+                                  ? _checked.where((item) => !keys.contains(item)).toList()
+                                  : [...{..._checked, ...keys}];
+                            });
+                          },
+                          onSave: () => _saveRole(selected),
+                          onDelete: selected.canDelete ? () => _deleteRole(selected) : null,
+                        );
+
+                  if (constraints.maxWidth < 960) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        roleList,
+                        const SizedBox(height: 12),
+                        matrix,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(width: 300, child: roleList),
+                      const SizedBox(width: 12),
+                      Expanded(child: matrix),
+                    ],
+                  );
+                },
+              ),
+              if (orgId != null) ...[
+                const SizedBox(height: 16),
+                AsyncBody(
+                  value: org!,
+                  onRetry: () => ref.invalidate(organizationProvider(orgId)),
+                  builder: (organization) => _UserRoster(users: organization.users, roles: data.roles),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
+  }
+
+  Future<void> _createRole(List<String> permissions) async {
+    final created = await showCreateRoleDialog(context, ref, permissions: permissions);
+    if (created == null || !mounted) {
+      return;
+    }
+    ref.invalidate(accessCatalogProvider);
+    _selectRole(created);
+    showAppSnack(context, context.tr('users.roleCreated'));
+  }
+
+  Future<void> _saveRole(AccessRole role) async {
+    if (_checked.isEmpty) {
+      showAppSnack(context, context.tr('users.permissionsRequired'));
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final updated = await ref.read(roleRepositoryProvider).update(role: role.name, permissions: _checked);
+      ref.invalidate(accessCatalogProvider);
+      await ref.read(sessionProvider.notifier).refreshUser();
+      if (mounted) {
+        _selectRole(updated);
+        showAppSnack(context, context.tr('users.roleSaved'));
+      }
+    } on ApiException catch (error) {
+      if (mounted) {
+        showAppSnack(context, error.message);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
+  Future<void> _deleteRole(AccessRole role) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      message: context.tr('users.deleteRoleBody'),
+      confirmLabel: context.tr('users.deleteRole'),
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await ref.read(roleRepositoryProvider).delete(role.name);
+      setState(() => _selectedRoleName = null);
+      ref.invalidate(accessCatalogProvider);
+      if (mounted) {
+        showAppSnack(context, context.tr('users.roleDeleted'));
+      }
+    } on ApiException catch (error) {
+      if (mounted) {
+        showAppSnack(context, error.message);
+      }
+    }
   }
 }
 
@@ -261,16 +393,18 @@ class _Metrics extends StatelessWidget {
 
 class _RoleList extends StatelessWidget {
   const _RoleList({
+    required this.roles,
     required this.selected,
     required this.sessionRoles,
     required this.users,
     required this.onSelect,
   });
 
-  final ProviderRoleGuide selected;
+  final List<AccessRole> roles;
+  final AccessRole? selected;
   final List<String> sessionRoles;
   final List<AppUser> users;
-  final ValueChanged<ProviderRoleGuide> onSelect;
+  final ValueChanged<AccessRole> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -279,10 +413,10 @@ class _RoleList extends StatelessWidget {
       icon: Icons.shield_outlined,
       child: Column(
         children: [
-          for (final role in AppPermissions.roleGuides)
+          for (final role in roles)
             _RoleTile(
               role: role,
-              selected: role.id == selected.id,
+              selected: role.name == selected?.name,
               yours: role.matches(sessionRoles),
               userCount: users.where((user) => role.matches(user.roles)).length,
               onTap: () => onSelect(role),
@@ -302,7 +436,7 @@ class _RoleTile extends StatelessWidget {
     required this.onTap,
   });
 
-  final ProviderRoleGuide role;
+  final AccessRole role;
   final bool selected;
   final bool yours;
   final int userCount;
@@ -310,7 +444,7 @@ class _RoleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visual = _roleVisual(role.id);
+    final visual = _roleVisual(role);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
@@ -335,7 +469,7 @@ class _RoleTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.tr(role.nameKey),
+                        _roleTitle(context, role),
                         style: const TextStyle(fontWeight: FontWeight.w700, height: 1.35),
                       ),
                       const SizedBox(height: 2),
@@ -372,41 +506,85 @@ class _RoleTile extends StatelessWidget {
 }
 
 class _PermissionMatrix extends StatelessWidget {
-  const _PermissionMatrix({required this.role});
+  const _PermissionMatrix({
+    required this.role,
+    required this.groups,
+    required this.checked,
+    required this.saving,
+    required this.onToggle,
+    required this.onToggleGroup,
+    required this.onSave,
+    this.onDelete,
+  });
 
-  final ProviderRoleGuide role;
+  final AccessRole role;
+  final List<PermissionGroup> groups;
+  final List<String> checked;
+  final bool saving;
+  final ValueChanged<String> onToggle;
+  final ValueChanged<List<String>> onToggleGroup;
+  final VoidCallback onSave;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final description = role.guide == null ? context.tr('users.customRoleHint') : context.tr(role.guide!.labelKey);
     return SectionCard(
-      title: context.tr(role.nameKey),
+      title: _roleTitle(context, role),
       icon: Icons.tune_outlined,
       tone: IconTone.coral,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.tr(role.labelKey), style: const TextStyle(color: AppColors.muted, height: 1.45)),
+          Text(description, style: const TextStyle(color: AppColors.muted, height: 1.45)),
           const SizedBox(height: 8),
-          Text(context.tr('users.catalogHint'), style: const TextStyle(color: AppColors.muted, height: 1.45)),
+          Text(
+            role.canManage ? context.tr('users.editHint') : context.tr('users.catalogHint'),
+            style: const TextStyle(color: AppColors.muted, height: 1.45),
+          ),
           const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.coralSoft,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              context.tr('users.readOnly'),
-              style: const TextStyle(
-                color: AppColors.coralDeep,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: role.isSystem ? AppColors.coralSoft : AppColors.tealSoft,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  role.isSystem ? context.tr('users.systemRole') : context.tr('users.customRole'),
+                  style: TextStyle(
+                    color: role.isSystem ? AppColors.coralDeep : AppColors.teal800,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
               ),
-            ),
+              if (role.canManage)
+                AppButton(
+                  label: context.tr('common.save'),
+                  loading: saving,
+                  onPressed: onSave,
+                ),
+              if (onDelete != null)
+                AppButton(
+                  label: context.tr('users.deleteRole'),
+                  outlined: true,
+                  onPressed: onDelete,
+                ),
+            ],
           ),
           const SizedBox(height: 16),
-          for (final group in AppPermissions.groups) ...[
-            _PermissionGroupCard(role: role, group: group),
+          for (final group in groups) ...[
+            _PermissionGroupCard(
+              group: group,
+              checked: checked,
+              canEdit: role.canManage,
+              onToggle: onToggle,
+              onToggleGroup: onToggleGroup,
+            ),
             const SizedBox(height: 12),
           ],
         ],
@@ -416,14 +594,23 @@ class _PermissionMatrix extends StatelessWidget {
 }
 
 class _PermissionGroupCard extends StatelessWidget {
-  const _PermissionGroupCard({required this.role, required this.group});
+  const _PermissionGroupCard({
+    required this.group,
+    required this.checked,
+    required this.canEdit,
+    required this.onToggle,
+    required this.onToggleGroup,
+  });
 
-  final ProviderRoleGuide role;
   final PermissionGroup group;
+  final List<String> checked;
+  final bool canEdit;
+  final ValueChanged<String> onToggle;
+  final ValueChanged<List<String>> onToggleGroup;
 
   @override
   Widget build(BuildContext context) {
-    final granted = role.grantedIn(group);
+    final granted = group.keys.where(checked.contains).length;
     final allGranted = granted == group.keys.length;
     final visual = _groupVisual(group.id);
 
@@ -438,38 +625,39 @@ class _PermissionGroupCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              IconWell(icon: visual.icon, tone: visual.tone, size: IconWellSize.sm),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  context.tr(AppPermissions.groupLabelKey(group.id)),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+          InkWell(
+            onTap: canEdit ? () => onToggleGroup(group.keys) : null,
+            child: Row(
+              children: [
+                IconWell(icon: visual.icon, tone: visual.tone, size: IconWellSize.sm),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    context.tr(AppPermissions.groupLabelKey(group.id)),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
-              ),
-              Icon(
-                allGranted ? Icons.check_box_rounded : Icons.indeterminate_check_box_outlined,
-                size: 18,
-                color: allGranted ? AppColors.teal800 : AppColors.muted,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                context.tr('users.grantedCount', {
-                  'granted': '$granted',
-                  'total': '${group.keys.length}',
-                }),
-                style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            ],
+                Icon(
+                  allGranted ? Icons.check_box_rounded : Icons.indeterminate_check_box_outlined,
+                  size: 18,
+                  color: allGranted ? AppColors.teal800 : AppColors.muted,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  context.tr('users.grantedCount', {
+                    'granted': '$granted',
+                    'total': '${group.keys.length}',
+                  }),
+                  style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           LayoutBuilder(
             builder: (context, constraints) {
               final columns = constraints.maxWidth >= 640 ? 2 : 1;
-              final width = columns == 1
-                  ? constraints.maxWidth
-                  : (constraints.maxWidth - 10) / 2;
+              final width = columns == 1 ? constraints.maxWidth : (constraints.maxWidth - 10) / 2;
               return Wrap(
                 spacing: 10,
                 runSpacing: 10,
@@ -479,7 +667,9 @@ class _PermissionGroupCard extends StatelessWidget {
                       width: width,
                       child: _PermissionTile(
                         label: context.tr(AppPermissions.permissionLabelKey(permission)),
-                        granted: role.grants(permission),
+                        granted: checked.contains(permission),
+                        canEdit: canEdit,
+                        onTap: () => onToggle(permission),
                       ),
                     ),
                 ],
@@ -493,49 +683,64 @@ class _PermissionGroupCard extends StatelessWidget {
 }
 
 class _PermissionTile extends StatelessWidget {
-  const _PermissionTile({required this.label, required this.granted});
+  const _PermissionTile({
+    required this.label,
+    required this.granted,
+    required this.canEdit,
+    required this.onTap,
+  });
 
   final String label;
   final bool granted;
+  final bool canEdit;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: granted ? AppColors.tealSoft : AppColors.white,
+    return Material(
+      color: granted ? AppColors.tealSoft : AppColors.white,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: canEdit ? onTap : null,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: granted ? AppColors.teal.withValues(alpha: 0.45) : AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            granted ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-            size: 18,
-            color: granted ? AppColors.teal800 : AppColors.muted,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: granted ? AppColors.teal.withValues(alpha: 0.45) : AppColors.border),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                height: 1.35,
-                color: granted ? AppColors.ink : AppColors.muted,
+          child: Row(
+            children: [
+              Icon(
+                granted ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                size: 18,
+                color: granted ? AppColors.teal800 : AppColors.muted,
               ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    height: 1.35,
+                    color: granted ? AppColors.ink : AppColors.muted,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class _UserRoster extends ConsumerWidget {
-  const _UserRoster({required this.users});
+  const _UserRoster({required this.users, required this.roles});
 
   final List<AppUser> users;
+  final List<AccessRole> roles;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -578,7 +783,8 @@ class _UserRoster extends ConsumerWidget {
                   meta: [
                     [
                       _userTypeLabel(context, user.userType),
-                      if (user.roles.isNotEmpty) user.roles.join(' · '),
+                      if (user.roles.isNotEmpty)
+                        user.roles.map((role) => _roleTitleForName(context, roles, role)).join(' · '),
                     ].join(' · '),
                     '${context.tr('users.lastLogin')}: ${Formatters.dateTime(user.lastLoginAt, locale: locale)}',
                   ],
@@ -591,15 +797,15 @@ class _UserRoster extends ConsumerWidget {
   }
 }
 
-({IconData icon, IconTone tone}) _roleVisual(String id) {
-  return switch (id) {
+({IconData icon, IconTone tone}) _roleVisual(AccessRole role) {
+  return switch (role.guide?.id) {
     'providerAdmin' => (icon: Icons.admin_panel_settings_outlined, tone: IconTone.teal),
     'operations' => (icon: Icons.work_outline_rounded, tone: IconTone.warning),
     'dispatcher' => (icon: Icons.assignment_ind_outlined, tone: IconTone.coral),
     'fleetManager' => (icon: Icons.fire_truck_outlined, tone: IconTone.teal),
     'finance' => (icon: Icons.account_balance_outlined, tone: IconTone.success),
     'quotation' => (icon: Icons.request_quote_outlined, tone: IconTone.info),
-    _ => (icon: Icons.visibility_outlined, tone: IconTone.muted),
+    _ => (icon: Icons.shield_outlined, tone: role.isSystem ? IconTone.muted : IconTone.teal),
   };
 }
 
@@ -613,13 +819,32 @@ class _UserRoster extends ConsumerWidget {
   };
 }
 
-ProviderRoleGuide? _matchingRole(Iterable<String> roles) {
-  for (final role in AppPermissions.roleGuides) {
-    if (role.matches(roles)) {
+AccessRole? _matchingRole(List<AccessRole> roles, Iterable<String> assigned) {
+  for (final role in roles) {
+    if (role.matches(assigned)) {
       return role;
     }
   }
   return null;
+}
+
+String _roleTitle(BuildContext context, AccessRole role) {
+  final guide = role.guide;
+  if (guide != null) {
+    return context.tr(guide.nameKey);
+  }
+  return role.displayName;
+}
+
+String _roleTitleForName(BuildContext context, List<AccessRole> roles, String name) {
+  final match = roles.cast<AccessRole?>().firstWhere(
+        (role) => role!.name == name,
+        orElse: () => null,
+      );
+  if (match != null) {
+    return _roleTitle(context, match);
+  }
+  return name;
 }
 
 String _userTypeLabel(BuildContext context, String? type) {

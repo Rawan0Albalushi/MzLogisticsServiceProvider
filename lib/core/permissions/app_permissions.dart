@@ -54,8 +54,10 @@ class AppPermissions {
   static const paymentsView = 'payments.view';
   static const invoicesView = 'invoices.view';
   static const settlementsView = 'settlements.view';
+  static const settlementsRequest = 'settlements.request';
   static const walletsView = 'wallets.view';
   static const usersManage = 'users.manage';
+  static const rolesManage = 'roles.manage';
   static const companyManage = 'company.manage';
   static const trackingView = 'tracking.view';
   static const podView = 'pod.view';
@@ -93,11 +95,11 @@ class AppPermissions {
     ),
     PermissionGroup(
       id: 'finance',
-      keys: [paymentsView, invoicesView, settlementsView, walletsView],
+      keys: [paymentsView, invoicesView, settlementsView, settlementsRequest, walletsView],
     ),
     PermissionGroup(
       id: 'workspace',
-      keys: [usersManage, companyManage],
+      keys: [usersManage, rolesManage, companyManage],
     ),
   ];
 
@@ -110,6 +112,7 @@ class AppPermissions {
         dashboardView,
         companyManage,
         usersManage,
+        rolesManage,
         fleetView,
         fleetManage,
         driversView,
@@ -127,6 +130,7 @@ class AppPermissions {
         paymentsView,
         invoicesView,
         settlementsView,
+        settlementsRequest,
         walletsView,
       ],
     ),
@@ -162,7 +166,7 @@ class AppPermissions {
       id: 'finance',
       backendName: 'Finance',
       labelKey: 'users.roleFinance',
-      permissions: [dashboardView, paymentsView, invoicesView, settlementsView, walletsView],
+      permissions: [dashboardView, paymentsView, invoicesView, settlementsView, settlementsRequest, walletsView],
     ),
     ProviderRoleGuide(
       id: 'quotation',
@@ -197,8 +201,10 @@ class AppPermissions {
     paymentsView,
     invoicesView,
     settlementsView,
+    settlementsRequest,
     walletsView,
     usersManage,
+    rolesManage,
     companyManage,
   ];
 

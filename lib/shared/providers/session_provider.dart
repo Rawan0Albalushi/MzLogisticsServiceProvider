@@ -14,6 +14,7 @@ import '../../features/quotations/data/quotation_repository.dart';
 import '../../features/shipments/data/shipment_repository.dart';
 import '../../features/trips/data/trip_repository.dart';
 import '../../features/truck_types/data/truck_type_repository.dart';
+import '../../features/users/data/role_repository.dart';
 import '../models/user.dart';
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) => TokenStorage());
@@ -40,6 +41,7 @@ final truckTypeRepositoryProvider = Provider((ref) => TruckTypeRepository(ref.wa
 final financeRepositoryProvider = Provider((ref) => FinanceRepository(ref.watch(apiClientProvider)));
 final organizationRepositoryProvider = Provider((ref) => OrganizationRepository(ref.watch(apiClientProvider)));
 final notificationRepositoryProvider = Provider((ref) => NotificationRepository(ref.watch(apiClientProvider)));
+final roleRepositoryProvider = Provider((ref) => RoleRepository(ref.watch(apiClientProvider)));
 
 class SessionState {
   const SessionState({
