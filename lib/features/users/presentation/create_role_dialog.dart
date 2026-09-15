@@ -118,8 +118,7 @@ Future<AccessRole?> showCreateRoleDialog(
 
 List<PermissionGroup> _visibleGroups(List<String> permissions) {
   final allowed = permissions.toSet();
-  final source = allowed.isEmpty ? AppPermissions.groups : AppPermissions.groups;
-  return source
+  return AppPermissions.visibleGroups()
       .map(
         (group) => PermissionGroup(
           id: group.id,

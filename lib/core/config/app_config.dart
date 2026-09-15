@@ -8,6 +8,9 @@ class AppConfig {
 
   static const String demoEmail = 'provider@omanhaulers.om';
   static const String demoPassword = 'Password123!';
+
+  /// Temporarily hidden until live tracking is ready to ship.
+  static const bool liveTrackingEnabled = false;
   static const String defaultCurrency = 'OMR';
   static const List<String> truckTypes = [
     'flatbed',

@@ -78,14 +78,6 @@ const sidebarDestinations = <NavDestination>[
     permission: AppPermissions.tripsAssign,
   ),
   NavDestination(
-    path: '/fleet',
-    labelKey: 'nav.fleet',
-    icon: Icons.agriculture_outlined,
-    selectedIcon: Icons.agriculture_rounded,
-    section: NavSection.fleet,
-    permission: AppPermissions.fleetView,
-  ),
-  NavDestination(
     path: '/trucks',
     labelKey: 'nav.trucks',
     icon: Icons.fire_truck_outlined,
@@ -322,7 +314,7 @@ class AppShell extends ConsumerWidget {
   }
 
   List<NavDestination> _mobileTabs(List<NavDestination> items) {
-    final preferred = ['/dashboard', '/shipments', '/jobs', '/fleet'];
+    final preferred = ['/dashboard', '/shipments', '/jobs', '/trucks'];
     final tabs = <NavDestination>[];
     for (final path in preferred) {
       final match = items.where((item) => item.path == path);

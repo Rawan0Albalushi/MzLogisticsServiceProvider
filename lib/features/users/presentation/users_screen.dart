@@ -60,7 +60,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
 
   List<PermissionGroup> _groups(AccessCatalog catalog) {
     final allowed = catalog.permissions.toSet();
-    return AppPermissions.groups
+    return AppPermissions.visibleGroups()
         .map(
           (group) => PermissionGroup(
             id: group.id,
@@ -108,7 +108,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
           }
 
           final yourRole = _matchingRole(data.roles, user?.roles ?? const []);
-          final yourPermissions = (user?.permissions ?? const <String>[])
+          final yourPermissions = AppPermissions.visibleKeys(user?.permissions ?? const <String>[])
               .where((permission) => data.permissions.contains(permission) || AppPermissions.catalogKeys.contains(permission))
               .toList();
 

@@ -11,7 +11,6 @@ import '../../features/documents/presentation/documents_screen.dart';
 import '../../features/drivers/presentation/drivers_screen.dart';
 import '../../features/equipment/presentation/equipment_screen.dart';
 import '../../features/finance/presentation/finance_screen.dart';
-import '../../features/fleet/presentation/fleet_screen.dart';
 import '../../features/jobs/presentation/job_detail_screen.dart';
 import '../../features/jobs/presentation/jobs_screen.dart';
 import '../../features/more/presentation/more_screen.dart';
@@ -84,6 +83,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (session.isAccountRestricted && !session.allowsRestrictedPath(state.matchedLocation)) {
         return '/dashboard';
       }
+      if (session.isAuthenticated && state.matchedLocation == '/fleet') {
+        return '/trucks';
+      }
       return null;
     },
     routes: [
@@ -118,7 +120,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             (context, state) => TripDetailScreen(id: int.parse(state.pathParameters['id']!)),
           ),
           fadeRoute('/dispatch', (context, state) => const DispatchScreen()),
-          fadeRoute('/fleet', (context, state) => const FleetScreen()),
           fadeRoute('/trucks', (context, state) => const TrucksScreen()),
           fadeRoute('/truck-types', (context, state) => const TruckTypesScreen()),
           fadeRoute('/trucks/new', (context, state) => const TruckFormScreen()),

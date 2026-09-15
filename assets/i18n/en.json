@@ -507,7 +507,7 @@
     "kpiUsers": "Workspace users",
     "kpiAccess": "Your permissions",
     "roleProviderAdmin": "Full company access across fleet, operations, finance, and users.",
-    "roleOperations": "Jobs, trips, dispatch, and live tracking.",
+    "roleOperations": "Jobs, trips, and dispatch.",
     "roleDispatcher": "Assign company trucks and drivers to waiting trips.",
     "roleFleetManager": "Trucks, equipment, and driver records.",
     "roleFinance": "Wallet, payments, invoices, and settlements.",

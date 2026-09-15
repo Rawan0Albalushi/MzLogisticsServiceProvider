@@ -1,3 +1,5 @@
+import '../config/app_config.dart';
+
 class PermissionGroup {
   const PermissionGroup({
     required this.id,
@@ -213,6 +215,23 @@ class AppPermissions {
   }
 
   static String groupLabelKey(String groupId) => 'users.group_$groupId';
+
+  static List<String> visibleKeys(Iterable<String> keys) {
+    if (AppConfig.liveTrackingEnabled) return List<String>.from(keys);
+    return keys.where((key) => key != trackingView).toList();
+  }
+
+  static List<PermissionGroup> visibleGroups() {
+    return groups
+        .map(
+          (group) => PermissionGroup(
+            id: group.id,
+            keys: visibleKeys(group.keys),
+          ),
+        )
+        .where((group) => group.keys.isNotEmpty)
+        .toList();
+  }
 }
 
 class PermissionSet {
