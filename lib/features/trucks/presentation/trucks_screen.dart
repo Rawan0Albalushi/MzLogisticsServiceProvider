@@ -94,6 +94,7 @@ class TrucksScreen extends ConsumerWidget {
                         DataColumnSpec(context.tr('trucks.model')),
                         DataColumnSpec(context.tr('trucks.year')),
                         DataColumnSpec(context.tr('common.capacity')),
+                        DataColumnSpec(context.tr('trucks.volume')),
                         DataColumnSpec(context.tr('trucks.assignedDriver')),
                         DataColumnSpec(context.tr('trucks.insurance')),
                         DataColumnSpec(context.tr('common.status')),
@@ -106,6 +107,11 @@ class TrucksScreen extends ConsumerWidget {
                         Text(item.model ?? '—'),
                         Text(item.year?.toString() ?? '—'),
                         Text('${Formatters.number(item.capacityTons, locale: locale)} ${context.tr('common.tons')}'),
+                        Text(
+                          item.volumeCbm == null
+                              ? '—'
+                              : '${Formatters.number(item.volumeCbm, locale: locale)} ${context.tr('common.cbm')}',
+                        ),
                         Text(item.assignedDriver?.name ?? '—'),
                         Text(Formatters.date(item.insuranceExpiresAt, locale: locale)),
                         StatusBadge(status: item.status),
@@ -125,6 +131,8 @@ class TrucksScreen extends ConsumerWidget {
                           context.l10n.truckType(item.type, label: item.typeLabel),
                           [item.make, item.model].where((value) => value != null && value.isNotEmpty).join(' '),
                           '${Formatters.number(item.capacityTons, locale: locale)} ${context.tr('common.tons')}',
+                          if (item.volumeCbm != null)
+                            '${Formatters.number(item.volumeCbm, locale: locale)} ${context.tr('common.cbm')}',
                           item.assignedDriver?.name ?? '',
                         ],
                         onTap: session.permissions.can(AppPermissions.fleetManage)

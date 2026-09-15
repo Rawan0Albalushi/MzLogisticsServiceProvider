@@ -17,6 +17,7 @@ import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../dispatch/presentation/assign_sheet.dart';
+import '../../shipments/presentation/widgets/shipment_request_summary.dart';
 import 'jobs_screen.dart';
 
 class JobDetailScreen extends ConsumerWidget {
@@ -114,6 +115,14 @@ class JobDetailScreen extends ConsumerWidget {
                             icon: Icons.payments_outlined,
                             tone: IconTone.success,
                           ),
+                          if (job.shipment != null)
+                            InfoField(
+                              label: context.tr('shipments.paymentTerms'),
+                              value: paymentTermsLabel(context, job.shipment!),
+                              icon: Icons.account_balance_wallet_outlined,
+                              tone: IconTone.info,
+                              wide: true,
+                            ),
                           if (job.quotation != null)
                             InfoField(
                               label: context.tr('quotations.truckCount'),

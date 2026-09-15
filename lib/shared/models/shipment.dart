@@ -27,6 +27,10 @@ class Shipment {
     this.customer,
     this.quotations = const [],
     this.quotationsCount,
+    this.paymentBillingTrigger,
+    this.paymentDueDays,
+    this.paymentPrepaid = true,
+    this.paymentBillingUnit = 'job',
     this.createdAt,
   });
 
@@ -53,6 +57,10 @@ class Shipment {
   final Organization? customer;
   final List<Quotation> quotations;
   final int? quotationsCount;
+  final String? paymentBillingTrigger;
+  final int? paymentDueDays;
+  final bool paymentPrepaid;
+  final String? paymentBillingUnit;
   final String? createdAt;
 
   bool quotedBy(int? organizationId) {
@@ -89,6 +97,10 @@ class Shipment {
       customer: json['customer'] is Map ? Organization.fromJson(asMap(json['customer'])) : null,
       quotations: asMapList(json['quotations']).map(Quotation.fromJson).toList(),
       quotationsCount: asInt(json['quotations_count']),
+      paymentBillingTrigger: asString(asMap(json['payment_terms'])['billing_trigger']),
+      paymentDueDays: asInt(asMap(json['payment_terms'])['due_days']),
+      paymentPrepaid: asBool(asMap(json['payment_terms'])['prepaid'], fallback: true),
+      paymentBillingUnit: asString(asMap(json['payment_terms'])['billing_unit']) ?? 'job',
       createdAt: asString(json['created_at']),
     );
   }

@@ -23,6 +23,7 @@ import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../quotations/presentation/quotations_screen.dart';
+import '../../quotations/presentation/widgets/quotation_billing_preview.dart';
 import '../../truck_types/presentation/truck_type_providers.dart';
 import '../domain/quote_transport_planner.dart';
 import 'shipment_detail_screen.dart';
@@ -527,6 +528,21 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                   showRequiredHint: false,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) => AppValidators.positiveNumber(value, context.tr('validation.positive')),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('quotations.totalPriceHint'),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                        height: 1.45,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                QuotationBillingPreview(
+                  shipment: shipment,
+                  totalPrice: double.tryParse(_price.text.trim()) ?? 0,
+                  tripCount: plan.tripCount,
                 ),
                 const SizedBox(height: 12),
                 AppTextField(

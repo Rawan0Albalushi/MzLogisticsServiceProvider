@@ -53,6 +53,7 @@ class ShipmentRequestSummary extends StatelessWidget {
           Formatters.dateTime(shipment.publishedAt, locale: locale),
         ),
     ];
+    final payment = _paymentMetrics(context, shipment);
 
     return SectionCard(
       title: context.tr('shipments.requestSummary'),
@@ -90,6 +91,11 @@ class ShipmentRequestSummary extends StatelessWidget {
                 ],
               ],
             ),
+          ),
+          const SizedBox(height: 18),
+          _SummaryBlock(
+            title: context.tr('shipments.paymentTerms'),
+            child: _MetricGrid(metrics: payment),
           ),
           if (showRoute) ...[
             const SizedBox(height: 18),
@@ -384,4 +390,46 @@ class _RouteConnector extends StatelessWidget {
       child: Icon(Icons.arrow_forward, size: 18, color: AppColors.muted),
     );
   }
+}
+
+List<_SummaryMetric> _paymentMetrics(BuildContext context, Shipment shipment) {
+  final prepaid = shipment.paymentPrepaid || shipment.paymentBillingTrigger == 'on_award';
+  return [
+    _SummaryMetric(
+      context.tr('shipments.paymentTrigger'),
+      prepaid ? context.tr('shipments.payOnAward') : context.tr('shipments.payOnDeliveryTrigger'),
+    ),
+    if (!prepaid) ...[
+      _SummaryMetric(
+        context.tr('shipments.paymentUnit'),
+        shipment.paymentBillingUnit == 'trip'
+            ? context.tr('shipments.unitTrip')
+            : context.tr('shipments.unitJob'),
+      ),
+      _SummaryMetric(
+        context.tr('shipments.paymentDue'),
+        (shipment.paymentDueDays ?? 0) <= 0
+            ? context.tr('shipments.dueImmediate')
+            : context.tr('shipments.payNetDays', {'days': '${shipment.paymentDueDays}'}),
+      ),
+    ],
+  ];
+}
+
+String paymentTermsLabel(BuildContext context, Shipment shipment) {
+  if (shipment.paymentPrepaid || shipment.paymentBillingTrigger == 'on_award') {
+    return context.tr('shipments.payOnAward');
+  }
+  final days = shipment.paymentDueDays ?? 0;
+  final perTrip = shipment.paymentBillingUnit == 'trip';
+  if (perTrip && days <= 0) {
+    return context.tr('shipments.payPerTrip');
+  }
+  if (perTrip) {
+    return context.tr('shipments.payPerTripNet', {'days': '$days'});
+  }
+  if (days <= 0) {
+    return context.tr('shipments.payOnDelivery');
+  }
+  return context.tr('shipments.payNetDays', {'days': '$days'});
 }

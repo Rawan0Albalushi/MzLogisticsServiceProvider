@@ -8,6 +8,11 @@ class Truck {
     this.type,
     this.typeLabel,
     this.capacityTons,
+    this.volumeCbm,
+    this.cargoLengthM,
+    this.cargoWidthM,
+    this.cargoHeightM,
+    this.axleCount,
     this.year,
     this.make,
     this.model,
@@ -22,6 +27,11 @@ class Truck {
   final String? type;
   final String? typeLabel;
   final double? capacityTons;
+  final double? volumeCbm;
+  final double? cargoLengthM;
+  final double? cargoWidthM;
+  final double? cargoHeightM;
+  final int? axleCount;
   final int? year;
   final String? make;
   final String? model;
@@ -45,6 +55,11 @@ class Truck {
       type: asString(json['type']),
       typeLabel: asString(json['type_label']),
       capacityTons: asDouble(json['capacity_tons']),
+      volumeCbm: asDouble(json['volume_cbm']),
+      cargoLengthM: asDouble(json['cargo_length_m']),
+      cargoWidthM: asDouble(json['cargo_width_m']),
+      cargoHeightM: asDouble(json['cargo_height_m']),
+      axleCount: asInt(json['axle_count']),
       year: asInt(json['year']),
       make: asString(json['make']),
       model: asString(json['model']),

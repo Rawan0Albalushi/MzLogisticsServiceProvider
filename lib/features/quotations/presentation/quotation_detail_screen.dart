@@ -17,6 +17,7 @@ import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
 import 'quotations_screen.dart';
+import 'widgets/quotation_billing_preview.dart';
 
 final quotationDetailProvider = FutureProvider.autoDispose.family((ref, int id) {
   return ref.watch(quotationRepositoryProvider).show(id);
@@ -125,6 +126,15 @@ class QuotationDetailScreen extends ConsumerWidget {
                             ),
                         ],
                       ),
+                      if (shipment != null) ...[
+                        const SizedBox(height: 16),
+                        QuotationBillingPreview(
+                          shipment: shipment,
+                          totalPrice: item.totalPrice ?? 0,
+                          tripCount: item.plannedTripRecords,
+                          currency: item.currency,
+                        ),
+                      ],
                     ],
                   ),
                 ),

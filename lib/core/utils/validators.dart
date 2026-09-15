@@ -48,4 +48,18 @@ class AppValidators {
     }
     return null;
   }
+
+  static String? optionalPositiveNumber(String? value, String message) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    return positiveNumber(value, message);
+  }
+
+  static String? optionalPositiveInt(String? value, String message) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    return positiveInt(value, message);
+  }
 }
