@@ -96,10 +96,10 @@ class TripDetailScreen extends ConsumerWidget {
                             icon: Icons.done_all_rounded,
                             tone: IconTone.success,
                           ),
-                          if (trip.otpCode != null)
+                          if (trip.otpRequired)
                             InfoField(
                               label: context.tr('trips.otp'),
-                              value: trip.otpCode!,
+                              value: context.tr('trips.otpReceiverHolds'),
                               icon: Icons.pin_outlined,
                               tone: IconTone.warning,
                             ),

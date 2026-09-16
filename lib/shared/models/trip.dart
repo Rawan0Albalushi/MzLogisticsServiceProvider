@@ -48,6 +48,7 @@ class Trip {
     this.deliveryLng,
     this.etaAt,
     this.otpCode,
+    this.otpRequired = false,
     this.assignedAt,
     this.job,
     this.truck,
@@ -72,6 +73,7 @@ class Trip {
   final double? deliveryLng;
   final String? etaAt;
   final String? otpCode;
+  final bool otpRequired;
   final String? assignedAt;
   final TransportJob? job;
   final Truck? truck;
@@ -114,6 +116,7 @@ class Trip {
       deliveryLng: asDouble(json['delivery_lng']),
       etaAt: asString(json['eta_at']),
       otpCode: asString(json['otp_code']),
+      otpRequired: asBool(json['otp_required']),
       assignedAt: asString(json['assigned_at']),
       job: json['job'] is Map ? TransportJob.fromJson(asMap(json['job'])) : null,
       truck: json['truck'] is Map ? Truck.fromJson(asMap(json['truck'])) : null,
