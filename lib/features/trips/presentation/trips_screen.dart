@@ -141,11 +141,12 @@ class TripsScreen extends ConsumerWidget {
                         ],
                         onTap: () => context.go('/trips/${item.id}'),
                       ),
-                    ),
-                    PaginationBar(
-                      currentPage: data.currentPage,
-                      lastPage: data.lastPage,
-                      onPage: (page) => ref.read(tripPageProvider.notifier).state = page,
+                      pagination: TablePagination(
+                        currentPage: data.currentPage,
+                        lastPage: data.lastPage,
+                        total: data.total,
+                        onPage: (page) => ref.read(tripPageProvider.notifier).state = page,
+                      ),
                     ),
                   ],
                 );

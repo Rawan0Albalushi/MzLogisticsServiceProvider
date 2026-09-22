@@ -129,11 +129,12 @@ class QuotationsScreen extends ConsumerWidget {
                         footer: _WithdrawButton(quotation: item),
                         onTap: () => context.go('/quotations/${item.id}'),
                       ),
-                    ),
-                    PaginationBar(
-                      currentPage: data.currentPage,
-                      lastPage: data.lastPage,
-                      onPage: (page) => ref.read(quotationPageProvider.notifier).state = page,
+                      pagination: TablePagination(
+                        currentPage: data.currentPage,
+                        lastPage: data.lastPage,
+                        total: data.total,
+                        onPage: (page) => ref.read(quotationPageProvider.notifier).state = page,
+                      ),
                     ),
                   ],
                 );

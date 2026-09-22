@@ -140,11 +140,12 @@ class ShipmentsScreen extends ConsumerWidget {
                         footer: _quoteAction(context, session, item, orgId),
                         onTap: () => context.go('/shipments/${item.id}'),
                       ),
-                    ),
-                    PaginationBar(
-                      currentPage: data.currentPage,
-                      lastPage: data.lastPage,
-                      onPage: (page) => ref.read(shipmentPageProvider.notifier).state = page,
+                      pagination: TablePagination(
+                        currentPage: data.currentPage,
+                        lastPage: data.lastPage,
+                        total: data.total,
+                        onPage: (page) => ref.read(shipmentPageProvider.notifier).state = page,
+                      ),
                     ),
                   ],
                 );

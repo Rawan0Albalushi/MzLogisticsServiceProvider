@@ -2,13 +2,27 @@ import 'package:flutter/material.dart';
 
 import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/utils/breakpoints.dart';
+import '../../core/utils/formatters.dart';
 
 class DataColumnSpec {
   const DataColumnSpec(this.label, {this.flex = 1});
 
   final String label;
   final int flex;
+}
+
+class TablePagination {
+  const TablePagination({
+    required this.currentPage,
+    required this.lastPage,
+    required this.total,
+    required this.onPage,
+  });
+
+  final int currentPage;
+  final int lastPage;
+  final int total;
+  final ValueChanged<int> onPage;
 }
 
 class ResponsiveDataView<T> extends StatelessWidget {
@@ -19,6 +33,7 @@ class ResponsiveDataView<T> extends StatelessWidget {
     required this.rowCells,
     required this.cardBuilder,
     this.onRowTap,
+    this.pagination,
   });
 
   final List<T> items;
@@ -26,25 +41,66 @@ class ResponsiveDataView<T> extends StatelessWidget {
   final List<Widget> Function(T item) rowCells;
   final Widget Function(T item) cardBuilder;
   final ValueChanged<T>? onRowTap;
+  final TablePagination? pagination;
 
   @override
   Widget build(BuildContext context) {
-    if (!Breakpoints.isDesktop(context)) {
-      return Column(
-        children: [
-          for (final item in items) ...[
-            cardBuilder(item),
-            const SizedBox(height: 10),
-          ],
-        ],
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final table = constraints.maxWidth >= 720;
+        if (!table) {
+          return Column(
+            children: [
+              for (final item in items) ...[
+                cardBuilder(item),
+                const SizedBox(height: 10),
+              ],
+              if (pagination != null) ...[
+                const SizedBox(height: 2),
+                _PaginationShell(child: PaginationBar(pagination: pagination!)),
+              ],
+            ],
+          );
+        }
 
-    return _DesktopDataTable<T>(
-      items: items,
-      columns: columns,
-      rowCells: rowCells,
-      onRowTap: onRowTap,
+        return _PaginationShell(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _DesktopDataTable<T>(
+                items: items,
+                columns: columns,
+                rowCells: rowCells,
+                onRowTap: onRowTap,
+                viewportWidth: constraints.maxWidth,
+              ),
+              if (pagination != null)
+                PaginationBar(pagination: pagination!, embedded: true),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PaginationShell extends StatelessWidget {
+  const _PaginationShell({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppColors.radius),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppColors.radius - 1),
+        child: child,
+      ),
     );
   }
 }
@@ -54,12 +110,14 @@ class _DesktopDataTable<T> extends StatefulWidget {
     required this.items,
     required this.columns,
     required this.rowCells,
+    required this.viewportWidth,
     this.onRowTap,
   });
 
   final List<T> items;
   final List<DataColumnSpec> columns;
   final List<Widget> Function(T item) rowCells;
+  final double viewportWidth;
   final ValueChanged<T>? onRowTap;
 
   @override
@@ -67,8 +125,40 @@ class _DesktopDataTable<T> extends StatefulWidget {
 }
 
 class _DesktopDataTableState<T> extends State<_DesktopDataTable<T>> {
+  final ScrollController _scrollController = ScrollController();
   int? _hoveredRow;
   int _hoverEpoch = 0;
+  bool _overflows = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncOverflow();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DesktopDataTable<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncOverflow();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _syncOverflow() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      final overflows = _scrollController.position.maxScrollExtent > 1;
+      if (overflows != _overflows) {
+        setState(() => _overflows = overflows);
+      }
+    });
+  }
 
   void _enter(int index) {
     _hoverEpoch++;
@@ -89,75 +179,95 @@ class _DesktopDataTableState<T> extends State<_DesktopDataTable<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final headingStyle = theme.dataTableTheme.headingTextStyle ??
-        theme.textTheme.labelMedium?.copyWith(
-          color: AppColors.muted,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.3,
-          fontSize: 11,
-        );
-    final canTap = widget.onRowTap != null;
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final wide = widget.viewportWidth >= 1440;
+    final headingStyle = TextStyle(
+      color: AppColors.muted,
+      fontWeight: FontWeight.w700,
+      letterSpacing: rtl ? 0 : 0.6,
+      fontSize: 13,
+      height: 1.3,
+    );
+    final padding = wide
+        ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+        : const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Card(
-          clipBehavior: Clip.antiAlias,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Table(
-                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                defaultColumnWidth: const IntrinsicColumnWidth(),
-                border: const TableBorder(
-                  horizontalInside: BorderSide(color: AppColors.border),
-                ),
+    return Scrollbar(
+      controller: _scrollController,
+      thumbVisibility: _overflows,
+      interactive: true,
+      notificationPredicate: (notification) => notification.metrics.axis == Axis.horizontal,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        primary: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: widget.viewportWidth),
+          child: Table(
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            defaultColumnWidth: const IntrinsicColumnWidth(),
+            border: const TableBorder(
+              horizontalInside: BorderSide(color: AppColors.border),
+            ),
+            children: [
+              TableRow(
+                decoration: const BoxDecoration(color: AppColors.surface),
                 children: [
-                  TableRow(
-                    decoration: const BoxDecoration(color: AppColors.surface),
-                    children: [
-                      for (final column in widget.columns)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          child: Text(column.label, style: headingStyle),
-                        ),
-                    ],
-                  ),
-                  for (var index = 0; index < widget.items.length; index++)
-                    TableRow(
-                      decoration: BoxDecoration(
-                        color: _hoveredRow == index ? AppColors.rowHover : AppColors.white,
+                  for (final column in widget.columns)
+                    Padding(
+                      padding: padding,
+                      child: Text(
+                        rtl ? column.label : column.label.toUpperCase(),
+                        maxLines: 1,
+                        softWrap: false,
+                        style: headingStyle,
                       ),
-                      children: [
-                        for (final cell in widget.rowCells(widget.items[index]))
-                          MouseRegion(
-                            onEnter: (_) => _enter(index),
-                            onExit: (_) => _leave(index),
-                            cursor: canTap ? SystemMouseCursors.click : MouseCursor.defer,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.translucent,
-                              onTap: canTap ? () => widget.onRowTap!(widget.items[index]) : null,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(minHeight: 54),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: cell,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
                     ),
                 ],
               ),
+              for (var index = 0; index < widget.items.length; index++)
+                _dataRow(index, padding),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  TableRow _dataRow(int index, EdgeInsets padding) {
+    final cells = widget.rowCells(widget.items[index]);
+    return TableRow(
+      decoration: BoxDecoration(
+        color: _hoveredRow == index ? AppColors.rowHover : AppColors.white,
+      ),
+      children: [
+        for (var cell = 0; cell < cells.length; cell++)
+          MouseRegion(
+            onEnter: (_) => _enter(index),
+            onExit: (_) => _leave(index),
+            cursor: widget.onRowTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+            child: InkWell(
+              onTap: widget.onRowTap == null ? null : () => widget.onRowTap!(widget.items[index]),
+              canRequestFocus: cell == 0 && widget.onRowTap != null,
+              hoverColor: Colors.transparent,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Padding(
+                  padding: padding,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: DefaultTextStyle.merge(
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      child: cells[cell],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        );
-      },
+      ],
     );
   }
 }
@@ -165,42 +275,96 @@ class _DesktopDataTableState<T> extends State<_DesktopDataTable<T>> {
 class PaginationBar extends StatelessWidget {
   const PaginationBar({
     super.key,
-    required this.currentPage,
-    required this.lastPage,
-    required this.onPage,
+    required this.pagination,
+    this.embedded = false,
   });
 
-  final int currentPage;
-  final int lastPage;
-  final ValueChanged<int> onPage;
+  final TablePagination pagination;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
-    if (lastPage <= 1) {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Row(
-        children: [
-          Text(
-            context.tr('common.pageOf', {
-              'current': '$currentPage',
-              'last': '$lastPage',
-            }),
-            style: const TextStyle(color: AppColors.muted),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: currentPage > 1 ? () => onPage(currentPage - 1) : null,
-            icon: const Icon(Icons.chevron_left),
-          ),
-          IconButton(
-            onPressed: currentPage < lastPage ? () => onPage(currentPage + 1) : null,
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
+    final locale = Localizations.localeOf(context).languageCode;
+    String number(int value) => Formatters.number(value, locale: locale, decimals: 0);
+    final summary = context.tr('common.pagination', {
+      'total': number(pagination.total),
+      'current': number(pagination.currentPage),
+      'last': number(pagination.lastPage),
+    });
+
+    final previous = _PageButton(
+      label: context.tr('common.previous'),
+      onPressed: pagination.currentPage > 1 ? () => pagination.onPage(pagination.currentPage - 1) : null,
+    );
+    final next = _PageButton(
+      label: context.tr('common.next'),
+      onPressed: pagination.currentPage < pagination.lastPage ? () => pagination.onPage(pagination.currentPage + 1) : null,
+    );
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: embedded ? const Border(top: BorderSide(color: AppColors.border)) : null,
       ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final summaryText = Text(
+              summary,
+              style: const TextStyle(fontSize: 13, color: AppColors.muted, height: 1.4),
+            );
+            if (constraints.maxWidth < 640) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  summaryText,
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(child: previous),
+                      const SizedBox(width: 8),
+                      Expanded(child: next),
+                    ],
+                  ),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: summaryText),
+                const SizedBox(width: 12),
+                previous,
+                const SizedBox(width: 8),
+                next,
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _PageButton extends StatelessWidget {
+  const _PageButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.ink,
+        backgroundColor: AppColors.white,
+        disabledForegroundColor: AppColors.muted,
+        side: const BorderSide(color: AppColors.border),
+        minimumSize: const Size(44, 42),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      child: Text(label),
     );
   }
 }

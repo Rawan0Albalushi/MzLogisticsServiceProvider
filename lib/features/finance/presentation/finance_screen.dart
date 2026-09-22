@@ -378,12 +378,12 @@ class _LedgerTab extends ConsumerWidget {
                         trailing: StatusBadge(status: item.type),
                       ),
                     ),
-                  ),
-                  PaginationBar(
-                    currentPage: data.currentPage,
-                    lastPage: data.lastPage,
-                    onPage: (page) =>
-                        ref.read(ledgerPageProvider.notifier).state = page,
+                    pagination: TablePagination(
+                      currentPage: data.currentPage,
+                      lastPage: data.lastPage,
+                      total: data.total,
+                      onPage: (page) => ref.read(ledgerPageProvider.notifier).state = page,
+                    ),
                   ),
                 ],
               );
@@ -504,12 +504,12 @@ class _PaymentsTab extends ConsumerWidget {
                         trailing: StatusBadge(status: item.status),
                       ),
                     ),
-                  ),
-                  PaginationBar(
-                    currentPage: data.currentPage,
-                    lastPage: data.lastPage,
-                    onPage: (page) =>
-                        ref.read(paymentPageProvider.notifier).state = page,
+                    pagination: TablePagination(
+                      currentPage: data.currentPage,
+                      lastPage: data.lastPage,
+                      total: data.total,
+                      onPage: (page) => ref.read(paymentPageProvider.notifier).state = page,
+                    ),
                   ),
                 ],
               );
@@ -618,12 +618,12 @@ class _InvoicesTab extends ConsumerWidget {
                         trailing: StatusBadge(status: item.status),
                       ),
                     ),
-                  ),
-                  PaginationBar(
-                    currentPage: data.currentPage,
-                    lastPage: data.lastPage,
-                    onPage: (page) =>
-                        ref.read(invoicePageProvider.notifier).state = page,
+                    pagination: TablePagination(
+                      currentPage: data.currentPage,
+                      lastPage: data.lastPage,
+                      total: data.total,
+                      onPage: (page) => ref.read(invoicePageProvider.notifier).state = page,
+                    ),
                   ),
                 ],
               );
@@ -730,12 +730,12 @@ class _SettlementsTab extends ConsumerWidget {
                         trailing: StatusBadge(status: item.status),
                       ),
                     ),
-                  ),
-                  PaginationBar(
-                    currentPage: data.currentPage,
-                    lastPage: data.lastPage,
-                    onPage: (page) =>
-                        ref.read(settlementPageProvider.notifier).state = page,
+                    pagination: TablePagination(
+                      currentPage: data.currentPage,
+                      lastPage: data.lastPage,
+                      total: data.total,
+                      onPage: (page) => ref.read(settlementPageProvider.notifier).state = page,
+                    ),
                   ),
                 ],
               );

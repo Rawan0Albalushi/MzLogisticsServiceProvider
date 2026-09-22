@@ -140,11 +140,12 @@ class DriversScreen extends ConsumerWidget {
                               )
                             : null,
                       ),
-                    ),
-                    PaginationBar(
-                      currentPage: data.currentPage,
-                      lastPage: data.lastPage,
-                      onPage: (page) => ref.read(driverPageProvider.notifier).state = page,
+                      pagination: TablePagination(
+                        currentPage: data.currentPage,
+                        lastPage: data.lastPage,
+                        total: data.total,
+                        onPage: (page) => ref.read(driverPageProvider.notifier).state = page,
+                      ),
                     ),
                   ],
                 );

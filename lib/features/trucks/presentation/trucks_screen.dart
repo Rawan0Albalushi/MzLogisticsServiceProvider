@@ -165,11 +165,12 @@ class TrucksScreen extends ConsumerWidget {
                             ? () => context.go('/trucks/${item.id}/edit')
                             : null,
                       ),
-                    ),
-                    PaginationBar(
-                      currentPage: data.currentPage,
-                      lastPage: data.lastPage,
-                      onPage: (page) => ref.read(truckPageProvider.notifier).state = page,
+                      pagination: TablePagination(
+                        currentPage: data.currentPage,
+                        lastPage: data.lastPage,
+                        total: data.total,
+                        onPage: (page) => ref.read(truckPageProvider.notifier).state = page,
+                      ),
                     ),
                   ],
                 );

@@ -126,11 +126,12 @@ class JobsScreen extends ConsumerWidget {
                         ],
                         onTap: () => context.go('/jobs/${item.id}'),
                       ),
-                    ),
-                    PaginationBar(
-                      currentPage: data.currentPage,
-                      lastPage: data.lastPage,
-                      onPage: (page) => ref.read(jobPageProvider.notifier).state = page,
+                      pagination: TablePagination(
+                        currentPage: data.currentPage,
+                        lastPage: data.lastPage,
+                        total: data.total,
+                        onPage: (page) => ref.read(jobPageProvider.notifier).state = page,
+                      ),
                     ),
                   ],
                 );

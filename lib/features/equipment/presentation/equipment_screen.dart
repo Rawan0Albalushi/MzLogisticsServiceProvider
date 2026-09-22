@@ -166,12 +166,12 @@ class EquipmentScreen extends ConsumerWidget {
                             ? () => _openForm(context, ref, item)
                             : null,
                       ),
-                    ),
-                    PaginationBar(
-                      currentPage: data.currentPage,
-                      lastPage: data.lastPage,
-                      onPage: (page) =>
-                          ref.read(equipmentPageProvider.notifier).state = page,
+                      pagination: TablePagination(
+                        currentPage: data.currentPage,
+                        lastPage: data.lastPage,
+                        total: data.total,
+                        onPage: (page) => ref.read(equipmentPageProvider.notifier).state = page,
+                      ),
                     ),
                   ],
                 );
