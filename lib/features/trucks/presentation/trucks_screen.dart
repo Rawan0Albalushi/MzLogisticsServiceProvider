@@ -8,6 +8,8 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/truck.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../fleet/presentation/fleet_screen.dart';
+import '../../fleet/presentation/import_fleet_sheet.dart';
 import '../../../core/theme/page_visuals.dart';
 import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -47,12 +49,36 @@ class TrucksScreen extends ConsumerWidget {
             title: context.tr('trucks.title'),
             subtitle: context.tr('app.companyFleetNote'),
             actions: [
-              if (session.permissions.can(AppPermissions.fleetManage))
+              if (session.permissions.can(AppPermissions.fleetManage)) ...[
+                AppButton(
+                  label: context.tr('trucks.import'),
+                  outlined: true,
+                  icon: Icons.table_view_outlined,
+                  onPressed: () => showFleetImportSheet(
+                    context,
+                    ref,
+                    FleetImportRequest(
+                      namespace: 'trucks',
+                      templateFilename: 'trucks-import-template.xlsx',
+                      downloadTemplate: () => ref
+                          .read(fleetRepositoryProvider)
+                          .downloadTruckImportTemplate(),
+                      importFile: ({required bytes, required filename}) => ref
+                          .read(fleetRepositoryProvider)
+                          .importTrucks(bytes: bytes, filename: filename),
+                      onImported: (ref) {
+                        ref.invalidate(trucksProvider);
+                        ref.invalidate(fleetTrucksProvider);
+                      },
+                    ),
+                  ),
+                ),
                 AppButton(
                   label: context.tr('trucks.add'),
                   icon: Icons.add,
                   onPressed: () => context.go('/trucks/new'),
                 ),
+              ],
             ],
           ),
           const SizedBox(height: 12),

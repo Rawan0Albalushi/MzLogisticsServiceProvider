@@ -1,4 +1,5 @@
 import '../../core/utils/json_utils.dart';
+import 'equipment.dart';
 import 'user.dart';
 
 class Truck {
@@ -19,6 +20,7 @@ class Truck {
     this.status,
     this.assignedDriverId,
     this.assignedDriver,
+    this.equipment = const [],
     this.insuranceExpiresAt,
   });
 
@@ -38,6 +40,7 @@ class Truck {
   final String? status;
   final int? assignedDriverId;
   final AppUser? assignedDriver;
+  final List<EquipmentItem> equipment;
   final String? insuranceExpiresAt;
 
   bool get isAvailable => status == 'available';
@@ -68,6 +71,12 @@ class Truck {
       assignedDriver: json['assigned_driver'] is Map
           ? AppUser.fromJson(asMap(json['assigned_driver']))
           : null,
+      equipment: json['equipment'] is List
+          ? (json['equipment'] as List)
+                .whereType<Map>()
+                .map((item) => EquipmentItem.fromJson(asMap(item)))
+                .toList()
+          : const [],
       insuranceExpiresAt: asString(json['insurance_expires_at']),
     );
   }

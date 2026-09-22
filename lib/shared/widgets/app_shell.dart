@@ -485,7 +485,7 @@ class _TopBar extends ConsumerWidget {
 
   String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
-    if (parts.isEmpty) return 'MZ';
+    if (parts.isEmpty) return 'MX';
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
   }

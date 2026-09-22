@@ -45,12 +45,17 @@ class FleetScreen extends ConsumerWidget {
     final equipment = ref.watch(fleetEquipmentProvider);
     final canDrivers = session.permissions.can(AppPermissions.driversView);
     final locale = Localizations.localeOf(context).languageCode;
-    final available = trucks.asData?.value.items.where((truck) => truck.isAvailable).length;
+    final available = trucks.asData?.value.items
+        .where((truck) => truck.isAvailable)
+        .length;
 
     return AppPage(
       child: ListView(
         children: [
-          PageHeader(title: context.tr('fleet.title'), subtitle: context.tr('fleet.subtitle')),
+          PageHeader(
+            title: context.tr('fleet.title'),
+            subtitle: context.tr('fleet.subtitle'),
+          ),
           const SizedBox(height: 12),
           _FleetNote(text: context.tr('fleet.belongsToCompany')),
           const SizedBox(height: 16),
@@ -58,7 +63,8 @@ class FleetScreen extends ConsumerWidget {
             builder: (context, constraints) {
               final columns = Breakpoints.metricColumns(constraints.maxWidth);
               final gap = 12.0;
-              final itemWidth = (constraints.maxWidth - (gap * (columns - 1))) / columns;
+              final itemWidth =
+                  (constraints.maxWidth - (gap * (columns - 1))) / columns;
               return Wrap(
                 spacing: gap,
                 runSpacing: gap,
@@ -70,7 +76,9 @@ class FleetScreen extends ConsumerWidget {
                       value: trucks.asData?.value.total.toString() ?? '—',
                       icon: Icons.fire_truck_outlined,
                       tone: IconTone.teal,
-                      hint: available == null ? null : '${context.tr('fleet.availableNow')}: $available',
+                      hint: available == null
+                          ? null
+                          : '${context.tr('fleet.availableNow')}: $available',
                       onTap: () => context.go('/trucks'),
                     ),
                   ),
@@ -102,24 +110,53 @@ class FleetScreen extends ConsumerWidget {
           const SizedBox(height: 20),
           Text(
             context.tr('fleet.shortcuts'),
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(color: AppColors.muted, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
           LayoutBuilder(
             builder: (context, constraints) {
-              final columns = constraints.maxWidth >= 720 ? 3 : constraints.maxWidth >= 420 ? 2 : 1;
+              final columns = constraints.maxWidth >= 720
+                  ? 3
+                  : constraints.maxWidth >= 420
+                  ? 2
+                  : 1;
               final gap = 10.0;
-              final width = (constraints.maxWidth - (gap * (columns - 1))) / columns;
+              final width =
+                  (constraints.maxWidth - (gap * (columns - 1))) / columns;
               final links = <_Shortcut>[
-                _Shortcut('/trucks', 'nav.trucks', Icons.fire_truck_outlined, IconTone.teal),
-                if (canDrivers) _Shortcut('/drivers', 'nav.drivers', Icons.badge_outlined, IconTone.success),
-                _Shortcut('/equipment', 'nav.equipment', Icons.handyman_outlined, IconTone.info),
+                _Shortcut(
+                  '/trucks',
+                  'nav.trucks',
+                  Icons.fire_truck_outlined,
+                  IconTone.teal,
+                ),
+                if (canDrivers)
+                  _Shortcut(
+                    '/drivers',
+                    'nav.drivers',
+                    Icons.badge_outlined,
+                    IconTone.success,
+                  ),
+                _Shortcut(
+                  '/equipment',
+                  'nav.equipment',
+                  Icons.handyman_outlined,
+                  IconTone.info,
+                ),
                 if (session.permissions.can(AppPermissions.fleetManage))
-                  _Shortcut('/truck-types', 'nav.truckTypes', Icons.category_outlined, IconTone.muted),
-                _Shortcut('/documents', 'nav.documents', Icons.folder_outlined, IconTone.warning),
+                  _Shortcut(
+                    '/truck-types',
+                    'nav.truckTypes',
+                    Icons.category_outlined,
+                    IconTone.muted,
+                  ),
+                _Shortcut(
+                  '/documents',
+                  'nav.documents',
+                  Icons.folder_outlined,
+                  IconTone.warning,
+                ),
               ];
               return Wrap(
                 spacing: gap,
@@ -152,7 +189,10 @@ class FleetScreen extends ConsumerWidget {
                     value: trucks,
                     onRetry: () => ref.invalidate(fleetTrucksProvider),
                     isEmpty: (data) => data.isEmpty,
-                    empty: EmptyState(message: context.tr('trucks.empty'), icon: Icons.fire_truck_outlined),
+                    empty: EmptyState(
+                      message: context.tr('trucks.empty'),
+                      icon: Icons.fire_truck_outlined,
+                    ),
                     builder: (data) {
                       return Column(
                         children: [
@@ -162,10 +202,14 @@ class FleetScreen extends ConsumerWidget {
                               tone: IconTone.teal,
                               title: truck.plateNumber ?? '—',
                               subtitle: [
-                                context.l10n.truckType(truck.type, label: truck.typeLabel),
+                                context.l10n.truckType(
+                                  truck.type,
+                                  label: truck.typeLabel,
+                                ),
                                 if (truck.capacityTons != null)
                                   '${Formatters.number(truck.capacityTons, locale: locale)} ${context.tr('common.tons')}',
-                                if (truck.assignedDriver?.name != null) truck.assignedDriver!.name!,
+                                if (truck.assignedDriver?.name != null)
+                                  truck.assignedDriver!.name!,
                               ].join(' · '),
                               status: truck.status,
                               onTap: () => context.go('/trucks'),
@@ -198,7 +242,10 @@ class FleetScreen extends ConsumerWidget {
                           value: drivers,
                           onRetry: () => ref.invalidate(fleetDriversProvider),
                           isEmpty: (data) => data.isEmpty,
-                          empty: EmptyState(message: context.tr('drivers.empty'), icon: Icons.badge_outlined),
+                          empty: EmptyState(
+                            message: context.tr('drivers.empty'),
+                            icon: Icons.badge_outlined,
+                          ),
                           builder: (data) {
                             return Column(
                               children: [
@@ -208,8 +255,11 @@ class FleetScreen extends ConsumerWidget {
                                     tone: IconTone.success,
                                     title: driver.name ?? '—',
                                     subtitle: [
-                                      if (driver.phone != null && driver.phone!.isNotEmpty) driver.phone!,
-                                      if (driver.driverProfile?.licenseNumber != null)
+                                      if (driver.phone != null &&
+                                          driver.phone!.isNotEmpty)
+                                        driver.phone!,
+                                      if (driver.driverProfile?.licenseNumber !=
+                                          null)
                                         driver.driverProfile!.licenseNumber!,
                                     ].join(' · '),
                                     status: driver.driverProfile?.status,
@@ -236,7 +286,10 @@ class FleetScreen extends ConsumerWidget {
                     title: context.tr('fleet.recentEquipment'),
                     icon: Icons.handyman_outlined,
                     tone: IconTone.info,
-                    child: _EquipmentSnapshot(equipment: equipment, onRetry: () => ref.invalidate(fleetEquipmentProvider)),
+                    child: _EquipmentSnapshot(
+                      equipment: equipment,
+                      onRetry: () => ref.invalidate(fleetEquipmentProvider),
+                    ),
                   ),
           ),
           if (canDrivers) ...[
@@ -245,7 +298,10 @@ class FleetScreen extends ConsumerWidget {
               title: context.tr('fleet.recentEquipment'),
               icon: Icons.handyman_outlined,
               tone: IconTone.info,
-              child: _EquipmentSnapshot(equipment: equipment, onRetry: () => ref.invalidate(fleetEquipmentProvider)),
+              child: _EquipmentSnapshot(
+                equipment: equipment,
+                onRetry: () => ref.invalidate(fleetEquipmentProvider),
+              ),
             ),
           ],
         ],
@@ -280,7 +336,11 @@ class _FleetNote extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const IconWell(icon: Icons.info_outline, tone: IconTone.teal, size: IconWellSize.sm),
+          const IconWell(
+            icon: Icons.info_outline,
+            tone: IconTone.teal,
+            size: IconWellSize.sm,
+          ),
           const SizedBox(width: 10),
           Expanded(child: Text(text, style: const TextStyle(height: 1.45))),
         ],
@@ -315,10 +375,18 @@ class _ShortcutCard extends StatelessWidget {
               IconWell(icon: icon, tone: tone, size: IconWellSize.sm),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, height: 1.35)),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                  ),
+                ),
               ),
               Icon(
-                Directionality.of(context) == TextDirection.rtl ? Icons.chevron_left : Icons.chevron_right,
+                Directionality.of(context) == TextDirection.rtl
+                    ? Icons.chevron_left
+                    : Icons.chevron_right,
                 color: AppColors.muted,
               ),
             ],
@@ -369,10 +437,19 @@ class _FleetRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     if (subtitle.trim().isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -400,7 +477,10 @@ class _EquipmentSnapshot extends ConsumerWidget {
           value: equipment,
           onRetry: onRetry,
           isEmpty: (data) => data.isEmpty,
-          empty: EmptyState(message: context.tr('equipment.empty'), icon: Icons.handyman_outlined),
+          empty: EmptyState(
+            message: context.tr('equipment.empty'),
+            icon: Icons.handyman_outlined,
+          ),
           builder: (data) {
             return Column(
               children: [
@@ -409,7 +489,19 @@ class _EquipmentSnapshot extends ConsumerWidget {
                     icon: Icons.handyman_outlined,
                     tone: IconTone.info,
                     title: item.name ?? '—',
-                    subtitle: [item.type, if (item.quantity != null) '${item.quantity}'].whereType<String>().join(' · '),
+                    subtitle:
+                        [
+                              item.type,
+                              if (item.quantity != null) '${item.quantity}',
+                              item.truckId == null
+                                  ? context.tr('equipment.companyPool')
+                                  : context.tr('equipment.attachedTo', {
+                                      'plate': item.truckPlate ?? '',
+                                    }),
+                            ]
+                            .whereType<String>()
+                            .where((part) => part.isNotEmpty)
+                            .join(' · '),
                     status: item.status,
                     onTap: () => context.go('/equipment'),
                   ),

@@ -132,13 +132,16 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
       if (_year.text.isNotEmpty) 'year': int.tryParse(_year.text),
       if (_make.text.isNotEmpty) 'make': _make.text.trim(),
       if (_model.text.isNotEmpty) 'model': _model.text.trim(),
-      if (_insurance.text.isNotEmpty) 'insurance_expires_at': _insurance.text.trim(),
+      if (_insurance.text.isNotEmpty)
+        'insurance_expires_at': _insurance.text.trim(),
     };
     try {
       if (widget.truckId == null) {
         await ref.read(fleetRepositoryProvider).createTruck(payload);
       } else {
-        await ref.read(fleetRepositoryProvider).updateTruck(widget.truckId!, payload);
+        await ref
+            .read(fleetRepositoryProvider)
+            .updateTruck(widget.truckId!, payload);
       }
       ref.invalidate(trucksProvider);
       ref.invalidate(fleetTrucksProvider);
@@ -160,31 +163,34 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
   @override
   Widget build(BuildContext context) {
     final editing = widget.truckId != null;
-    final form = _form(context);
     return AppPage(
       child: editing
           ? AsyncBody(
               value: ref.watch(trucksProvider),
               onRetry: () => ref.invalidate(trucksProvider),
               builder: (page) {
-                final truck = page.items.where((item) => item.id == widget.truckId).firstOrNull;
+                final truck = page.items
+                    .where((item) => item.id == widget.truckId)
+                    .firstOrNull;
                 if (truck != null) {
                   _hydrate(truck);
                 }
-                return form;
+                return _form(context, truck);
               },
             )
-          : form,
+          : _form(context, null),
     );
   }
 
-  Widget _form(BuildContext context) {
+  Widget _form(BuildContext context, Truck? truck) {
     return Form(
       key: _formKey,
       child: ListView(
         children: [
           PageHeader(
-            title: widget.truckId == null ? context.tr('trucks.add') : context.tr('trucks.edit'),
+            title: widget.truckId == null
+                ? context.tr('trucks.add')
+                : context.tr('trucks.edit'),
             subtitle: context.tr('trucks.formSubtitle'),
           ),
           const SizedBox(height: 16),
@@ -197,7 +203,10 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
                   label: context.tr('trucks.plate'),
                   controller: _plate,
                   required: true,
-                  validator: (value) => AppValidators.required(value, context.tr('validation.required')),
+                  validator: (value) => AppValidators.required(
+                    value,
+                    context.tr('validation.required'),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 _typeDropdown(context),
@@ -207,18 +216,36 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
                   value: _status,
                   items: [
                     for (final status in AppConfig.truckStatuses)
-                      DropdownMenuItem(value: status, child: Text(context.l10n.status(status))),
+                      DropdownMenuItem(
+                        value: status,
+                        child: Text(context.l10n.status(status)),
+                      ),
                   ],
-                  onChanged: (value) => setState(() => _status = value ?? _status),
+                  onChanged: (value) =>
+                      setState(() => _status = value ?? _status),
                 ),
                 const SizedBox(height: 12),
-                AppTextField(label: context.tr('trucks.year'), controller: _year, keyboardType: TextInputType.number),
+                AppTextField(
+                  label: context.tr('trucks.year'),
+                  controller: _year,
+                  keyboardType: TextInputType.number,
+                ),
                 const SizedBox(height: 12),
-                AppTextField(label: context.tr('trucks.make'), controller: _make),
+                AppTextField(
+                  label: context.tr('trucks.make'),
+                  controller: _make,
+                ),
                 const SizedBox(height: 12),
-                AppTextField(label: context.tr('trucks.model'), controller: _model),
+                AppTextField(
+                  label: context.tr('trucks.model'),
+                  controller: _model,
+                ),
                 const SizedBox(height: 12),
-                AppTextField(label: context.tr('trucks.insurance'), controller: _insurance, hint: 'YYYY-MM-DD'),
+                AppTextField(
+                  label: context.tr('trucks.insurance'),
+                  controller: _insurance,
+                  hint: 'YYYY-MM-DD',
+                ),
               ],
             ),
           ),
@@ -232,7 +259,8 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
               children: [
                 Text(
                   context.tr('trucks.loadHint'),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(height: 1.4),
                 ),
                 const SizedBox(height: 16),
                 _responsivePair(
@@ -240,14 +268,24 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
                     label: context.tr('trucks.capacityTons'),
                     controller: _capacity,
                     required: true,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    validator: (value) => AppValidators.positiveNumber(value, context.tr('validation.positive')),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) => AppValidators.positiveNumber(
+                      value,
+                      context.tr('validation.positive'),
+                    ),
                   ),
                   AppTextField(
                     label: context.tr('trucks.volume'),
                     controller: _volume,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    validator: (value) => AppValidators.optionalPositiveNumber(value, context.tr('validation.positive')),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) => AppValidators.optionalPositiveNumber(
+                      value,
+                      context.tr('validation.positive'),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -257,13 +295,71 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
                   label: context.tr('trucks.axles'),
                   controller: _axles,
                   keyboardType: TextInputType.number,
-                  validator: (value) => AppValidators.optionalPositiveInt(value, context.tr('validation.positive')),
+                  validator: (value) => AppValidators.optionalPositiveInt(
+                    value,
+                    context.tr('validation.positive'),
+                  ),
                 ),
+                if (truck == null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    context.tr('trucks.equipmentAfterSave'),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(height: 1.4),
+                  ),
+                ],
                 const SizedBox(height: 20),
-                AppButton(label: context.tr('common.save'), onPressed: _save, loading: _loading, expanded: true),
+                AppButton(
+                  label: context.tr('common.save'),
+                  onPressed: _save,
+                  loading: _loading,
+                  expanded: true,
+                ),
               ],
             ),
           ),
+          if (truck != null) ...[
+            const SizedBox(height: 16),
+            SectionCard(
+              title: context.tr('trucks.equipmentSection'),
+              icon: Icons.handyman_outlined,
+              tone: IconTone.info,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    context.tr('trucks.equipmentHint'),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(height: 1.4),
+                  ),
+                  const SizedBox(height: 12),
+                  if (truck.equipment.isEmpty)
+                    Text(context.tr('trucks.equipmentEmpty'))
+                  else
+                    for (final item in truck.equipment)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          [
+                            item.name ?? '',
+                            if (item.quantity != null) '${item.quantity}',
+                          ].where((part) => part.isNotEmpty).join(' · '),
+                        ),
+                      ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: AppButton(
+                      label: context.tr('trucks.manageEquipment'),
+                      outlined: true,
+                      icon: Icons.handyman_outlined,
+                      onPressed: () => context.go('/equipment'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -275,19 +371,28 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
         label: context.tr('trucks.length'),
         controller: _length,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        validator: (value) => AppValidators.optionalPositiveNumber(value, context.tr('validation.positive')),
+        validator: (value) => AppValidators.optionalPositiveNumber(
+          value,
+          context.tr('validation.positive'),
+        ),
       ),
       AppTextField(
         label: context.tr('trucks.width'),
         controller: _width,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        validator: (value) => AppValidators.optionalPositiveNumber(value, context.tr('validation.positive')),
+        validator: (value) => AppValidators.optionalPositiveNumber(
+          value,
+          context.tr('validation.positive'),
+        ),
       ),
       AppTextField(
         label: context.tr('trucks.height'),
         controller: _height,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        validator: (value) => AppValidators.optionalPositiveNumber(value, context.tr('validation.positive')),
+        validator: (value) => AppValidators.optionalPositiveNumber(
+          value,
+          context.tr('validation.positive'),
+        ),
       ),
     );
   }
@@ -296,13 +401,7 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 560) {
-          return Column(
-            children: [
-              first,
-              const SizedBox(height: 12),
-              second,
-            ],
-          );
+          return Column(children: [first, const SizedBox(height: 12), second]);
         }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,10 +450,14 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
       error: (_, _) => Text(context.tr('common.error')),
       data: (types) {
         final options = [...types];
-        if (_type != null && _type!.isNotEmpty && !options.any((item) => item.code == _type)) {
+        if (_type != null &&
+            _type!.isNotEmpty &&
+            !options.any((item) => item.code == _type)) {
           options.insert(0, TruckTypeOption.fallback(_type!));
         }
-        final value = options.any((item) => item.code == _type) ? _type : options.firstOrNull?.code;
+        final value = options.any((item) => item.code == _type)
+            ? _type
+            : options.firstOrNull?.code;
         if (value != null && value != _type) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -368,7 +471,10 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
           required: true,
           items: [
             for (final type in options)
-              DropdownMenuItem(value: type.code, child: Text(type.displayName(context.l10n.isRtl))),
+              DropdownMenuItem(
+                value: type.code,
+                child: Text(type.displayName(context.l10n.isRtl)),
+              ),
           ],
           onChanged: (selected) => setState(() => _type = selected ?? _type),
         );

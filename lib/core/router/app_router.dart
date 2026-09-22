@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
+import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/company/presentation/company_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/dispatch/presentation/dispatch_screen.dart';
@@ -29,8 +30,8 @@ import '../../features/trucks/presentation/trucks_screen.dart';
 import '../../features/users/presentation/users_screen.dart';
 import '../../shared/providers/session_provider.dart';
 import '../../shared/widgets/app_shell.dart';
-import '../../shared/widgets/async_body.dart';
 import 'page_transitions.dart';
+import 'session_redirect.dart';
 
 class _AuthenticatedShell extends ConsumerWidget {
   const _AuthenticatedShell({required this.child});
@@ -41,7 +42,7 @@ class _AuthenticatedShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ready = ref.watch(sessionProvider).ready;
     if (!ready) {
-      return const Scaffold(body: LoadingState());
+      return const SplashScreen();
     }
     return AppShell(child: child);
   }
@@ -58,37 +59,26 @@ final routerProvider = Provider<GoRouter>((ref) {
   ) {
     return GoRoute(
       path: path,
-      pageBuilder: (context, state) => subtleFadePage(
-        key: state.pageKey,
-        child: screen(context, state),
-      ),
+      pageBuilder: (context, state) =>
+          subtleFadePage(key: state.pageKey, child: screen(context, state)),
     );
   }
 
   return GoRouter(
-    initialLocation: '/dashboard',
+    initialLocation: '/splash',
     refreshListenable: refresh,
     redirect: (context, state) {
-      final session = ref.read(sessionProvider);
-      final loggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/register';
-      if (!session.ready) {
-        return null;
-      }
-      if (!session.isAuthenticated && !loggingIn) {
-        return '/login';
-      }
-      if (session.isAuthenticated && loggingIn) {
-        return '/dashboard';
-      }
-      if (session.isAccountRestricted && !session.allowsRestrictedPath(state.matchedLocation)) {
-        return '/dashboard';
-      }
-      if (session.isAuthenticated && state.matchedLocation == '/fleet') {
-        return '/trucks';
-      }
-      return null;
+      return resolveSessionRedirect(
+        session: ref.read(sessionProvider),
+        location: state.matchedLocation,
+        uri: state.uri,
+      );
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       fadeRoute('/login', (context, state) => const LoginScreen()),
       fadeRoute('/register', (context, state) => const RegisterScreen()),
       ShellRoute(
@@ -98,40 +88,59 @@ final routerProvider = Provider<GoRouter>((ref) {
           fadeRoute('/shipments', (context, state) => const ShipmentsScreen()),
           fadeRoute(
             '/shipments/:id',
-            (context, state) => ShipmentDetailScreen(id: int.parse(state.pathParameters['id']!)),
+            (context, state) => ShipmentDetailScreen(
+              id: int.parse(state.pathParameters['id']!),
+            ),
           ),
           fadeRoute(
             '/shipments/:id/quote',
-            (context, state) => SubmitQuotationScreen(shipmentId: int.parse(state.pathParameters['id']!)),
+            (context, state) => SubmitQuotationScreen(
+              shipmentId: int.parse(state.pathParameters['id']!),
+            ),
           ),
-          fadeRoute('/quotations', (context, state) => const QuotationsScreen()),
+          fadeRoute(
+            '/quotations',
+            (context, state) => const QuotationsScreen(),
+          ),
           fadeRoute(
             '/quotations/:id',
-            (context, state) => QuotationDetailScreen(id: int.parse(state.pathParameters['id']!)),
+            (context, state) => QuotationDetailScreen(
+              id: int.parse(state.pathParameters['id']!),
+            ),
           ),
           fadeRoute('/jobs', (context, state) => const JobsScreen()),
           fadeRoute(
             '/jobs/:id',
-            (context, state) => JobDetailScreen(id: int.parse(state.pathParameters['id']!)),
+            (context, state) =>
+                JobDetailScreen(id: int.parse(state.pathParameters['id']!)),
           ),
           fadeRoute('/trips', (context, state) => const TripsScreen()),
           fadeRoute(
             '/trips/:id',
-            (context, state) => TripDetailScreen(id: int.parse(state.pathParameters['id']!)),
+            (context, state) =>
+                TripDetailScreen(id: int.parse(state.pathParameters['id']!)),
           ),
           fadeRoute('/dispatch', (context, state) => const DispatchScreen()),
           fadeRoute('/trucks', (context, state) => const TrucksScreen()),
-          fadeRoute('/truck-types', (context, state) => const TruckTypesScreen()),
+          fadeRoute(
+            '/truck-types',
+            (context, state) => const TruckTypesScreen(),
+          ),
           fadeRoute('/trucks/new', (context, state) => const TruckFormScreen()),
           fadeRoute(
             '/trucks/:id/edit',
-            (context, state) => TruckFormScreen(truckId: int.parse(state.pathParameters['id']!)),
+            (context, state) => TruckFormScreen(
+              truckId: int.parse(state.pathParameters['id']!),
+            ),
           ),
           fadeRoute('/equipment', (context, state) => const EquipmentScreen()),
           fadeRoute('/drivers', (context, state) => const DriversScreen()),
           fadeRoute('/documents', (context, state) => const DocumentsScreen()),
           fadeRoute('/finance', (context, state) => const FinanceScreen()),
-          fadeRoute('/notifications', (context, state) => const NotificationsScreen()),
+          fadeRoute(
+            '/notifications',
+            (context, state) => const NotificationsScreen(),
+          ),
           fadeRoute('/company', (context, state) => const CompanyScreen()),
           fadeRoute('/users', (context, state) => const UsersScreen()),
           fadeRoute('/profile', (context, state) => const ProfileScreen()),

@@ -1,9 +1,9 @@
 {
-    "name": "MZ Logistics Services",
-    "short_name": "MZ Logistics",
+    "name": "MoveX",
+    "short_name": "MoveX",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#F3F8F8",
+    "background_color": "#003D3D",
     "theme_color": "#00A6A6",
     "description": "Service provider operations for transportation companies.",
     "orientation": "portrait-primary",

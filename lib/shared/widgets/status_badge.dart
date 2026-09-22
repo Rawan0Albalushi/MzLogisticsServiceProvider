@@ -56,6 +56,7 @@ class StatusBadge extends StatelessWidget {
         return AppColors.info;
       case 'submitted':
       case 'pending':
+      case 'pending_activation':
       case 'pending_dispatch':
       case 'unassigned':
       case 'issued':

@@ -58,7 +58,29 @@ class ApiClient {
     Object? data,
     Map<String, dynamic>? query,
   }) {
-    return _send(() => _dio.post<dynamic>(path, data: data, queryParameters: query));
+    return _send(() => _dio.post<dynamic>(
+          path,
+          data: data,
+          queryParameters: query,
+          options: data is FormData
+              ? Options(
+                  contentType: Headers.multipartFormDataContentType,
+                  receiveTimeout: const Duration(seconds: 60),
+                )
+              : null,
+        ));
+  }
+
+  Future<List<int>> getBytes(String path) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return response.data ?? const [];
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
   }
 
   Future<Map<String, dynamic>> put(

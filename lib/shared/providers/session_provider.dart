@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_client.dart';
@@ -30,39 +32,69 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   );
 });
 
-final authRepositoryProvider = Provider((ref) => AuthRepository(ref.watch(apiClientProvider)));
-final dashboardRepositoryProvider = Provider((ref) => DashboardRepository(ref.watch(apiClientProvider)));
-final shipmentRepositoryProvider = Provider((ref) => ShipmentRepository(ref.watch(apiClientProvider)));
-final quotationRepositoryProvider = Provider((ref) => QuotationRepository(ref.watch(apiClientProvider)));
-final jobRepositoryProvider = Provider((ref) => JobRepository(ref.watch(apiClientProvider)));
-final tripRepositoryProvider = Provider((ref) => TripRepository(ref.watch(apiClientProvider)));
-final fleetRepositoryProvider = Provider((ref) => FleetRepository(ref.watch(apiClientProvider)));
-final truckTypeRepositoryProvider = Provider((ref) => TruckTypeRepository(ref.watch(apiClientProvider)));
-final financeRepositoryProvider = Provider((ref) => FinanceRepository(ref.watch(apiClientProvider)));
-final organizationRepositoryProvider = Provider((ref) => OrganizationRepository(ref.watch(apiClientProvider)));
-final notificationRepositoryProvider = Provider((ref) => NotificationRepository(ref.watch(apiClientProvider)));
-final roleRepositoryProvider = Provider((ref) => RoleRepository(ref.watch(apiClientProvider)));
+final authRepositoryProvider = Provider(
+  (ref) => AuthRepository(ref.watch(apiClientProvider)),
+);
+final dashboardRepositoryProvider = Provider(
+  (ref) => DashboardRepository(ref.watch(apiClientProvider)),
+);
+final shipmentRepositoryProvider = Provider(
+  (ref) => ShipmentRepository(ref.watch(apiClientProvider)),
+);
+final quotationRepositoryProvider = Provider(
+  (ref) => QuotationRepository(ref.watch(apiClientProvider)),
+);
+final jobRepositoryProvider = Provider(
+  (ref) => JobRepository(ref.watch(apiClientProvider)),
+);
+final tripRepositoryProvider = Provider(
+  (ref) => TripRepository(ref.watch(apiClientProvider)),
+);
+final fleetRepositoryProvider = Provider(
+  (ref) => FleetRepository(ref.watch(apiClientProvider)),
+);
+final truckTypeRepositoryProvider = Provider(
+  (ref) => TruckTypeRepository(ref.watch(apiClientProvider)),
+);
+final financeRepositoryProvider = Provider(
+  (ref) => FinanceRepository(ref.watch(apiClientProvider)),
+);
+final organizationRepositoryProvider = Provider(
+  (ref) => OrganizationRepository(ref.watch(apiClientProvider)),
+);
+final notificationRepositoryProvider = Provider(
+  (ref) => NotificationRepository(ref.watch(apiClientProvider)),
+);
+final roleRepositoryProvider = Provider(
+  (ref) => RoleRepository(ref.watch(apiClientProvider)),
+);
 
 class SessionState {
-  const SessionState({
-    required this.ready,
-    this.token,
-    this.user,
-  });
+  const SessionState({required this.ready, this.token, this.user});
 
   final bool ready;
   final String? token;
   final AppUser? user;
 
-  static const restrictedAllowedPaths = {'/dashboard', '/profile', '/company', '/more'};
+  static const restrictedAllowedPaths = {
+    '/dashboard',
+    '/profile',
+    '/company',
+    '/more',
+  };
 
-  bool get isAuthenticated => token != null && token!.isNotEmpty && user != null;
+  bool get isAuthenticated =>
+      token != null && token!.isNotEmpty && user != null;
   bool get isPendingReview => user?.organization?.isPending ?? false;
-  bool get isAccountRestricted => isAuthenticated && !(user?.organization?.isActive ?? false);
-  bool get canOperate => isAuthenticated && (user?.organization?.isActive ?? false);
-  PermissionSet get permissions => user?.permissionSet ?? const PermissionSet([]);
+  bool get isAccountRestricted =>
+      isAuthenticated && !(user?.organization?.isActive ?? false);
+  bool get canOperate =>
+      isAuthenticated && (user?.organization?.isActive ?? false);
+  PermissionSet get permissions =>
+      user?.permissionSet ?? const PermissionSet([]);
 
-  bool allowsRestrictedPath(String path) => restrictedAllowedPaths.contains(path);
+  bool allowsRestrictedPath(String path) =>
+      restrictedAllowedPaths.contains(path);
 }
 
 class SessionNotifier extends Notifier<SessionState> {
@@ -78,6 +110,23 @@ class SessionNotifier extends Notifier<SessionState> {
   }
 
   Future<void> restore() async {
+    try {
+      await _restore().timeout(
+        const Duration(seconds: 12),
+        onTimeout: () {
+          if (!state.ready) {
+            state = const SessionState(ready: true);
+          }
+        },
+      );
+    } catch (_) {
+      if (!state.ready) {
+        state = const SessionState(ready: true);
+      }
+    }
+  }
+
+  Future<void> _restore() async {
     final storage = ref.read(tokenStorageProvider);
     final token = await storage.read();
     if (token == null || token.isEmpty) {
@@ -118,4 +167,6 @@ class SessionNotifier extends Notifier<SessionState> {
   }
 }
 
-final sessionProvider = NotifierProvider<SessionNotifier, SessionState>(SessionNotifier.new);
+final sessionProvider = NotifierProvider<SessionNotifier, SessionState>(
+  SessionNotifier.new,
+);

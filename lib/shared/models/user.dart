@@ -45,6 +45,7 @@ class AppUser {
     this.permissions = const [],
     this.driverProfile,
     this.lastLoginAt,
+    this.mustSetPassword = false,
   });
 
   final int id;
@@ -61,6 +62,9 @@ class AppUser {
   final List<String> permissions;
   final DriverProfile? driverProfile;
   final String? lastLoginAt;
+  final bool mustSetPassword;
+
+  String? get displayStatus => mustSetPassword ? 'pending_activation' : driverProfile?.status;
 
   PermissionSet get permissionSet => PermissionSet(permissions);
 
@@ -88,6 +92,7 @@ class AppUser {
           ? DriverProfile.fromJson(asMap(json['driver_profile']))
           : null,
       lastLoginAt: asString(json['last_login_at']),
+      mustSetPassword: asBool(json['must_set_password']),
     );
   }
 
@@ -113,6 +118,7 @@ class AppUser {
       permissions: permissions ?? this.permissions,
       driverProfile: driverProfile,
       lastLoginAt: lastLoginAt,
+      mustSetPassword: mustSetPassword,
     );
   }
 }

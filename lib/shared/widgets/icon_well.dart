@@ -67,7 +67,7 @@ class BrandMark extends StatelessWidget {
         ],
       ),
       child: Text(
-        'MZ',
+        'MX',
         style: TextStyle(
           color: AppColors.onAccent,
           fontWeight: FontWeight.w800,

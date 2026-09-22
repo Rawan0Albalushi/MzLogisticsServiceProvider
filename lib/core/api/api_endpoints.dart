@@ -12,8 +12,16 @@ class ApiEndpoints {
   static const jobs = '/jobs';
   static const trips = '/trips';
   static const trucks = '/trucks';
+  static const trucksImport = '/trucks/import';
+  static const trucksImportTemplate = '/trucks/import-template';
   static const equipment = '/equipment';
+  static const equipmentImport = '/equipment/import';
+  static const equipmentImportTemplate = '/equipment/import-template';
+  static String equipmentItem(int id) => '/equipment/$id';
   static const drivers = '/drivers';
+  static const driversImport = '/drivers/import';
+  static const driversImportTemplate = '/drivers/import-template';
+  static String resendDriverInvite(int id) => '/drivers/$id/resend-invite';
   static const catalog = '/catalog';
   static const truckTypes = '/truck-types';
   static const payments = '/payments';
