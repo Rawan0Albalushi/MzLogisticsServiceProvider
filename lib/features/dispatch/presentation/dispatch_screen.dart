@@ -30,13 +30,18 @@ class DispatchScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(sessionProvider).permissions.can(AppPermissions.tripsAssign)) {
+    if (!ref
+        .watch(sessionProvider)
+        .permissions
+        .can(AppPermissions.tripsAssign)) {
       return const NoPermissionState();
     }
     final locale = Localizations.localeOf(context).languageCode;
 
     return AppPage(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(
             title: context.tr('dispatch.title'),
@@ -47,89 +52,111 @@ class DispatchScreen extends ConsumerWidget {
             children: [
               FilterSearchField(
                 hint: context.tr('common.searchReference'),
-                onChanged: (value) => ref.read(dispatchSearchProvider.notifier).state = value,
+                onChanged: (value) =>
+                    ref.read(dispatchSearchProvider.notifier).state = value,
               ),
             ],
           ),
-          Expanded(
-            child: AsyncBody(
-              value: ref.watch(unassignedTripsProvider),
-              onRetry: () => ref.invalidate(unassignedTripsProvider),
-              isEmpty: (data) => data.isEmpty,
-              empty: EmptyState(message: context.tr('dispatch.empty'), icon: Icons.assignment_ind_outlined),
-              builder: (data) {
-                final search = ref.watch(dispatchSearchProvider).trim().toLowerCase();
-                final groups = DispatchJobGroup.fromTrips(data.items).where((group) {
-                  if (search.isEmpty) {
-                    return true;
-                  }
-                  final trip = group.trips.first;
-                  final haystack =
-                      '${group.job?.reference ?? ''} ${trip.reference ?? ''} ${trip.pickupCity ?? ''} ${trip.deliveryCity ?? ''}'
-                          .toLowerCase();
-                  return haystack.contains(search);
-                }).toList();
-                if (groups.isEmpty) {
-                  return EmptyState(message: context.tr('dispatch.empty'), icon: Icons.assignment_ind_outlined);
-                }
-
-                final waitingTrips = groups.fold<int>(0, (sum, group) => sum + group.trips.length);
-                final quotedTrucks = groups.fold<int>(
-                  0,
-                  (sum, group) => sum + (group.job?.quotation?.dispatchTruckCount ?? group.trips.length),
-                );
-
-                return ListView(
-                  children: [
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final columns = Breakpoints.metricColumns(constraints.maxWidth).clamp(1, 3);
-                        final gap = 12.0;
-                        final width = (constraints.maxWidth - (gap * (columns - 1))) / columns;
-                        return Wrap(
-                          spacing: gap,
-                          runSpacing: gap,
-                          children: [
-                            SizedBox(
-                              width: width,
-                              child: MetricCard(
-                                label: context.tr('dispatch.waitingJobs'),
-                                value: '${groups.length}',
-                                icon: Icons.work_outline_rounded,
-                                tone: IconTone.warning,
-                              ),
-                            ),
-                            SizedBox(
-                              width: width,
-                              child: MetricCard(
-                                label: context.tr('dispatch.waitingTrips'),
-                                value: '$waitingTrips',
-                                icon: Icons.route_outlined,
-                                tone: IconTone.coral,
-                              ),
-                            ),
-                            SizedBox(
-                              width: width,
-                              child: MetricCard(
-                                label: context.tr('dispatch.quotedNeed'),
-                                value: '$quotedTrucks',
-                                icon: Icons.fire_truck_outlined,
-                                tone: IconTone.teal,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    for (var i = 0; i < groups.length; i++) ...[
-                      if (i > 0) const SizedBox(height: 12),
-                      _DispatchGroupCard(group: groups[i], locale: locale),
-                    ],
-                  ],
-                );
-              },
+          AsyncBody(
+            value: ref.watch(unassignedTripsProvider),
+            onRetry: () => ref.invalidate(unassignedTripsProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(
+              message: context.tr('dispatch.empty'),
+              icon: Icons.assignment_ind_outlined,
             ),
+            builder: (data) {
+              final search = ref
+                  .watch(dispatchSearchProvider)
+                  .trim()
+                  .toLowerCase();
+              final groups = DispatchJobGroup.fromTrips(data.items).where((
+                group,
+              ) {
+                if (search.isEmpty) {
+                  return true;
+                }
+                final trip = group.trips.first;
+                final haystack =
+                    '${group.job?.reference ?? ''} ${trip.reference ?? ''} ${trip.pickupCity ?? ''} ${trip.deliveryCity ?? ''}'
+                        .toLowerCase();
+                return haystack.contains(search);
+              }).toList();
+              if (groups.isEmpty) {
+                return EmptyState(
+                  message: context.tr('dispatch.empty'),
+                  icon: Icons.assignment_ind_outlined,
+                );
+              }
+
+              final waitingTrips = groups.fold<int>(
+                0,
+                (sum, group) => sum + group.trips.length,
+              );
+              final quotedTrucks = groups.fold<int>(
+                0,
+                (sum, group) =>
+                    sum +
+                    (group.job?.quotation?.dispatchTruckCount ??
+                        group.trips.length),
+              );
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = Breakpoints.metricColumns(
+                        constraints.maxWidth,
+                      ).clamp(1, 3);
+                      final gap = 12.0;
+                      final width =
+                          (constraints.maxWidth - (gap * (columns - 1))) /
+                          columns;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          SizedBox(
+                            width: width,
+                            child: MetricCard(
+                              label: context.tr('dispatch.waitingJobs'),
+                              value: '${groups.length}',
+                              icon: Icons.work_outline_rounded,
+                              tone: IconTone.warning,
+                            ),
+                          ),
+                          SizedBox(
+                            width: width,
+                            child: MetricCard(
+                              label: context.tr('dispatch.waitingTrips'),
+                              value: '$waitingTrips',
+                              icon: Icons.route_outlined,
+                              tone: IconTone.coral,
+                            ),
+                          ),
+                          SizedBox(
+                            width: width,
+                            child: MetricCard(
+                              label: context.tr('dispatch.quotedNeed'),
+                              value: '$quotedTrucks',
+                              icon: Icons.fire_truck_outlined,
+                              tone: IconTone.teal,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  for (var i = 0; i < groups.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 12),
+                    _DispatchGroupCard(group: groups[i], locale: locale),
+                  ],
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -171,8 +198,11 @@ class _DispatchGroupCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        job?.reference ?? first.reference ?? context.tr('dispatch.queue'),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        job?.reference ??
+                            first.reference ??
+                            context.tr('dispatch.queue'),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 6),
                       Wrap(
@@ -181,7 +211,10 @@ class _DispatchGroupCard extends ConsumerWidget {
                         children: [
                           StatusBadge(status: job?.status ?? first.status),
                           if (route.trim() != '→')
-                            DetailChip(label: route, icon: Icons.route_outlined),
+                            DetailChip(
+                              label: route,
+                              icon: Icons.route_outlined,
+                            ),
                           DetailChip(
                             label: context.tr('dispatch.quotedTrucks', {
                               'count': '$quoted',
@@ -200,9 +233,9 @@ class _DispatchGroupCard extends ConsumerWidget {
             Text(
               context.tr('dispatch.tripsInQueue'),
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: AppColors.muted,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             for (final trip in group.trips) ...[
@@ -216,7 +249,9 @@ class _DispatchGroupCard extends ConsumerWidget {
               children: [
                 AppButton(
                   label: group.assignableNow > 1
-                      ? context.tr('dispatch.assignAll', {'count': '${group.assignableNow}'})
+                      ? context.tr('dispatch.assignAll', {
+                          'count': '${group.assignableNow}',
+                        })
                       : context.tr('common.assign'),
                   amber: true,
                   icon: Icons.assignment_turned_in_outlined,

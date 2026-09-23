@@ -50,7 +50,9 @@ class FleetScreen extends ConsumerWidget {
         .length;
 
     return AppPage(
-      child: ListView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(
             title: context.tr('fleet.title'),

@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
@@ -50,6 +52,7 @@ class ResponsiveDataView<T> extends StatelessWidget {
         final table = constraints.maxWidth >= 720;
         if (!table) {
           return Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               for (final item in items) ...[
                 cardBuilder(item),
@@ -65,6 +68,7 @@ class ResponsiveDataView<T> extends StatelessWidget {
 
         return _PaginationShell(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _DesktopDataTable<T>(
@@ -196,38 +200,41 @@ class _DesktopDataTableState<T> extends State<_DesktopDataTable<T>> {
       controller: _scrollController,
       thumbVisibility: _overflows,
       interactive: true,
-      notificationPredicate: (notification) => notification.metrics.axis == Axis.horizontal,
+      notificationPredicate: (notification) =>
+          notification.metrics.axis == Axis.horizontal,
       child: SingleChildScrollView(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
         primary: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: widget.viewportWidth),
-          child: Table(
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            defaultColumnWidth: const IntrinsicColumnWidth(),
-            border: const TableBorder(
-              horizontalInside: BorderSide(color: AppColors.border),
-            ),
-            children: [
-              TableRow(
-                decoration: const BoxDecoration(color: AppColors.surface),
-                children: [
-                  for (final column in widget.columns)
-                    Padding(
-                      padding: padding,
-                      child: Text(
-                        rtl ? column.label : column.label.toUpperCase(),
-                        maxLines: 1,
-                        softWrap: false,
-                        style: headingStyle,
-                      ),
-                    ),
-                ],
+        child: _ForwardVerticalScroll(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: widget.viewportWidth),
+            child: Table(
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+              defaultColumnWidth: const IntrinsicColumnWidth(),
+              border: const TableBorder(
+                horizontalInside: BorderSide(color: AppColors.border),
               ),
-              for (var index = 0; index < widget.items.length; index++)
-                _dataRow(index, padding),
-            ],
+              children: [
+                TableRow(
+                  decoration: const BoxDecoration(color: AppColors.surface),
+                  children: [
+                    for (final column in widget.columns)
+                      Padding(
+                        padding: padding,
+                        child: Text(
+                          rtl ? column.label : column.label.toUpperCase(),
+                          maxLines: 1,
+                          softWrap: false,
+                          style: headingStyle,
+                        ),
+                      ),
+                  ],
+                ),
+                for (var index = 0; index < widget.items.length; index++)
+                  _dataRow(index, padding),
+              ],
+            ),
           ),
         ),
       ),
@@ -245,9 +252,13 @@ class _DesktopDataTableState<T> extends State<_DesktopDataTable<T>> {
           MouseRegion(
             onEnter: (_) => _enter(index),
             onExit: (_) => _leave(index),
-            cursor: widget.onRowTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+            cursor: widget.onRowTap == null
+                ? MouseCursor.defer
+                : SystemMouseCursors.click,
             child: InkWell(
-              onTap: widget.onRowTap == null ? null : () => widget.onRowTap!(widget.items[index]),
+              onTap: widget.onRowTap == null
+                  ? null
+                  : () => widget.onRowTap!(widget.items[index]),
               canRequestFocus: cell == 0 && widget.onRowTap != null,
               hoverColor: Colors.transparent,
               child: ConstrainedBox(
@@ -285,7 +296,8 @@ class PaginationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
-    String number(int value) => Formatters.number(value, locale: locale, decimals: 0);
+    String number(int value) =>
+        Formatters.number(value, locale: locale, decimals: 0);
     final summary = context.tr('common.pagination', {
       'total': number(pagination.total),
       'current': number(pagination.currentPage),
@@ -294,16 +306,22 @@ class PaginationBar extends StatelessWidget {
 
     final previous = _PageButton(
       label: context.tr('common.previous'),
-      onPressed: pagination.currentPage > 1 ? () => pagination.onPage(pagination.currentPage - 1) : null,
+      onPressed: pagination.currentPage > 1
+          ? () => pagination.onPage(pagination.currentPage - 1)
+          : null,
     );
     final next = _PageButton(
       label: context.tr('common.next'),
-      onPressed: pagination.currentPage < pagination.lastPage ? () => pagination.onPage(pagination.currentPage + 1) : null,
+      onPressed: pagination.currentPage < pagination.lastPage
+          ? () => pagination.onPage(pagination.currentPage + 1)
+          : null,
     );
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: embedded ? const Border(top: BorderSide(color: AppColors.border)) : null,
+        border: embedded
+            ? const Border(top: BorderSide(color: AppColors.border))
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -311,7 +329,11 @@ class PaginationBar extends StatelessWidget {
           builder: (context, constraints) {
             final summaryText = Text(
               summary,
-              style: const TextStyle(fontSize: 13, color: AppColors.muted, height: 1.4),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.muted,
+                height: 1.4,
+              ),
             );
             if (constraints.maxWidth < 640) {
               return Column(
@@ -367,4 +389,63 @@ class _PageButton extends StatelessWidget {
       child: Text(label),
     );
   }
+}
+
+/// Vertical wheel and trackpad movement belong to the page. The table keeps
+/// horizontal movement, including shift plus wheel.
+class _ForwardVerticalScroll extends StatelessWidget {
+  const _ForwardVerticalScroll({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerSignal: (event) {
+        if (event is! PointerScrollEvent || event.scrollDelta.dy == 0) {
+          return;
+        }
+        if (event.scrollDelta.dx.abs() > event.scrollDelta.dy.abs()) {
+          return;
+        }
+        final pressed = HardwareKeyboard.instance.logicalKeysPressed;
+        if (pressed.contains(LogicalKeyboardKey.shift) ||
+            pressed.contains(LogicalKeyboardKey.shiftLeft) ||
+            pressed.contains(LogicalKeyboardKey.shiftRight)) {
+          return;
+        }
+        final scrollable = _verticalScrollable(context);
+        if (scrollable == null || !scrollable.position.hasContentDimensions) {
+          return;
+        }
+        GestureBinding.instance.pointerSignalResolver.register(event, (event) {
+          final scroll = event as PointerScrollEvent;
+          final position = scrollable.position;
+          var delta = scroll.scrollDelta.dy;
+          if (scrollable.axisDirection == AxisDirection.up) {
+            delta = -delta;
+          }
+          position.pointerScroll(delta);
+          scroll.respond(allowPlatformDefault: false);
+        });
+      },
+      child: child,
+    );
+  }
+}
+
+ScrollableState? _verticalScrollable(BuildContext context) {
+  ScrollableState? found;
+  context.visitAncestorElements((element) {
+    if (element is StatefulElement && element.state is ScrollableState) {
+      final state = element.state as ScrollableState;
+      if (state.widget.axis == Axis.vertical) {
+        found = state;
+        return false;
+      }
+    }
+    return true;
+  });
+  return found;
 }

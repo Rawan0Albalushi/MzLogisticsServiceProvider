@@ -46,7 +46,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final locale = ref.watch(localeControllerProvider);
     final locked = !session.canOperate;
     return AppPage(
-      child: ListView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(title: context.tr('profile.title')),
           if (locked) ...[

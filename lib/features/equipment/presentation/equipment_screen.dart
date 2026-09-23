@@ -51,6 +51,8 @@ class EquipmentScreen extends ConsumerWidget {
     }
     return AppPage(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(
             title: context.tr('equipment.title'),
@@ -122,61 +124,54 @@ class EquipmentScreen extends ConsumerWidget {
               ),
             ],
           ),
-          Expanded(
-            child: AsyncBody(
-              value: ref.watch(equipmentListProvider),
-              onRetry: () => ref.invalidate(equipmentListProvider),
-              isEmpty: (data) => data.isEmpty,
-              empty: EmptyState(message: context.tr('equipment.empty')),
-              builder: (data) {
-                return ListView(
-                  children: [
-                    ResponsiveDataView<EquipmentItem>(
-                      items: data.items,
-                      onRowTap:
-                          session.permissions.can(AppPermissions.fleetManage)
-                          ? (item) => _openForm(context, ref, item)
-                          : null,
-                      columns: [
-                        DataColumnSpec(context.tr('equipment.name')),
-                        DataColumnSpec(context.tr('common.type')),
-                        DataColumnSpec(context.tr('equipment.quantity')),
-                        DataColumnSpec(context.tr('equipment.assignment')),
-                        DataColumnSpec(context.tr('common.status')),
-                      ],
-                      rowCells: (item) => [
-                        Text(item.name ?? ''),
-                        Text(item.type ?? '—'),
-                        Text('${item.quantity ?? 0}'),
-                        Text(_assignmentLabel(context, item)),
-                        StatusBadge(status: item.status),
-                      ],
-                      cardBuilder: (item) => EntityCard(
-                        title: item.name ?? '',
-                        icon: Icons.handyman_outlined,
-                        tone: IconTone.info,
-                        trailing: StatusBadge(status: item.status),
-                        subtitle: item.type,
-                        meta: [
-                          '${item.quantity ?? 0}',
-                          _assignmentLabel(context, item),
-                        ],
-                        onTap:
-                            session.permissions.can(AppPermissions.fleetManage)
-                            ? () => _openForm(context, ref, item)
-                            : null,
-                      ),
-                      pagination: TablePagination(
-                        currentPage: data.currentPage,
-                        lastPage: data.lastPage,
-                        total: data.total,
-                        onPage: (page) => ref.read(equipmentPageProvider.notifier).state = page,
-                      ),
-                    ),
+          AsyncBody(
+            value: ref.watch(equipmentListProvider),
+            onRetry: () => ref.invalidate(equipmentListProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(message: context.tr('equipment.empty')),
+            builder: (data) {
+              return ResponsiveDataView<EquipmentItem>(
+                items: data.items,
+                onRowTap: session.permissions.can(AppPermissions.fleetManage)
+                    ? (item) => _openForm(context, ref, item)
+                    : null,
+                columns: [
+                  DataColumnSpec(context.tr('equipment.name')),
+                  DataColumnSpec(context.tr('common.type')),
+                  DataColumnSpec(context.tr('equipment.quantity')),
+                  DataColumnSpec(context.tr('equipment.assignment')),
+                  DataColumnSpec(context.tr('common.status')),
+                ],
+                rowCells: (item) => [
+                  Text(item.name ?? ''),
+                  Text(item.type ?? '—'),
+                  Text('${item.quantity ?? 0}'),
+                  Text(_assignmentLabel(context, item)),
+                  StatusBadge(status: item.status),
+                ],
+                cardBuilder: (item) => EntityCard(
+                  title: item.name ?? '',
+                  icon: Icons.handyman_outlined,
+                  tone: IconTone.info,
+                  trailing: StatusBadge(status: item.status),
+                  subtitle: item.type,
+                  meta: [
+                    '${item.quantity ?? 0}',
+                    _assignmentLabel(context, item),
                   ],
-                );
-              },
-            ),
+                  onTap: session.permissions.can(AppPermissions.fleetManage)
+                      ? () => _openForm(context, ref, item)
+                      : null,
+                ),
+                pagination: TablePagination(
+                  currentPage: data.currentPage,
+                  lastPage: data.lastPage,
+                  total: data.total,
+                  onPage: (page) =>
+                      ref.read(equipmentPageProvider.notifier).state = page,
+                ),
+              );
+            },
           ),
         ],
       ),

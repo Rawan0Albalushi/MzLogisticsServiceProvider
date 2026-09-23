@@ -112,7 +112,9 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               .where((permission) => data.permissions.contains(permission) || AppPermissions.catalogKeys.contains(permission))
               .toList();
 
-          return ListView(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PageHeader(
                 title: context.tr('users.title'),

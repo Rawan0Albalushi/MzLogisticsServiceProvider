@@ -25,7 +25,9 @@ final quotationDateToProvider = StateProvider<String?>((ref) => null);
 final quotationPageProvider = StateProvider<int>((ref) => 1);
 
 final quotationsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(quotationRepositoryProvider).list(
+  return ref
+      .watch(quotationRepositoryProvider)
+      .list(
         page: ref.watch(quotationPageProvider),
         status: ref.watch(quotationStatusProvider),
         search: ref.watch(quotationSearchProvider),
@@ -46,6 +48,8 @@ class QuotationsScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     return AppPage(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(
             title: context.tr('quotations.title'),
@@ -62,7 +66,13 @@ class QuotationsScreen extends ConsumerWidget {
                 },
               ),
               FilterSelect(
-                options: const ['submitted', 'withdrawn', 'accepted', 'rejected', 'expired'],
+                options: const [
+                  'submitted',
+                  'withdrawn',
+                  'accepted',
+                  'rejected',
+                  'expired',
+                ],
                 value: ref.watch(quotationStatusProvider),
                 onChanged: (value) {
                   ref.read(quotationStatusProvider.notifier).state = value;
@@ -81,65 +91,75 @@ class QuotationsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          Expanded(
-            child: AsyncBody(
-              value: ref.watch(quotationsProvider),
-              onRetry: () => ref.invalidate(quotationsProvider),
-              isEmpty: (data) => data.isEmpty,
-              empty: EmptyState(message: context.tr('quotations.empty')),
-              builder: (data) {
-                return ListView(
-                  children: [
-                    ResponsiveDataView<Quotation>(
-                      items: data.items,
-                      columns: [
-                        DataColumnSpec(context.tr('common.reference')),
-                        DataColumnSpec(context.tr('nav.shipments')),
-                        DataColumnSpec(context.tr('quotations.totalPrice')),
-                        DataColumnSpec(context.tr('quotations.truckType')),
-                        DataColumnSpec(context.tr('quotations.truckCount')),
-                        DataColumnSpec(context.tr('quotations.tripCount')),
-                        DataColumnSpec(context.tr('quotations.validUntil')),
-                        DataColumnSpec(context.tr('common.status')),
-                        DataColumnSpec(context.tr('common.actions')),
-                      ],
-                      onRowTap: (item) => context.go('/quotations/${item.id}'),
-                      rowCells: (item) => [
-                        Text(item.reference ?? ''),
-                        Text(item.shipment?.reference ?? ''),
-                        Text(Formatters.money(item.totalPrice, currency: item.currency, locale: locale)),
-                        Text(context.l10n.truckType(item.truckType, label: item.truckTypeLabel)),
-                        Text('${item.truckCount ?? 0}'),
-                        Text('${item.tripCount ?? 0}'),
-                        Text(Formatters.date(item.validUntil, locale: locale)),
-                        StatusBadge(status: item.status),
-                        _WithdrawButton(quotation: item),
-                      ],
-                      cardBuilder: (item) => EntityCard(
-                        title: item.reference ?? '',
-                        icon: Icons.request_quote_outlined,
-                        tone: IconTone.info,
-                        trailing: StatusBadge(status: item.status),
-                        subtitle: item.shipment?.reference ?? '',
-                        meta: [
-                          Formatters.money(item.totalPrice, currency: item.currency, locale: locale),
-                          '${item.truckCount ?? 0} ${context.tr('common.trucks')} · ${item.tripCount ?? 0} ${context.tr('common.trips')}',
-                          Formatters.date(item.validUntil, locale: locale),
-                        ],
-                        footer: _WithdrawButton(quotation: item),
-                        onTap: () => context.go('/quotations/${item.id}'),
-                      ),
-                      pagination: TablePagination(
-                        currentPage: data.currentPage,
-                        lastPage: data.lastPage,
-                        total: data.total,
-                        onPage: (page) => ref.read(quotationPageProvider.notifier).state = page,
-                      ),
+          AsyncBody(
+            value: ref.watch(quotationsProvider),
+            onRetry: () => ref.invalidate(quotationsProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(message: context.tr('quotations.empty')),
+            builder: (data) {
+              return ResponsiveDataView<Quotation>(
+                items: data.items,
+                columns: [
+                  DataColumnSpec(context.tr('common.reference')),
+                  DataColumnSpec(context.tr('nav.shipments')),
+                  DataColumnSpec(context.tr('quotations.totalPrice')),
+                  DataColumnSpec(context.tr('quotations.truckType')),
+                  DataColumnSpec(context.tr('quotations.truckCount')),
+                  DataColumnSpec(context.tr('quotations.tripCount')),
+                  DataColumnSpec(context.tr('quotations.validUntil')),
+                  DataColumnSpec(context.tr('common.status')),
+                  DataColumnSpec(context.tr('common.actions')),
+                ],
+                onRowTap: (item) => context.go('/quotations/${item.id}'),
+                rowCells: (item) => [
+                  Text(item.reference ?? ''),
+                  Text(item.shipment?.reference ?? ''),
+                  Text(
+                    Formatters.money(
+                      item.totalPrice,
+                      currency: item.currency,
+                      locale: locale,
                     ),
+                  ),
+                  Text(
+                    context.l10n.truckType(
+                      item.truckType,
+                      label: item.truckTypeLabel,
+                    ),
+                  ),
+                  Text('${item.truckCount ?? 0}'),
+                  Text('${item.tripCount ?? 0}'),
+                  Text(Formatters.date(item.validUntil, locale: locale)),
+                  StatusBadge(status: item.status),
+                  _WithdrawButton(quotation: item),
+                ],
+                cardBuilder: (item) => EntityCard(
+                  title: item.reference ?? '',
+                  icon: Icons.request_quote_outlined,
+                  tone: IconTone.info,
+                  trailing: StatusBadge(status: item.status),
+                  subtitle: item.shipment?.reference ?? '',
+                  meta: [
+                    Formatters.money(
+                      item.totalPrice,
+                      currency: item.currency,
+                      locale: locale,
+                    ),
+                    '${item.truckCount ?? 0} ${context.tr('common.trucks')} · ${item.tripCount ?? 0} ${context.tr('common.trips')}',
+                    Formatters.date(item.validUntil, locale: locale),
                   ],
-                );
-              },
-            ),
+                  footer: _WithdrawButton(quotation: item),
+                  onTap: () => context.go('/quotations/${item.id}'),
+                ),
+                pagination: TablePagination(
+                  currentPage: data.currentPage,
+                  lastPage: data.lastPage,
+                  total: data.total,
+                  onPage: (page) =>
+                      ref.read(quotationPageProvider.notifier).state = page,
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -154,13 +174,19 @@ class _WithdrawButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final can = ref.watch(sessionProvider).permissions.can(AppPermissions.quotationsManage);
+    final can = ref
+        .watch(sessionProvider)
+        .permissions
+        .can(AppPermissions.quotationsManage);
     if (!can || !quotation.canWithdraw) {
       return const SizedBox.shrink();
     }
     return TextButton(
       onPressed: () async {
-        final ok = await showConfirmDialog(context, message: context.tr('quotations.withdrawConfirm'));
+        final ok = await showConfirmDialog(
+          context,
+          message: context.tr('quotations.withdrawConfirm'),
+        );
         if (!ok) {
           return;
         }

@@ -7,9 +7,13 @@ import 'package:mz_logistics_service_provider_app/shared/widgets/responsive_data
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('wide tables keep pagination in the admin summary', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(1100, 800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('wide tables keep pagination in the admin summary', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1100, 800);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(_app(const Locale('en'), 1100));
     await tester.pumpAndSettle();
 
@@ -17,13 +21,22 @@ void main() {
     expect(find.text('Showing 24 results · Page 1 of 3'), findsOneWidget);
     expect(find.text('Previous'), findsOneWidget);
     expect(find.text('Next'), findsOneWidget);
-    expect(tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Previous')).onPressed, isNull);
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.widgetWithText(OutlinedButton, 'Previous'),
+          )
+          .onPressed,
+      isNull,
+    );
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('narrow lists keep the same pagination controls', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(400, 800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(400, 800);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(_app(const Locale('ar'), 400));
     await tester.pumpAndSettle();
 
@@ -49,7 +62,10 @@ Widget _app(Locale locale, double width) {
         width: width,
         child: ResponsiveDataView<String>(
           items: const ['MZ-1042'],
-          columns: const [DataColumnSpec('Reference'), DataColumnSpec('Status')],
+          columns: const [
+            DataColumnSpec('Reference'),
+            DataColumnSpec('Status'),
+          ],
           rowCells: (item) => [Text(item), const Text('Active')],
           cardBuilder: (item) => ListTile(title: Text(item)),
           pagination: TablePagination(

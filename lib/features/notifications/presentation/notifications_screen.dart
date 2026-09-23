@@ -13,7 +13,9 @@ import '../../../shared/widgets/page_header.dart';
 
 final notificationStatusProvider = StateProvider<String?>((ref) => null);
 final notificationsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(notificationRepositoryProvider).list(status: ref.watch(notificationStatusProvider));
+  return ref
+      .watch(notificationRepositoryProvider)
+      .list(status: ref.watch(notificationStatusProvider));
 });
 
 class NotificationsScreen extends ConsumerWidget {
@@ -24,6 +26,8 @@ class NotificationsScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     return AppPage(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(
             title: context.tr('notifications.title'),
@@ -44,45 +48,56 @@ class NotificationsScreen extends ConsumerWidget {
               FilterSelect(
                 options: const ['unread', 'read'],
                 value: ref.watch(notificationStatusProvider),
-                onChanged: (value) => ref.read(notificationStatusProvider.notifier).state = value,
+                onChanged: (value) =>
+                    ref.read(notificationStatusProvider.notifier).state = value,
                 labelOf: (value) => context.tr('notifications.$value'),
               ),
             ],
           ),
-          Expanded(
-            child: AsyncBody(
-              value: ref.watch(notificationsProvider),
-              onRetry: () => ref.invalidate(notificationsProvider),
-              isEmpty: (data) => data.isEmpty,
-              empty: EmptyState(message: context.tr('notifications.empty'), icon: Icons.notifications_outlined),
-              builder: (data) {
-                return ListView(
-                  children: [
-                    for (final item in data.items)
-                      Card(
-                        child: ListTile(
-                          title: Text(item.title ?? context.tr('notifications.title')),
-                          subtitle: Text(
-                            '${item.body ?? ''}\n${Formatters.dateTime(item.createdAt, locale: locale)}',
-                          ),
-                          isThreeLine: true,
-                          leading: Icon(
-                            item.isUnread ? Icons.notifications_active_rounded : Icons.notifications_outlined,
-                            size: 22,
-                            color: item.isUnread ? AppColors.coral : AppColors.muted,
-                          ),
-                          onTap: item.isUnread
-                              ? () async {
-                                  await ref.read(notificationRepositoryProvider).markRead(item.id);
-                                  ref.invalidate(notificationsProvider);
-                                }
-                              : null,
-                        ),
-                      ),
-                  ],
-                );
-              },
+          AsyncBody(
+            value: ref.watch(notificationsProvider),
+            onRetry: () => ref.invalidate(notificationsProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(
+              message: context.tr('notifications.empty'),
+              icon: Icons.notifications_outlined,
             ),
+            builder: (data) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final item in data.items)
+                    Card(
+                      child: ListTile(
+                        title: Text(
+                          item.title ?? context.tr('notifications.title'),
+                        ),
+                        subtitle: Text(
+                          '${item.body ?? ''}\n${Formatters.dateTime(item.createdAt, locale: locale)}',
+                        ),
+                        isThreeLine: true,
+                        leading: Icon(
+                          item.isUnread
+                              ? Icons.notifications_active_rounded
+                              : Icons.notifications_outlined,
+                          size: 22,
+                          color: item.isUnread
+                              ? AppColors.coral
+                              : AppColors.muted,
+                        ),
+                        onTap: item.isUnread
+                            ? () async {
+                                await ref
+                                    .read(notificationRepositoryProvider)
+                                    .markRead(item.id);
+                                ref.invalidate(notificationsProvider);
+                              }
+                            : null,
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),

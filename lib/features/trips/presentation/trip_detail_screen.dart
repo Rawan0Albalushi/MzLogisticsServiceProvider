@@ -35,7 +35,9 @@ class TripDetailScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(tripDetailProvider(id)),
         builder: (trip) {
           final routeLabel = '${trip.pickupCity ?? ''} → ${trip.deliveryCity ?? ''}';
-          return ListView(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DetailBackLink(label: context.tr('trips.backToList'), path: '/trips'),
               const SizedBox(height: 4),

@@ -371,7 +371,9 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
             shipment.reference,
             shipment.customer?.name,
           ].whereType<String>().where((part) => part.trim().isNotEmpty);
-          return ListView(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PageHeader(
                 title: context.tr('quotations.submitTitle'),

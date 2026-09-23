@@ -80,7 +80,9 @@ class _CompanyScreenState extends ConsumerState<CompanyScreen> {
         builder: (org) {
           _hydrate(org);
           final locked = !session.canOperate;
-          return ListView(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PageHeader(
                 title: context.tr('company.title'),

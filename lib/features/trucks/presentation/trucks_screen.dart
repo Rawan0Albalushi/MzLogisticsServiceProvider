@@ -25,7 +25,9 @@ final truckSearchProvider = StateProvider<String>((ref) => '');
 final truckPageProvider = StateProvider<int>((ref) => 1);
 
 final trucksProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(fleetRepositoryProvider).trucks(
+  return ref
+      .watch(fleetRepositoryProvider)
+      .trucks(
         page: ref.watch(truckPageProvider),
         status: ref.watch(truckStatusProvider),
         search: ref.watch(truckSearchProvider),
@@ -44,6 +46,8 @@ class TrucksScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     return AppPage(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(
             title: context.tr('trucks.title'),
@@ -102,80 +106,84 @@ class TrucksScreen extends ConsumerWidget {
               ),
             ],
           ),
-          Expanded(
-            child: AsyncBody(
-              value: ref.watch(trucksProvider),
-              onRetry: () => ref.invalidate(trucksProvider),
-              isEmpty: (data) => data.isEmpty,
-              empty: EmptyState(message: context.tr('trucks.empty')),
-              builder: (data) {
-                return ListView(
-                  children: [
-                    ResponsiveDataView<Truck>(
-                      items: data.items,
-                      columns: [
-                        DataColumnSpec(context.tr('trucks.plate')),
-                        DataColumnSpec(context.tr('common.type')),
-                        DataColumnSpec(context.tr('trucks.make')),
-                        DataColumnSpec(context.tr('trucks.model')),
-                        DataColumnSpec(context.tr('trucks.year')),
-                        DataColumnSpec(context.tr('common.capacity')),
-                        DataColumnSpec(context.tr('trucks.volume')),
-                        DataColumnSpec(context.tr('trucks.assignedDriver')),
-                        DataColumnSpec(context.tr('trucks.insurance')),
-                        DataColumnSpec(context.tr('common.status')),
-                        DataColumnSpec(context.tr('common.actions')),
-                      ],
-                      rowCells: (item) => [
-                        Text(item.plateNumber ?? ''),
-                        Text(context.l10n.truckType(item.type, label: item.typeLabel)),
-                        Text(item.make ?? '—'),
-                        Text(item.model ?? '—'),
-                        Text(item.year?.toString() ?? '—'),
-                        Text('${Formatters.number(item.capacityTons, locale: locale)} ${context.tr('common.tons')}'),
-                        Text(
-                          item.volumeCbm == null
-                              ? '—'
-                              : '${Formatters.number(item.volumeCbm, locale: locale)} ${context.tr('common.cbm')}',
-                        ),
-                        Text(item.assignedDriver?.name ?? '—'),
-                        Text(Formatters.date(item.insuranceExpiresAt, locale: locale)),
-                        StatusBadge(status: item.status),
-                        session.permissions.can(AppPermissions.fleetManage)
-                            ? TextButton(
-                                onPressed: () => context.go('/trucks/${item.id}/edit'),
-                                child: Text(context.tr('common.edit')),
-                              )
-                            : const SizedBox.shrink(),
-                      ],
-                      cardBuilder: (item) => EntityCard(
-                        title: item.plateNumber ?? '',
-                        icon: Icons.fire_truck_outlined,
-                        tone: IconTone.teal,
-                        trailing: StatusBadge(status: item.status),
-                        meta: [
-                          context.l10n.truckType(item.type, label: item.typeLabel),
-                          [item.make, item.model].where((value) => value != null && value.isNotEmpty).join(' '),
-                          '${Formatters.number(item.capacityTons, locale: locale)} ${context.tr('common.tons')}',
-                          if (item.volumeCbm != null)
-                            '${Formatters.number(item.volumeCbm, locale: locale)} ${context.tr('common.cbm')}',
-                          item.assignedDriver?.name ?? '',
-                        ],
-                        onTap: session.permissions.can(AppPermissions.fleetManage)
-                            ? () => context.go('/trucks/${item.id}/edit')
-                            : null,
-                      ),
-                      pagination: TablePagination(
-                        currentPage: data.currentPage,
-                        lastPage: data.lastPage,
-                        total: data.total,
-                        onPage: (page) => ref.read(truckPageProvider.notifier).state = page,
-                      ),
-                    ),
+          AsyncBody(
+            value: ref.watch(trucksProvider),
+            onRetry: () => ref.invalidate(trucksProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(message: context.tr('trucks.empty')),
+            builder: (data) {
+              return ResponsiveDataView<Truck>(
+                items: data.items,
+                columns: [
+                  DataColumnSpec(context.tr('trucks.plate')),
+                  DataColumnSpec(context.tr('common.type')),
+                  DataColumnSpec(context.tr('trucks.make')),
+                  DataColumnSpec(context.tr('trucks.model')),
+                  DataColumnSpec(context.tr('trucks.year')),
+                  DataColumnSpec(context.tr('common.capacity')),
+                  DataColumnSpec(context.tr('trucks.volume')),
+                  DataColumnSpec(context.tr('trucks.assignedDriver')),
+                  DataColumnSpec(context.tr('trucks.insurance')),
+                  DataColumnSpec(context.tr('common.status')),
+                  DataColumnSpec(context.tr('common.actions')),
+                ],
+                rowCells: (item) => [
+                  Text(item.plateNumber ?? ''),
+                  Text(
+                    context.l10n.truckType(item.type, label: item.typeLabel),
+                  ),
+                  Text(item.make ?? '—'),
+                  Text(item.model ?? '—'),
+                  Text(item.year?.toString() ?? '—'),
+                  Text(
+                    '${Formatters.number(item.capacityTons, locale: locale)} ${context.tr('common.tons')}',
+                  ),
+                  Text(
+                    item.volumeCbm == null
+                        ? '—'
+                        : '${Formatters.number(item.volumeCbm, locale: locale)} ${context.tr('common.cbm')}',
+                  ),
+                  Text(item.assignedDriver?.name ?? '—'),
+                  Text(
+                    Formatters.date(item.insuranceExpiresAt, locale: locale),
+                  ),
+                  StatusBadge(status: item.status),
+                  session.permissions.can(AppPermissions.fleetManage)
+                      ? TextButton(
+                          onPressed: () =>
+                              context.go('/trucks/${item.id}/edit'),
+                          child: Text(context.tr('common.edit')),
+                        )
+                      : const SizedBox.shrink(),
+                ],
+                cardBuilder: (item) => EntityCard(
+                  title: item.plateNumber ?? '',
+                  icon: Icons.fire_truck_outlined,
+                  tone: IconTone.teal,
+                  trailing: StatusBadge(status: item.status),
+                  meta: [
+                    context.l10n.truckType(item.type, label: item.typeLabel),
+                    [item.make, item.model]
+                        .where((value) => value != null && value.isNotEmpty)
+                        .join(' '),
+                    '${Formatters.number(item.capacityTons, locale: locale)} ${context.tr('common.tons')}',
+                    if (item.volumeCbm != null)
+                      '${Formatters.number(item.volumeCbm, locale: locale)} ${context.tr('common.cbm')}',
+                    item.assignedDriver?.name ?? '',
                   ],
-                );
-              },
-            ),
+                  onTap: session.permissions.can(AppPermissions.fleetManage)
+                      ? () => context.go('/trucks/${item.id}/edit')
+                      : null,
+                ),
+                pagination: TablePagination(
+                  currentPage: data.currentPage,
+                  lastPage: data.lastPage,
+                  total: data.total,
+                  onPage: (page) =>
+                      ref.read(truckPageProvider.notifier).state = page,
+                ),
+              );
+            },
           ),
         ],
       ),

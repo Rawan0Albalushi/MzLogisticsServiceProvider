@@ -48,7 +48,9 @@ class ShipmentDetailScreen extends ConsumerWidget {
             if (cargoType != null && cargoType.isNotEmpty) cargoType,
           ];
 
-          return ListView(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DetailBackLink(label: context.tr('shipments.backToList'), path: '/shipments'),
               const SizedBox(height: 4),

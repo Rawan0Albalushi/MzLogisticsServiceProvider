@@ -185,7 +185,9 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
   Widget _form(BuildContext context, Truck? truck) {
     return Form(
       key: _formKey,
-      child: ListView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(
             title: widget.truckId == null

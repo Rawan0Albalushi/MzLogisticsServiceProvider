@@ -35,7 +35,9 @@ class JobDetailScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(jobDetailProvider(id)),
         builder: (job) {
           final progress = ((job.progressPercent ?? 0) / 100).clamp(0.0, 1.0);
-          return ListView(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DetailBackLink(label: context.tr('jobs.backToList'), path: '/jobs'),
               const SizedBox(height: 4),

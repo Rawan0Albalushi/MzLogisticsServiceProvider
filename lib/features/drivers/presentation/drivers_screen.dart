@@ -29,7 +29,9 @@ final driverPageProvider = StateProvider<int>((ref) => 1);
 final driverSearchProvider = StateProvider<String>((ref) => '');
 final driverStatusProvider = StateProvider<String?>((ref) => null);
 final driversListProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(fleetRepositoryProvider).drivers(
+  return ref
+      .watch(fleetRepositoryProvider)
+      .drivers(
         page: ref.watch(driverPageProvider),
         search: ref.watch(driverSearchProvider),
         status: ref.watch(driverStatusProvider),
@@ -49,6 +51,8 @@ class DriversScreen extends ConsumerWidget {
     final canManage = session.permissions.can(AppPermissions.driversManage);
     return AppPage(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(
             title: context.tr('drivers.title'),
@@ -89,68 +93,68 @@ class DriversScreen extends ConsumerWidget {
               ),
             ],
           ),
-          Expanded(
-            child: AsyncBody(
-              value: ref.watch(driversListProvider),
-              onRetry: () => ref.invalidate(driversListProvider),
-              isEmpty: (data) => data.isEmpty,
-              empty: EmptyState(message: context.tr('drivers.empty')),
-              builder: (data) {
-                return ListView(
-                  children: [
-                    ResponsiveDataView<AppUser>(
-                      items: data.items,
-                      columns: [
-                        DataColumnSpec(context.tr('auth.name')),
-                        DataColumnSpec(context.tr('auth.phone')),
-                        DataColumnSpec(context.tr('auth.email')),
-                        DataColumnSpec(context.tr('drivers.license')),
-                        DataColumnSpec(context.tr('drivers.licenseExpiry')),
-                        DataColumnSpec(context.tr('drivers.lastLogin')),
-                        DataColumnSpec(context.tr('common.status')),
-                        if (canManage) DataColumnSpec(context.tr('common.actions')),
-                      ],
-                      rowCells: (item) => [
-                        Text(item.name ?? ''),
-                        Text(item.phone ?? '—'),
-                        Text(item.email ?? '—'),
-                        Text(item.driverProfile?.licenseNumber ?? '—'),
-                        Text(Formatters.date(item.driverProfile?.licenseExpiresAt, locale: locale)),
-                        Text(Formatters.dateTime(item.lastLoginAt, locale: locale)),
-                        StatusBadge(status: item.displayStatus),
-                        if (canManage) _DriverActions(driver: item),
-                      ],
-                      cardBuilder: (item) => EntityCard(
-                        title: item.name ?? '',
-                        icon: Icons.badge_outlined,
-                        tone: IconTone.success,
-                        trailing: StatusBadge(status: item.displayStatus),
-                        meta: [
-                          item.phone ?? '',
-                          item.email ?? '',
-                          item.driverProfile?.licenseNumber ?? '',
-                        ],
-                        footer: canManage && item.mustSetPassword
-                            ? Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: TextButton(
-                                  onPressed: () => _resendInvite(context, ref, item),
-                                  child: Text(context.tr('drivers.resendInvite')),
-                                ),
-                              )
-                            : null,
-                      ),
-                      pagination: TablePagination(
-                        currentPage: data.currentPage,
-                        lastPage: data.lastPage,
-                        total: data.total,
-                        onPage: (page) => ref.read(driverPageProvider.notifier).state = page,
-                      ),
+          AsyncBody(
+            value: ref.watch(driversListProvider),
+            onRetry: () => ref.invalidate(driversListProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(message: context.tr('drivers.empty')),
+            builder: (data) {
+              return ResponsiveDataView<AppUser>(
+                items: data.items,
+                columns: [
+                  DataColumnSpec(context.tr('auth.name')),
+                  DataColumnSpec(context.tr('auth.phone')),
+                  DataColumnSpec(context.tr('auth.email')),
+                  DataColumnSpec(context.tr('drivers.license')),
+                  DataColumnSpec(context.tr('drivers.licenseExpiry')),
+                  DataColumnSpec(context.tr('drivers.lastLogin')),
+                  DataColumnSpec(context.tr('common.status')),
+                  if (canManage) DataColumnSpec(context.tr('common.actions')),
+                ],
+                rowCells: (item) => [
+                  Text(item.name ?? ''),
+                  Text(item.phone ?? '—'),
+                  Text(item.email ?? '—'),
+                  Text(item.driverProfile?.licenseNumber ?? '—'),
+                  Text(
+                    Formatters.date(
+                      item.driverProfile?.licenseExpiresAt,
+                      locale: locale,
                     ),
+                  ),
+                  Text(Formatters.dateTime(item.lastLoginAt, locale: locale)),
+                  StatusBadge(status: item.displayStatus),
+                  if (canManage) _DriverActions(driver: item),
+                ],
+                cardBuilder: (item) => EntityCard(
+                  title: item.name ?? '',
+                  icon: Icons.badge_outlined,
+                  tone: IconTone.success,
+                  trailing: StatusBadge(status: item.displayStatus),
+                  meta: [
+                    item.phone ?? '',
+                    item.email ?? '',
+                    item.driverProfile?.licenseNumber ?? '',
                   ],
-                );
-              },
-            ),
+                  footer: canManage && item.mustSetPassword
+                      ? Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: TextButton(
+                            onPressed: () => _resendInvite(context, ref, item),
+                            child: Text(context.tr('drivers.resendInvite')),
+                          ),
+                        )
+                      : null,
+                ),
+                pagination: TablePagination(
+                  currentPage: data.currentPage,
+                  lastPage: data.lastPage,
+                  total: data.total,
+                  onPage: (page) =>
+                      ref.read(driverPageProvider.notifier).state = page,
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -180,14 +184,20 @@ class DriversScreen extends ConsumerWidget {
                       label: context.tr('auth.name'),
                       controller: name,
                       required: true,
-                      validator: (value) => AppValidators.required(value, context.tr('validation.required')),
+                      validator: (value) => AppValidators.required(
+                        value,
+                        context.tr('validation.required'),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     AppTextField(
                       label: context.tr('auth.phone'),
                       controller: phone,
                       required: true,
-                      validator: (value) => AppValidators.required(value, context.tr('validation.required')),
+                      validator: (value) => AppValidators.required(
+                        value,
+                        context.tr('validation.required'),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     AppTextField(
@@ -197,33 +207,51 @@ class DriversScreen extends ConsumerWidget {
                         if (value == null || value.trim().isEmpty) {
                           return null;
                         }
-                        return AppValidators.email(value, context.tr('validation.email'));
+                        return AppValidators.email(
+                          value,
+                          context.tr('validation.email'),
+                        );
                       },
                     ),
                     const SizedBox(height: 12),
-                    AppTextField(label: context.tr('drivers.license'), controller: license),
+                    AppTextField(
+                      label: context.tr('drivers.license'),
+                      controller: license,
+                    ),
                     const SizedBox(height: 12),
-                    AppTextField(label: context.tr('drivers.licenseExpiry'), controller: expiry, hint: 'YYYY-MM-DD'),
+                    AppTextField(
+                      label: context.tr('drivers.licenseExpiry'),
+                      controller: expiry,
+                      hint: 'YYYY-MM-DD',
+                    ),
                   ],
                 ),
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(context.tr('common.cancel'))),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(context.tr('common.cancel')),
+            ),
             FilledButton(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) {
                   return;
                 }
                 try {
-                  final result = await ref.read(fleetRepositoryProvider).createDriver({
-                    'name': name.text.trim(),
-                    'phone': phone.text.trim(),
-                    if (email.text.trim().isNotEmpty) 'email': email.text.trim(),
-                    if (license.text.isNotEmpty) 'license_number': license.text.trim(),
-                    if (expiry.text.isNotEmpty) 'license_expires_at': expiry.text.trim(),
-                  });
+                  final result = await ref
+                      .read(fleetRepositoryProvider)
+                      .createDriver({
+                        'name': name.text.trim(),
+                        'phone': phone.text.trim(),
+                        if (email.text.trim().isNotEmpty)
+                          'email': email.text.trim(),
+                        if (license.text.isNotEmpty)
+                          'license_number': license.text.trim(),
+                        if (expiry.text.isNotEmpty)
+                          'license_expires_at': expiry.text.trim(),
+                      });
                   ref.invalidate(driversListProvider);
                   ref.invalidate(fleetDriversProvider);
                   if (context.mounted) {
@@ -234,7 +262,9 @@ class DriversScreen extends ConsumerWidget {
                   if (context.mounted) {
                     showAppSnack(
                       context,
-                      error.firstFieldError('phone') ?? error.firstFieldError('email') ?? error.message,
+                      error.firstFieldError('phone') ??
+                          error.firstFieldError('email') ??
+                          error.message,
                     );
                   }
                 }
@@ -270,9 +300,15 @@ class _DriverActions extends ConsumerWidget {
   }
 }
 
-Future<void> _resendInvite(BuildContext context, WidgetRef ref, AppUser driver) async {
+Future<void> _resendInvite(
+  BuildContext context,
+  WidgetRef ref,
+  AppUser driver,
+) async {
   try {
-    final result = await ref.read(fleetRepositoryProvider).resendDriverInvite(driver.id);
+    final result = await ref
+        .read(fleetRepositoryProvider)
+        .resendDriverInvite(driver.id);
     ref.invalidate(driversListProvider);
     if (context.mounted) {
       await _showInviteResult(context, result, resent: true);
@@ -297,7 +333,11 @@ Future<void> _showInviteResult(
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: Text(resent ? context.tr('drivers.inviteResent') : context.tr('drivers.saved')),
+        title: Text(
+          resent
+              ? context.tr('drivers.inviteResent')
+              : context.tr('drivers.saved'),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

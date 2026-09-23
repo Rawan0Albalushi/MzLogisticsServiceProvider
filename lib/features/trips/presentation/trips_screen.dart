@@ -25,7 +25,9 @@ final tripDateToProvider = StateProvider<String?>((ref) => null);
 final tripPageProvider = StateProvider<int>((ref) => 1);
 
 final tripsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(tripRepositoryProvider).list(
+  return ref
+      .watch(tripRepositoryProvider)
+      .list(
         page: ref.watch(tripPageProvider),
         status: ref.watch(tripStatusProvider),
         search: ref.watch(tripSearchProvider),
@@ -36,7 +38,9 @@ final tripsProvider = FutureProvider.autoDispose((ref) {
 });
 
 final unassignedTripsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(tripRepositoryProvider).list(status: 'unassigned', page: 1, perPage: 50);
+  return ref
+      .watch(tripRepositoryProvider)
+      .list(status: 'unassigned', page: 1, perPage: 50);
 });
 
 final tripDetailProvider = FutureProvider.autoDispose.family((ref, int id) {
@@ -54,8 +58,13 @@ class TripsScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     return AppPage(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PageHeader(title: context.tr('trips.title'), subtitle: context.tr('trips.subtitle')),
+          PageHeader(
+            title: context.tr('trips.title'),
+            subtitle: context.tr('trips.subtitle'),
+          ),
           const SizedBox(height: 12),
           FilterBar(
             children: [
@@ -93,65 +102,73 @@ class TripsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          Expanded(
-            child: AsyncBody(
-              value: ref.watch(tripsProvider),
-              onRetry: () => ref.invalidate(tripsProvider),
-              isEmpty: (data) => data.isEmpty,
-              empty: EmptyState(message: context.tr('trips.empty'), icon: Icons.route_outlined),
-              builder: (data) {
-                return ListView(
-                  children: [
-                    ResponsiveDataView<Trip>(
-                      items: data.items,
-                      columns: [
-                        DataColumnSpec(context.tr('common.reference')),
-                        DataColumnSpec(context.tr('common.job')),
-                        DataColumnSpec(context.tr('trips.sequence')),
-                        DataColumnSpec(context.tr('shipments.route')),
-                        DataColumnSpec(context.tr('common.truck')),
-                        DataColumnSpec(context.tr('common.driver')),
-                        DataColumnSpec(context.tr('trips.planned')),
-                        DataColumnSpec(context.tr('jobs.delivered')),
-                        DataColumnSpec(context.tr('trips.eta')),
-                        DataColumnSpec(context.tr('common.status')),
-                      ],
-                      onRowTap: (item) => context.go('/trips/${item.id}'),
-                      rowCells: (item) => [
-                        Text(item.reference ?? ''),
-                        Text(item.job?.reference ?? ''),
-                        Text('${item.sequence ?? ''}'),
-                        Text('${item.pickupCity ?? '—'} → ${item.deliveryCity ?? '—'}'),
-                        Text(item.truck?.plateNumber ?? '—'),
-                        Text(item.driver?.name ?? '—'),
-                        Text(Formatters.number(item.plannedQuantity, locale: locale)),
-                        Text(Formatters.number(item.deliveredQuantity, locale: locale)),
-                        Text(Formatters.dateTime(item.etaAt, locale: locale)),
-                        StatusBadge(status: item.status),
-                      ],
-                      cardBuilder: (item) => EntityCard(
-                        title: item.reference ?? '',
-                        icon: Icons.route_outlined,
-                        tone: IconTone.success,
-                        trailing: StatusBadge(status: item.status),
-                        subtitle: item.job?.reference,
-                        meta: [
-                          '${item.pickupCity ?? ''} → ${item.deliveryCity ?? ''}',
-                          [item.truck?.plateNumber, item.driver?.name].where((value) => value != null && value.toString().trim().isNotEmpty).join(' · '),
-                        ],
-                        onTap: () => context.go('/trips/${item.id}'),
-                      ),
-                      pagination: TablePagination(
-                        currentPage: data.currentPage,
-                        lastPage: data.lastPage,
-                        total: data.total,
-                        onPage: (page) => ref.read(tripPageProvider.notifier).state = page,
-                      ),
-                    ),
-                  ],
-                );
-              },
+          AsyncBody(
+            value: ref.watch(tripsProvider),
+            onRetry: () => ref.invalidate(tripsProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(
+              message: context.tr('trips.empty'),
+              icon: Icons.route_outlined,
             ),
+            builder: (data) {
+              return ResponsiveDataView<Trip>(
+                items: data.items,
+                columns: [
+                  DataColumnSpec(context.tr('common.reference')),
+                  DataColumnSpec(context.tr('common.job')),
+                  DataColumnSpec(context.tr('trips.sequence')),
+                  DataColumnSpec(context.tr('shipments.route')),
+                  DataColumnSpec(context.tr('common.truck')),
+                  DataColumnSpec(context.tr('common.driver')),
+                  DataColumnSpec(context.tr('trips.planned')),
+                  DataColumnSpec(context.tr('jobs.delivered')),
+                  DataColumnSpec(context.tr('trips.eta')),
+                  DataColumnSpec(context.tr('common.status')),
+                ],
+                onRowTap: (item) => context.go('/trips/${item.id}'),
+                rowCells: (item) => [
+                  Text(item.reference ?? ''),
+                  Text(item.job?.reference ?? ''),
+                  Text('${item.sequence ?? ''}'),
+                  Text(
+                    '${item.pickupCity ?? '—'} → ${item.deliveryCity ?? '—'}',
+                  ),
+                  Text(item.truck?.plateNumber ?? '—'),
+                  Text(item.driver?.name ?? '—'),
+                  Text(Formatters.number(item.plannedQuantity, locale: locale)),
+                  Text(
+                    Formatters.number(item.deliveredQuantity, locale: locale),
+                  ),
+                  Text(Formatters.dateTime(item.etaAt, locale: locale)),
+                  StatusBadge(status: item.status),
+                ],
+                cardBuilder: (item) => EntityCard(
+                  title: item.reference ?? '',
+                  icon: Icons.route_outlined,
+                  tone: IconTone.success,
+                  trailing: StatusBadge(status: item.status),
+                  subtitle: item.job?.reference,
+                  meta: [
+                    '${item.pickupCity ?? ''} → ${item.deliveryCity ?? ''}',
+                    [item.truck?.plateNumber, item.driver?.name]
+                        .where(
+                          (value) =>
+                              value != null &&
+                              value.toString().trim().isNotEmpty,
+                        )
+                        .join(' · '),
+                  ],
+                  onTap: () => context.go('/trips/${item.id}'),
+                ),
+                pagination: TablePagination(
+                  currentPage: data.currentPage,
+                  lastPage: data.lastPage,
+                  total: data.total,
+                  onPage: (page) =>
+                      ref.read(tripPageProvider.notifier).state = page,
+                ),
+              );
+            },
           ),
         ],
       ),

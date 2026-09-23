@@ -31,10 +31,8 @@ class AsyncBody<T> extends StatelessWidget {
         return builder(data);
       },
       loading: () => const LoadingState(),
-      error: (error, _) => ErrorState(
-        message: _message(context, error),
-        onRetry: onRetry,
-      ),
+      error: (error, _) =>
+          ErrorState(message: _message(context, error), onRetry: onRetry),
     );
   }
 
@@ -59,7 +57,7 @@ class LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return _StateFrame(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -69,7 +67,10 @@ class LoadingState extends StatelessWidget {
             child: CircularProgressIndicator(strokeWidth: 2.4),
           ),
           const SizedBox(height: 12),
-          Text(context.tr('common.loading'), style: const TextStyle(color: AppColors.muted)),
+          Text(
+            context.tr('common.loading'),
+            style: const TextStyle(color: AppColors.muted),
+          ),
         ],
       ),
     );
@@ -77,14 +78,18 @@ class LoadingState extends StatelessWidget {
 }
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.message, this.icon = Icons.inbox_outlined});
+  const EmptyState({
+    super.key,
+    required this.message,
+    this.icon = Icons.inbox_outlined,
+  });
 
   final String message;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return _StateFrame(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -104,7 +109,8 @@ class EmptyState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.muted),
             ),
           ],
         ),
@@ -121,7 +127,7 @@ class ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return _StateFrame(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -132,7 +138,10 @@ class ErrorState extends StatelessWidget {
             Text(message, textAlign: TextAlign.center),
             if (onRetry != null) ...[
               const SizedBox(height: 16),
-              OutlinedButton(onPressed: onRetry, child: Text(context.tr('common.retry'))),
+              OutlinedButton(
+                onPressed: onRetry,
+                child: Text(context.tr('common.retry')),
+              ),
             ],
           ],
         ),
@@ -149,6 +158,26 @@ class NoPermissionState extends StatelessWidget {
     return EmptyState(
       message: context.tr('common.noPermission'),
       icon: Icons.lock_outline,
+    );
+  }
+}
+
+/// Centers when the parent gives a finite height, and sizes to the child
+/// when the parent is a page scroll view.
+class _StateFrame extends StatelessWidget {
+  const _StateFrame({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxHeight.isFinite) {
+          return Center(child: child);
+        }
+        return child;
+      },
     );
   }
 }

@@ -23,7 +23,9 @@ final jobDateToProvider = StateProvider<String?>((ref) => null);
 final jobPageProvider = StateProvider<int>((ref) => 1);
 
 final jobsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(jobRepositoryProvider).list(
+  return ref
+      .watch(jobRepositoryProvider)
+      .list(
         page: ref.watch(jobPageProvider),
         status: ref.watch(jobStatusProvider),
         search: ref.watch(jobSearchProvider),
@@ -47,8 +49,13 @@ class JobsScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     return AppPage(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PageHeader(title: context.tr('jobs.title'), subtitle: context.tr('jobs.subtitle')),
+          PageHeader(
+            title: context.tr('jobs.title'),
+            subtitle: context.tr('jobs.subtitle'),
+          ),
           const SizedBox(height: 12),
           FilterBar(
             children: [
@@ -60,7 +67,12 @@ class JobsScreen extends ConsumerWidget {
                 },
               ),
               FilterSelect(
-                options: const ['pending_dispatch', 'in_progress', 'completed', 'cancelled'],
+                options: const [
+                  'pending_dispatch',
+                  'in_progress',
+                  'completed',
+                  'cancelled',
+                ],
                 value: ref.watch(jobStatusProvider),
                 onChanged: (value) {
                   ref.read(jobStatusProvider.notifier).state = value;
@@ -79,64 +91,74 @@ class JobsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          Expanded(
-            child: AsyncBody(
-              value: ref.watch(jobsProvider),
-              onRetry: () => ref.invalidate(jobsProvider),
-              isEmpty: (data) => data.isEmpty,
-              empty: EmptyState(message: context.tr('jobs.empty'), icon: Icons.work_outline),
-              builder: (data) {
-                return ListView(
-                  children: [
-                    ResponsiveDataView<TransportJob>(
-                      items: data.items,
-                      columns: [
-                        DataColumnSpec(context.tr('common.reference')),
-                        DataColumnSpec(context.tr('common.customer')),
-                        DataColumnSpec(context.tr('nav.shipments')),
-                        DataColumnSpec(context.tr('quotations.totalPrice')),
-                        DataColumnSpec(context.tr('jobs.totalQuantity')),
-                        DataColumnSpec(context.tr('jobs.delivered')),
-                        DataColumnSpec(context.tr('jobs.progress')),
-                        DataColumnSpec(context.tr('nav.trips')),
-                        DataColumnSpec(context.tr('common.status')),
-                      ],
-                      onRowTap: (item) => context.go('/jobs/${item.id}'),
-                      rowCells: (item) => [
-                        Text(item.reference ?? ''),
-                        Text(item.customer?.name ?? ''),
-                        Text(item.shipment?.reference ?? '—'),
-                        Text(Formatters.money(item.totalPrice, currency: item.currency, locale: locale)),
-                        Text(Formatters.number(item.totalQuantity, locale: locale)),
-                        Text(Formatters.number(item.deliveredQuantity, locale: locale)),
-                        Text(Formatters.percent(item.progressPercent)),
-                        Text('${item.trips.length}'),
-                        StatusBadge(status: item.status),
-                      ],
-                      cardBuilder: (item) => EntityCard(
-                        title: item.reference ?? '',
-                        icon: Icons.work_outline_rounded,
-                        tone: IconTone.warning,
-                        trailing: StatusBadge(status: item.status),
-                        subtitle: item.customer?.name,
-                        meta: [
-                          item.shipment?.reference ?? '',
-                          Formatters.money(item.totalPrice, currency: item.currency, locale: locale),
-                          '${item.trips.length} ${context.tr('common.trips')} · ${Formatters.percent(item.progressPercent)}',
-                        ],
-                        onTap: () => context.go('/jobs/${item.id}'),
-                      ),
-                      pagination: TablePagination(
-                        currentPage: data.currentPage,
-                        lastPage: data.lastPage,
-                        total: data.total,
-                        onPage: (page) => ref.read(jobPageProvider.notifier).state = page,
-                      ),
-                    ),
-                  ],
-                );
-              },
+          AsyncBody(
+            value: ref.watch(jobsProvider),
+            onRetry: () => ref.invalidate(jobsProvider),
+            isEmpty: (data) => data.isEmpty,
+            empty: EmptyState(
+              message: context.tr('jobs.empty'),
+              icon: Icons.work_outline,
             ),
+            builder: (data) {
+              return ResponsiveDataView<TransportJob>(
+                items: data.items,
+                columns: [
+                  DataColumnSpec(context.tr('common.reference')),
+                  DataColumnSpec(context.tr('common.customer')),
+                  DataColumnSpec(context.tr('nav.shipments')),
+                  DataColumnSpec(context.tr('quotations.totalPrice')),
+                  DataColumnSpec(context.tr('jobs.totalQuantity')),
+                  DataColumnSpec(context.tr('jobs.delivered')),
+                  DataColumnSpec(context.tr('jobs.progress')),
+                  DataColumnSpec(context.tr('nav.trips')),
+                  DataColumnSpec(context.tr('common.status')),
+                ],
+                onRowTap: (item) => context.go('/jobs/${item.id}'),
+                rowCells: (item) => [
+                  Text(item.reference ?? ''),
+                  Text(item.customer?.name ?? ''),
+                  Text(item.shipment?.reference ?? '—'),
+                  Text(
+                    Formatters.money(
+                      item.totalPrice,
+                      currency: item.currency,
+                      locale: locale,
+                    ),
+                  ),
+                  Text(Formatters.number(item.totalQuantity, locale: locale)),
+                  Text(
+                    Formatters.number(item.deliveredQuantity, locale: locale),
+                  ),
+                  Text(Formatters.percent(item.progressPercent)),
+                  Text('${item.trips.length}'),
+                  StatusBadge(status: item.status),
+                ],
+                cardBuilder: (item) => EntityCard(
+                  title: item.reference ?? '',
+                  icon: Icons.work_outline_rounded,
+                  tone: IconTone.warning,
+                  trailing: StatusBadge(status: item.status),
+                  subtitle: item.customer?.name,
+                  meta: [
+                    item.shipment?.reference ?? '',
+                    Formatters.money(
+                      item.totalPrice,
+                      currency: item.currency,
+                      locale: locale,
+                    ),
+                    '${item.trips.length} ${context.tr('common.trips')} · ${Formatters.percent(item.progressPercent)}',
+                  ],
+                  onTap: () => context.go('/jobs/${item.id}'),
+                ),
+                pagination: TablePagination(
+                  currentPage: data.currentPage,
+                  lastPage: data.lastPage,
+                  total: data.total,
+                  onPage: (page) =>
+                      ref.read(jobPageProvider.notifier).state = page,
+                ),
+              );
+            },
           ),
         ],
       ),

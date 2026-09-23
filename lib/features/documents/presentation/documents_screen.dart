@@ -110,7 +110,9 @@ class DocumentsScreen extends ConsumerWidget {
     }).toList();
 
     return AppPage(
-      child: ListView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PageHeader(title: context.tr('documents.title'), subtitle: context.tr('documents.subtitle')),
           const SizedBox(height: 12),

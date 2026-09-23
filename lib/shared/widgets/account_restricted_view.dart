@@ -76,7 +76,9 @@ class _AccountRestrictedViewState extends ConsumerState<AccountRestrictedView> {
     final canViewCompany = session.permissions.can(AppPermissions.companyManage);
 
     return AppPage(
-      child: ListView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           context.tr(_titleKey(session)),

@@ -34,7 +34,9 @@ class MoreScreen extends ConsumerWidget {
               ? constraints.maxWidth
               : (constraints.maxWidth - gap) / 2;
 
-          return ListView(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PageHeader(
                 title: context.tr('nav.more'),

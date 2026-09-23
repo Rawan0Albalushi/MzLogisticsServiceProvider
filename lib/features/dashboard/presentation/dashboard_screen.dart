@@ -43,25 +43,27 @@ class DashboardScreen extends ConsumerWidget {
     final canTrips = session.permissions.can(AppPermissions.tripsView);
     final updated = ref.watch(dashboardUpdatedAtProvider);
 
-    return AppPage(
-      child: AsyncBody(
-        value: ref.watch(dashboardProvider),
-        onRetry: () => ref.invalidate(dashboardProvider),
-        builder: (data) {
-          final attention = _attention(context, data, session, locale);
-          final operations = _operations(context, data, session, locale);
-          final finance = _finance(context, data, session, locale);
-          final links = _links(context, session);
-          return RefreshIndicator(
-            color: AppColors.teal,
-            onRefresh: () => _reload(
-              ref,
-              shipments: canShipments,
-              jobs: canJobs,
-              trips: canTrips,
-            ),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
+    return RefreshIndicator(
+      color: AppColors.teal,
+      onRefresh: () => _reload(
+        ref,
+        shipments: canShipments,
+        jobs: canJobs,
+        trips: canTrips,
+      ),
+      child: AppPage(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: AsyncBody(
+          value: ref.watch(dashboardProvider),
+          onRetry: () => ref.invalidate(dashboardProvider),
+          builder: (data) {
+            final attention = _attention(context, data, session, locale);
+            final operations = _operations(context, data, session, locale);
+            final finance = _finance(context, data, session, locale);
+            final links = _links(context, session);
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 DashboardHero(
                   kicker: context.tr('app.tagline'),
@@ -116,9 +118,9 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 const _FleetNote(),
               ],
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

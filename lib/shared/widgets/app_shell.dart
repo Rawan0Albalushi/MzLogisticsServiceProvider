@@ -221,20 +221,7 @@ class AppShell extends ConsumerWidget {
                   Expanded(
                     child: ColoredBox(
                       color: AppColors.surface,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final maxW = Breakpoints.contentMaxWidth(context);
-                          final width = constraints.maxWidth < maxW ? constraints.maxWidth : maxW;
-                          return Align(
-                            alignment: Alignment.topCenter,
-                            child: SizedBox(
-                              width: width,
-                              height: constraints.maxHeight,
-                              child: child,
-                            ),
-                          );
-                        },
-                      ),
+                      child: child,
                     ),
                   ),
                 ],

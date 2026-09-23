@@ -43,7 +43,9 @@ class QuotationDetailScreen extends ConsumerWidget {
             if (shipment?.deliveryCity?.isNotEmpty == true) shipment!.deliveryCity,
           ].join(' → ');
 
-          return ListView(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DetailBackLink(label: context.tr('quotations.backToList'), path: '/quotations'),
               const SizedBox(height: 4),
