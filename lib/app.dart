@@ -19,7 +19,7 @@ class MzProviderApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'MoveX',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(locale),
+      theme: AppTheme.light,
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [

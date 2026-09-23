@@ -141,6 +141,11 @@ class FleetRepository {
     return DriverInviteResult.fromJson(asMap(response['data']));
   }
 
+  Future<AppUser> updateDriver(int id, Map<String, dynamic> payload) async {
+    final response = await _api.put(ApiEndpoints.driver(id), data: payload);
+    return AppUser.fromJson(asMap(response['data']));
+  }
+
   Future<List<int>> downloadDriverImportTemplate() {
     return _api.getBytes(ApiEndpoints.driversImportTemplate);
   }

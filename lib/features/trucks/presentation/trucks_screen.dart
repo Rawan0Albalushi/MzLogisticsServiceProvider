@@ -16,7 +16,10 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/entity_card.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/filter_bar.dart';
+import '../../../shared/widgets/info_grid.dart';
 import '../../../shared/widgets/page_header.dart';
+import '../../../shared/widgets/record_actions.dart';
+import '../../../shared/widgets/record_details_dialog.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 
@@ -44,6 +47,7 @@ class TrucksScreen extends ConsumerWidget {
       return const NoPermissionState();
     }
     final locale = Localizations.localeOf(context).languageCode;
+    final canManage = session.permissions.can(AppPermissions.fleetManage);
     return AppPage(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -53,7 +57,7 @@ class TrucksScreen extends ConsumerWidget {
             title: context.tr('trucks.title'),
             subtitle: context.tr('app.companyFleetNote'),
             actions: [
-              if (session.permissions.can(AppPermissions.fleetManage)) ...[
+              if (canManage) ...[
                 AppButton(
                   label: context.tr('trucks.import'),
                   outlined: true,
@@ -114,6 +118,14 @@ class TrucksScreen extends ConsumerWidget {
             builder: (data) {
               return ResponsiveDataView<Truck>(
                 items: data.items,
+                onRowTap: (item) => _showTruckDetails(
+                  context,
+                  item,
+                  locale: locale,
+                  onEdit: canManage
+                      ? () => context.go('/trucks/${item.id}/edit')
+                      : null,
+                ),
                 columns: [
                   DataColumnSpec(context.tr('trucks.plate')),
                   DataColumnSpec(context.tr('common.type')),
@@ -148,13 +160,19 @@ class TrucksScreen extends ConsumerWidget {
                     Formatters.date(item.insuranceExpiresAt, locale: locale),
                   ),
                   StatusBadge(status: item.status),
-                  session.permissions.can(AppPermissions.fleetManage)
-                      ? TextButton(
-                          onPressed: () =>
-                              context.go('/trucks/${item.id}/edit'),
-                          child: Text(context.tr('common.edit')),
-                        )
-                      : const SizedBox.shrink(),
+                  RecordActions(
+                    onView: () => _showTruckDetails(
+                      context,
+                      item,
+                      locale: locale,
+                      onEdit: canManage
+                          ? () => context.go('/trucks/${item.id}/edit')
+                          : null,
+                    ),
+                    onEdit: canManage
+                        ? () => context.go('/trucks/${item.id}/edit')
+                        : null,
+                  ),
                 ],
                 cardBuilder: (item) => EntityCard(
                   title: item.plateNumber ?? '',
@@ -171,9 +189,27 @@ class TrucksScreen extends ConsumerWidget {
                       '${Formatters.number(item.volumeCbm, locale: locale)} ${context.tr('common.cbm')}',
                     item.assignedDriver?.name ?? '',
                   ],
-                  onTap: session.permissions.can(AppPermissions.fleetManage)
-                      ? () => context.go('/trucks/${item.id}/edit')
-                      : null,
+                  onTap: () => _showTruckDetails(
+                    context,
+                    item,
+                    locale: locale,
+                    onEdit: canManage
+                        ? () => context.go('/trucks/${item.id}/edit')
+                        : null,
+                  ),
+                  footer: RecordActions(
+                    onView: () => _showTruckDetails(
+                      context,
+                      item,
+                      locale: locale,
+                      onEdit: canManage
+                          ? () => context.go('/trucks/${item.id}/edit')
+                          : null,
+                    ),
+                    onEdit: canManage
+                        ? () => context.go('/trucks/${item.id}/edit')
+                        : null,
+                  ),
                 ),
                 pagination: TablePagination(
                   currentPage: data.currentPage,
@@ -189,4 +225,110 @@ class TrucksScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+void _showTruckDetails(
+  BuildContext context,
+  Truck truck, {
+  required String locale,
+  VoidCallback? onEdit,
+}) {
+  String text(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '—';
+    }
+    return value;
+  }
+
+  String measure(num? value, String unit) {
+    if (value == null) {
+      return '—';
+    }
+    return '${Formatters.number(value, locale: locale)} $unit';
+  }
+
+  final equipment = truck.equipment
+      .map((item) {
+        final name = item.name ?? '';
+        if (name.isEmpty) {
+          return '';
+        }
+        if (item.quantity == null) {
+          return name;
+        }
+        return '$name · ${item.quantity}';
+      })
+      .where((line) => line.isNotEmpty)
+      .join('\n');
+
+  showRecordDetails(
+    context,
+    title: context.tr('trucks.details'),
+    onEdit: onEdit,
+    fields: [
+      InfoField(
+        label: context.tr('trucks.plate'),
+        value: text(truck.plateNumber),
+      ),
+      InfoField(
+        label: context.tr('common.type'),
+        value: context.l10n.truckType(truck.type, label: truck.typeLabel),
+      ),
+      InfoField(
+        label: context.tr('common.status'),
+        value: context.l10n.status(truck.status),
+      ),
+      InfoField(label: context.tr('trucks.make'), value: text(truck.make)),
+      InfoField(label: context.tr('trucks.model'), value: text(truck.model)),
+      InfoField(
+        label: context.tr('trucks.year'),
+        value: truck.year?.toString() ?? '—',
+      ),
+      InfoField(
+        label: context.tr('trucks.capacityTons'),
+        value: measure(truck.capacityTons, context.tr('common.tons')),
+      ),
+      InfoField(
+        label: context.tr('trucks.volume'),
+        value: measure(truck.volumeCbm, context.tr('common.cbm')),
+      ),
+      InfoField(
+        label: context.tr('trucks.length'),
+        value: truck.cargoLengthM == null
+            ? '—'
+            : Formatters.number(truck.cargoLengthM, locale: locale),
+      ),
+      InfoField(
+        label: context.tr('trucks.width'),
+        value: truck.cargoWidthM == null
+            ? '—'
+            : Formatters.number(truck.cargoWidthM, locale: locale),
+      ),
+      InfoField(
+        label: context.tr('trucks.height'),
+        value: truck.cargoHeightM == null
+            ? '—'
+            : Formatters.number(truck.cargoHeightM, locale: locale),
+      ),
+      InfoField(
+        label: context.tr('trucks.axles'),
+        value: truck.axleCount?.toString() ?? '—',
+      ),
+      InfoField(
+        label: context.tr('trucks.assignedDriver'),
+        value: text(truck.assignedDriver?.name),
+      ),
+      InfoField(
+        label: context.tr('trucks.insurance'),
+        value: Formatters.date(truck.insuranceExpiresAt, locale: locale),
+      ),
+      InfoField(
+        label: context.tr('trucks.equipmentSection'),
+        value: equipment.isEmpty
+            ? context.tr('trucks.equipmentEmpty')
+            : equipment,
+        wide: true,
+      ),
+    ],
+  );
 }

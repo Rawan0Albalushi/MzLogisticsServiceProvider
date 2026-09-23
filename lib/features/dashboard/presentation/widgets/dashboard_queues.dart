@@ -11,7 +11,9 @@ import '../../../../shared/widgets/status_badge.dart';
 import 'dashboard_kpi.dart';
 
 final dashboardOpenShipmentsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(shipmentRepositoryProvider).list(status: 'published', page: 1);
+  return ref
+      .watch(shipmentRepositoryProvider)
+      .list(status: 'published', page: 1);
 });
 
 final dashboardActiveJobsProvider = FutureProvider.autoDispose((ref) {
@@ -19,7 +21,9 @@ final dashboardActiveJobsProvider = FutureProvider.autoDispose((ref) {
 });
 
 final dashboardTransitTripsProvider = FutureProvider.autoDispose((ref) {
-  return ref.watch(tripRepositoryProvider).list(status: 'in_transit', page: 1, perPage: 5);
+  return ref
+      .watch(tripRepositoryProvider)
+      .list(status: 'in_transit', page: 1, perPage: 5);
 });
 
 class DashboardQueueGrid extends StatelessWidget {
@@ -59,16 +63,25 @@ class DashboardQueueGrid extends StatelessWidget {
           children: [
             for (var index = 0; index < panels.length; index += columns) ...[
               if (index > 0) const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var cell = index; cell < index + columns && cell < panels.length; cell++) ...[
-                    if (cell > index) const SizedBox(width: 16),
-                    Expanded(child: panels[cell]),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (
+                      var cell = index;
+                      cell < index + columns && cell < panels.length;
+                      cell++
+                    ) ...[
+                      if (cell > index) const SizedBox(width: 16),
+                      Expanded(child: panels[cell]),
+                    ],
+                    if (panels.length - index < columns)
+                      Spacer(
+                        flex:
+                            columns - (panels.length - index).clamp(0, columns),
+                      ),
                   ],
-                  if (panels.length - index < columns)
-                    Spacer(flex: columns - (panels.length - index).clamp(0, columns)),
-                ],
+                ),
               ),
             ],
           ],
@@ -95,7 +108,12 @@ class _ShipmentQueue extends ConsumerWidget {
         return data.items.take(5).map((item) {
           return _QueueRowData(
             title: _reference(item.reference),
-            meta: _routeMeta(context, item.customer?.name, item.pickupCity, item.deliveryCity),
+            meta: _queueMeta(
+              context,
+              item.customer?.name,
+              item.pickupCity,
+              item.deliveryCity,
+            ),
             status: item.status,
             onTap: () => context.go('/shipments/${item.id}'),
           );
@@ -120,16 +138,21 @@ class _JobQueue extends ConsumerWidget {
       value: value,
       items: (data) {
         return data.items
-            .where((job) => job.status == 'pending_dispatch' || job.status == 'in_progress')
+            .where(
+              (job) =>
+                  job.status == 'pending_dispatch' ||
+                  job.status == 'in_progress',
+            )
             .take(5)
             .map((job) {
-          return _QueueRowData(
-            title: _reference(job.reference),
-            meta: _party(job.customer?.name),
-            status: job.status,
-            onTap: () => context.go('/jobs/${job.id}'),
-          );
-        }).toList();
+              return _QueueRowData(
+                title: _reference(job.reference),
+                meta: _party(job.customer?.name),
+                status: job.status,
+                onTap: () => context.go('/jobs/${job.id}'),
+              );
+            })
+            .toList();
       },
     );
   }
@@ -152,7 +175,12 @@ class _TripQueue extends ConsumerWidget {
         return data.items.take(5).map((trip) {
           return _QueueRowData(
             title: _reference(trip.reference),
-            meta: _routeMeta(context, trip.driver?.name, trip.pickupCity, trip.deliveryCity),
+            meta: _queueMeta(
+              context,
+              trip.driver?.name,
+              trip.pickupCity,
+              trip.deliveryCity,
+            ),
             status: trip.status,
             onTap: () => context.go('/trips/${trip.id}'),
           );
@@ -198,10 +226,11 @@ class _QueueCard<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewAll = context.tr('dashboard.viewAll');
+    final theme = Theme.of(context);
     return DecoratedBox(
       decoration: dashboardSurfaceDecoration,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -214,29 +243,39 @@ class _QueueCard<T> extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, height: 1.3),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
+                    ),
                   ),
                 ),
                 TextButton(
                   onPressed: onViewAll,
-                  style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
                   child: Text(viewAll, semanticsLabel: '$viewAll, $title'),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
             value.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 28),
-                child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.2))),
+              skipLoadingOnReload: true,
+              loading: () => Semantics(
+                label: context.tr('common.loading'),
+                child: const _QueuePlaceholder(),
               ),
               error: (_, _) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.fromLTRB(0, 8, 8, 8),
                 child: Column(
                   children: [
-                    Text(context.tr('common.error'), textAlign: TextAlign.center),
+                    Text(
+                      context.tr('common.error'),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 8),
-                    OutlinedButton(onPressed: onRetry, child: Text(context.tr('common.retry'))),
+                    OutlinedButton(
+                      onPressed: onRetry,
+                      child: Text(context.tr('common.retry')),
+                    ),
                   ],
                 ),
               ),
@@ -244,11 +283,14 @@ class _QueueCard<T> extends StatelessWidget {
                 final rows = items(data);
                 if (rows.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 28),
+                    padding: const EdgeInsets.fromLTRB(0, 20, 8, 20),
                     child: Text(
                       context.tr('dashboard.queueEmpty'),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppColors.muted, height: 1.4),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.muted,
+                        height: 1.4,
+                      ),
                     ),
                   );
                 }
@@ -259,7 +301,9 @@ class _QueueCard<T> extends StatelessWidget {
                         decoration: BoxDecoration(
                           border: index == rows.length - 1
                               ? null
-                              : const Border(bottom: BorderSide(color: AppColors.border)),
+                              : const Border(
+                                  bottom: BorderSide(color: AppColors.border),
+                                ),
                         ),
                         child: _QueueRow(row: rows[index]),
                       ),
@@ -274,6 +318,30 @@ class _QueueCard<T> extends StatelessWidget {
   }
 }
 
+class _QueuePlaceholder extends StatelessWidget {
+  const _QueuePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 8, 8),
+      child: Column(
+        children: [
+          for (var index = 0; index < 3; index++)
+            Container(
+              height: 14,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _QueueRow extends StatelessWidget {
   const _QueueRow({required this.row});
 
@@ -281,37 +349,49 @@ class _QueueRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: row.onTap,
+      mouseCursor: SystemMouseCursors.click,
       hoverColor: AppColors.rowHover,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    row.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    row.meta,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, color: AppColors.muted, height: 1.35),
-                  ),
-                ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(4, 10, 8, 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      row.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                      ),
+                    ),
+                    if (row.meta.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        row.meta,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            StatusBadge(status: row.status),
-          ],
+              const SizedBox(width: 10),
+              StatusBadge(status: row.status),
+            ],
+          ),
         ),
       ),
     );
@@ -334,7 +414,27 @@ String _party(String? value) {
   return trimmed;
 }
 
-String _routeMeta(BuildContext context, String? party, String? pickup, String? delivery) {
+String _queueMeta(
+  BuildContext context,
+  String? party,
+  String? pickup,
+  String? delivery,
+) {
+  final name = party?.trim();
+  final from = pickup?.trim();
+  final to = delivery?.trim();
+  final hasRoute =
+      (from != null && from.isNotEmpty) || (to != null && to.isNotEmpty);
+  final lines = <String>[
+    if (name != null && name.isNotEmpty) name,
+    if (hasRoute) _routeLine(context, from, to),
+  ];
+  return lines.join('\n');
+}
+
+String _routeLine(BuildContext context, String? pickup, String? delivery) {
   final arrow = Directionality.of(context) == TextDirection.rtl ? '←' : '→';
-  return '${_party(party)} · ${_party(pickup)} $arrow ${_party(delivery)}';
+  final from = (pickup == null || pickup.isEmpty) ? '—' : pickup;
+  final to = (delivery == null || delivery.isEmpty) ? '—' : delivery;
+  return '$from $arrow $to';
 }

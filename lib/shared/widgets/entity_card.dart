@@ -33,52 +33,61 @@ class EntityCard extends StatelessWidget {
       ...meta.where((line) => line.trim().isNotEmpty),
     ];
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
+    final body = Padding(
+      padding: EdgeInsets.fromLTRB(14, 14, 14, footer == null ? 14 : 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (icon != null) ...[
-                    IconWell(icon: icon!, tone: tone, size: IconWellSize.sm),
-                    const SizedBox(width: 10),
-                  ],
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.w600, height: 1.35),
-                    ),
+              if (icon != null) ...[
+                IconWell(icon: icon!, tone: tone, size: IconWellSize.sm),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
                   ),
-                  if (trailing != null) ...[
-                    const SizedBox(width: 8),
-                    trailing!,
-                  ],
-                ],
+                ),
               ),
-              if (lines.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                for (final line in lines)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(
-                      line,
-                      style: const TextStyle(color: AppColors.muted, height: 1.4, fontSize: 13),
-                    ),
-                  ),
-              ],
-              if (footer != null) ...[
-                const SizedBox(height: 10),
-                footer!,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
             ],
           ),
-        ),
+          if (lines.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final line in lines)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  line,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    height: 1.4,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(onTap: onTap, child: body),
+          if (footer != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(6, 0, 6, 6),
+              child: footer,
+            ),
+        ],
       ),
     );
   }

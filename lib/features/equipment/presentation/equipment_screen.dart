@@ -18,7 +18,10 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/filter_bar.dart';
+import '../../../shared/widgets/info_grid.dart';
 import '../../../shared/widgets/page_header.dart';
+import '../../../shared/widgets/record_actions.dart';
+import '../../../shared/widgets/record_details_dialog.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../fleet/presentation/fleet_screen.dart';
@@ -49,6 +52,7 @@ class EquipmentScreen extends ConsumerWidget {
     if (!session.permissions.can(AppPermissions.fleetView)) {
       return const NoPermissionState();
     }
+    final canManage = session.permissions.can(AppPermissions.fleetManage);
     return AppPage(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -57,7 +61,7 @@ class EquipmentScreen extends ConsumerWidget {
           PageHeader(
             title: context.tr('equipment.title'),
             actions: [
-              if (session.permissions.can(AppPermissions.fleetManage)) ...[
+              if (canManage) ...[
                 AppButton(
                   label: context.tr('equipment.import'),
                   outlined: true,
@@ -132,15 +136,20 @@ class EquipmentScreen extends ConsumerWidget {
             builder: (data) {
               return ResponsiveDataView<EquipmentItem>(
                 items: data.items,
-                onRowTap: session.permissions.can(AppPermissions.fleetManage)
-                    ? (item) => _openForm(context, ref, item)
-                    : null,
+                onRowTap: (item) => _showEquipmentDetails(
+                  context,
+                  item,
+                  onEdit: canManage
+                      ? () => _openForm(context, ref, item)
+                      : null,
+                ),
                 columns: [
                   DataColumnSpec(context.tr('equipment.name')),
                   DataColumnSpec(context.tr('common.type')),
                   DataColumnSpec(context.tr('equipment.quantity')),
                   DataColumnSpec(context.tr('equipment.assignment')),
                   DataColumnSpec(context.tr('common.status')),
+                  DataColumnSpec(context.tr('common.actions')),
                 ],
                 rowCells: (item) => [
                   Text(item.name ?? ''),
@@ -148,6 +157,18 @@ class EquipmentScreen extends ConsumerWidget {
                   Text('${item.quantity ?? 0}'),
                   Text(_assignmentLabel(context, item)),
                   StatusBadge(status: item.status),
+                  RecordActions(
+                    onView: () => _showEquipmentDetails(
+                      context,
+                      item,
+                      onEdit: canManage
+                          ? () => _openForm(context, ref, item)
+                          : null,
+                    ),
+                    onEdit: canManage
+                        ? () => _openForm(context, ref, item)
+                        : null,
+                  ),
                 ],
                 cardBuilder: (item) => EntityCard(
                   title: item.name ?? '',
@@ -159,9 +180,25 @@ class EquipmentScreen extends ConsumerWidget {
                     '${item.quantity ?? 0}',
                     _assignmentLabel(context, item),
                   ],
-                  onTap: session.permissions.can(AppPermissions.fleetManage)
-                      ? () => _openForm(context, ref, item)
-                      : null,
+                  onTap: () => _showEquipmentDetails(
+                    context,
+                    item,
+                    onEdit: canManage
+                        ? () => _openForm(context, ref, item)
+                        : null,
+                  ),
+                  footer: RecordActions(
+                    onView: () => _showEquipmentDetails(
+                      context,
+                      item,
+                      onEdit: canManage
+                          ? () => _openForm(context, ref, item)
+                          : null,
+                    ),
+                    onEdit: canManage
+                        ? () => _openForm(context, ref, item)
+                        : null,
+                  ),
                 ),
                 pagination: TablePagination(
                   currentPage: data.currentPage,
@@ -359,6 +396,42 @@ class EquipmentScreen extends ConsumerWidget {
     type.dispose();
     quantity.dispose();
   }
+}
+
+void _showEquipmentDetails(
+  BuildContext context,
+  EquipmentItem item, {
+  VoidCallback? onEdit,
+}) {
+  String text(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '—';
+    }
+    return value;
+  }
+
+  showRecordDetails(
+    context,
+    title: context.tr('equipment.details'),
+    onEdit: onEdit,
+    fields: [
+      InfoField(label: context.tr('equipment.name'), value: text(item.name)),
+      InfoField(label: context.tr('common.type'), value: text(item.type)),
+      InfoField(
+        label: context.tr('equipment.quantity'),
+        value: '${item.quantity ?? 0}',
+      ),
+      InfoField(
+        label: context.tr('common.status'),
+        value: context.l10n.status(item.status),
+      ),
+      InfoField(
+        label: context.tr('equipment.assignment'),
+        value: _assignmentLabel(context, item),
+        wide: true,
+      ),
+    ],
+  );
 }
 
 String _assignmentLabel(BuildContext context, EquipmentItem item) {

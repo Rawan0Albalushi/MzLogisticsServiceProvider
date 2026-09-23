@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mz_logistics_service_provider_app/core/theme/page_visuals.dart';
 import 'package:mz_logistics_service_provider_app/features/dashboard/presentation/widgets/dashboard_kpi.dart';
 
 void main() {
@@ -28,19 +29,66 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('kpi grid keeps labels in Arabic layout', (tester) async {
-    await _pumpGrid(
-      tester,
-      const Size(400, 900),
-      [
-        _metric('شحنات مفتوحة', '١٢'),
-        _metric('عروض معلّقة', '٤'),
-      ],
-      textDirection: TextDirection.rtl,
+  testWidgets('attention list and quick actions fit a phone width', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                DashboardAttentionList(
+                  items: [
+                    DashboardAttentionItem(
+                      label: 'Unassigned trips',
+                      count: '3',
+                      icon: Icons.route_outlined,
+                      tone: DashboardKpiTone.danger,
+                      viewLabel: 'View all',
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+                DashboardQuickLinkGrid(
+                  links: [
+                    DashboardQuickLink(
+                      title: 'Review shipments',
+                      hint: 'Open published requests and prepare quotations.',
+                      icon: Icons.local_shipping_outlined,
+                      tone: IconTone.teal,
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
+    expect(find.text('Unassigned trips'), findsOneWidget);
+    expect(
+      find.text('Open published requests and prepare quotations.'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('kpi grid keeps labels in Arabic layout', (tester) async {
+    await _pumpGrid(tester, const Size(400, 900), [
+      _metric('شحنات مفتوحة', '١٢'),
+      _metric('عروض معلّقة', '٤'),
+    ], textDirection: TextDirection.rtl);
+
     expect(find.text('شحنات مفتوحة'), findsOneWidget);
-    expect(Directionality.of(tester.element(find.text('شحنات مفتوحة'))), TextDirection.rtl);
+    expect(
+      Directionality.of(tester.element(find.text('شحنات مفتوحة'))),
+      TextDirection.rtl,
+    );
     expect(tester.takeException(), isNull);
   });
 }
@@ -68,7 +116,9 @@ Future<void> _pumpGrid(
       home: Directionality(
         textDirection: textDirection,
         child: Scaffold(
-          body: SingleChildScrollView(child: DashboardKpiGrid(metrics: metrics)),
+          body: SingleChildScrollView(
+            child: DashboardKpiGrid(metrics: metrics),
+          ),
         ),
       ),
     ),

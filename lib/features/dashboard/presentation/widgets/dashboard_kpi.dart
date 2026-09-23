@@ -61,11 +61,7 @@ class DashboardQuickLink {
 }
 
 class DashboardSection extends StatelessWidget {
-  const DashboardSection({
-    super.key,
-    required this.title,
-    required this.child,
-  });
+  const DashboardSection({super.key, required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -74,7 +70,7 @@ class DashboardSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return DecoratedBox(
-      decoration: dashboardSurfaceDecoration,
+      decoration: dashboardPanelDecoration,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -85,7 +81,7 @@ class DashboardSection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                letterSpacing: rtl ? 0 : 0.8,
+                letterSpacing: rtl ? 0 : 0.9,
                 color: AppColors.muted,
                 height: 1.3,
               ),
@@ -114,8 +110,8 @@ class DashboardKpiGrid extends StatelessWidget {
   }
 }
 
-class DashboardAttentionGrid extends StatelessWidget {
-  const DashboardAttentionGrid({super.key, required this.items});
+class DashboardAttentionList extends StatelessWidget {
+  const DashboardAttentionList({super.key, required this.items});
 
   final List<DashboardAttentionItem> items;
 
@@ -177,25 +173,23 @@ class _AdaptiveGrid extends StatelessWidget {
                   if (cell > index) const SizedBox(width: 12),
                   Expanded(child: itemBuilder(cell)),
                 ],
-                if (end - index < columns) Spacer(flex: columns - (end - index)),
+                if (end - index < columns)
+                  Spacer(flex: columns - (end - index)),
               ],
             ),
           );
         }
-        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: rows,
+        );
       },
     );
   }
 
   int _columns(double width, int count, double minWidth) {
-    if (width < 520) {
-      return 1;
-    }
-    if (width < 900) {
-      return math.min(2, count);
-    }
-    final fitted = (width / minWidth).floor();
-    return fitted.clamp(1, math.min(count, 4));
+    final fitted = math.max(1, (width / minWidth).floor());
+    return math.min(fitted, count);
   }
 }
 
@@ -207,67 +201,69 @@ class _KpiTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _toneColors(metric.tone);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: metric.onTap,
+    return _DashboardCard(
+      onTap: metric.onTap,
+      radius: 10,
+      decoration: BoxDecoration(
+        color: colors.background,
+        gradient: colors.wash,
         borderRadius: BorderRadius.circular(10),
-        hoverColor: AppColors.rowHover,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: colors.background,
-            gradient: colors.wash,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                  Row(
-                    children: [
-                      _KpiIcon(icon: metric.icon, colors: colors),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          metric.label,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            height: 1.3,
-                            color: AppColors.ink,
-                          ),
-                        ),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 148),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _KpiIcon(icon: metric.icon, colors: colors),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      metric.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                        color: AppColors.ink,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    metric.value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      height: 1.15,
-                      color: AppColors.ink,
-                      fontFeatures: [FontFeature.tabularFigures()],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    metric.hint ?? '\u00A0',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 12),
+              Text(
+                metric.value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                  height: 1.15,
+                  letterSpacing: -0.4,
+                  color: AppColors.ink,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                metric.hint ?? '',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.4,
+                  color: AppColors.muted,
+                ),
+              ),
+            ],
           ),
+        ),
       ),
     );
   }
@@ -305,67 +301,75 @@ class _AttentionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _toneColors(item.tone);
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: item.onTap,
+    return _DashboardCard(
+      onTap: item.onTap,
+      radius: 10,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(10),
-        hoverColor: AppColors.rowHover,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-                children: [
-                  IconWell(icon: item.icon, tone: colors.iconTone, size: IconWellSize.md),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          item.label,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, height: 1.3),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          item.viewLabel,
-                          style: const TextStyle(fontSize: 12, color: AppColors.muted, height: 1.3),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: colors.pill,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      item.count,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: colors.icon,
-                        fontFeatures: const [FontFeature.tabularFigures()],
+        border: Border.all(color: AppColors.border),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 76),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              IconWell(
+                icon: item.icon,
+                tone: colors.iconTone,
+                size: IconWellSize.md,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      item.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      item.viewLabel,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.muted,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Container(
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: colors.pill,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  item.count,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: colors.icon,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
           ),
+        ),
       ),
     );
   }
@@ -378,50 +382,112 @@ class _QuickLinkTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: link.onTap,
+    return _DashboardCard(
+      onTap: link.onTap,
+      radius: 12,
+      decoration: BoxDecoration(
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        hoverColor: AppColors.rowHover,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-                children: [
-                  IconWell(icon: link.icon, tone: link.tone, size: IconWellSize.lg),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          link.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, height: 1.3),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          link.hint,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12, color: AppColors.muted, height: 1.35),
-                        ),
-                      ],
+        border: Border.all(color: AppColors.border),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 88),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              IconWell(icon: link.icon, tone: link.tone, size: IconWellSize.lg),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      link.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      link.hint,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.muted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardCard extends StatefulWidget {
+  const _DashboardCard({
+    required this.onTap,
+    required this.radius,
+    required this.decoration,
+    required this.child,
+  });
+
+  final VoidCallback onTap;
+  final double radius;
+  final BoxDecoration decoration;
+  final Widget child;
+
+  @override
+  State<_DashboardCard> createState() => _DashboardCardState();
+}
+
+class _DashboardCardState extends State<_DashboardCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final lifted = _hovered && !reduceMotion;
+    final radius = BorderRadius.circular(widget.radius);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: reduceMotion ? 0 : 180),
+        curve: Curves.easeOut,
+        transform: Matrix4.translationValues(0, lifted ? -2 : 0, 0),
+        transformAlignment: Alignment.center,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: radius,
+            hoverColor: Colors.transparent,
+            splashColor: AppColors.rowHover,
+            child: Ink(
+              decoration: widget.decoration.copyWith(
+                borderRadius: radius,
+                border: Border.all(
+                  color: _hovered ? AppColors.hoverBorder : AppColors.border,
+                ),
+                boxShadow: lifted ? dashboardCardHoverShadow : const [],
+              ),
+              child: widget.child,
             ),
           ),
+        ),
       ),
     );
   }
@@ -450,77 +516,87 @@ class _ToneColors {
 _ToneColors _toneColors(DashboardKpiTone tone) {
   return switch (tone) {
     DashboardKpiTone.neutral => const _ToneColors(
-        background: AppColors.surface,
-        icon: AppColors.teal800,
-        iconBackground: AppColors.white,
-        pill: AppColors.chipBg,
-        iconTone: IconTone.teal,
-        iconBorder: Border.fromBorderSide(BorderSide(color: AppColors.border)),
-      ),
+      background: AppColors.surface,
+      icon: AppColors.teal800,
+      iconBackground: AppColors.white,
+      pill: AppColors.chipBg,
+      iconTone: IconTone.teal,
+      iconBorder: Border.fromBorderSide(BorderSide(color: AppColors.border)),
+    ),
     DashboardKpiTone.info => const _ToneColors(
-        background: AppColors.white,
-        icon: AppColors.info,
-        iconBackground: AppColors.infoSoft,
-        pill: AppColors.infoSoft,
-        iconTone: IconTone.info,
-        wash: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.infoSoft, AppColors.white],
-          stops: [0, 0.42],
-        ),
+      background: AppColors.white,
+      icon: AppColors.info,
+      iconBackground: AppColors.infoSoft,
+      pill: AppColors.infoSoft,
+      iconTone: IconTone.info,
+      wash: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [AppColors.infoSoft, AppColors.white],
+        stops: [0, 0.42],
       ),
+    ),
     DashboardKpiTone.warning => const _ToneColors(
-        background: AppColors.white,
-        icon: AppColors.warning,
-        iconBackground: AppColors.warningSoft,
-        pill: AppColors.warningSoft,
-        iconTone: IconTone.warning,
-        wash: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.warningSoft, AppColors.white],
-          stops: [0, 0.42],
-        ),
+      background: AppColors.white,
+      icon: AppColors.warning,
+      iconBackground: AppColors.warningSoft,
+      pill: AppColors.warningSoft,
+      iconTone: IconTone.warning,
+      wash: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [AppColors.warningSoft, AppColors.white],
+        stops: [0, 0.42],
       ),
+    ),
     DashboardKpiTone.success => const _ToneColors(
-        background: AppColors.white,
-        icon: AppColors.success,
-        iconBackground: AppColors.successSoft,
-        pill: AppColors.successSoft,
-        iconTone: IconTone.success,
-        wash: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.successSoft, AppColors.white],
-          stops: [0, 0.42],
-        ),
+      background: AppColors.white,
+      icon: AppColors.success,
+      iconBackground: AppColors.successSoft,
+      pill: AppColors.successSoft,
+      iconTone: IconTone.success,
+      wash: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [AppColors.successSoft, AppColors.white],
+        stops: [0, 0.42],
       ),
+    ),
     DashboardKpiTone.danger => const _ToneColors(
-        background: AppColors.white,
-        icon: AppColors.danger,
-        iconBackground: AppColors.dangerSoft,
-        pill: AppColors.dangerSoft,
-        iconTone: IconTone.danger,
-        wash: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.dangerSoft, AppColors.white],
-          stops: [0, 0.42],
-        ),
+      background: AppColors.white,
+      icon: AppColors.danger,
+      iconBackground: AppColors.dangerSoft,
+      pill: AppColors.dangerSoft,
+      iconTone: IconTone.danger,
+      wash: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [AppColors.dangerSoft, AppColors.white],
+        stops: [0, 0.42],
       ),
+    ),
   };
 }
 
-const dashboardSurfaceDecoration = BoxDecoration(
+const dashboardCardShadow = [
+  BoxShadow(color: Color(0x0F142426), blurRadius: 2, offset: Offset(0, 1)),
+  BoxShadow(color: Color(0x0F142426), blurRadius: 24, offset: Offset(0, 8)),
+];
+
+const dashboardCardHoverShadow = [
+  BoxShadow(color: Color(0x1A142426), blurRadius: 22, offset: Offset(0, 10)),
+];
+
+const dashboardPanelDecoration = BoxDecoration(
   color: AppColors.white,
   borderRadius: BorderRadius.all(Radius.circular(14)),
   border: Border.fromBorderSide(BorderSide(color: AppColors.border)),
-  boxShadow: [
-    BoxShadow(
-      color: Color(0x0A142426),
-      blurRadius: 16,
-      offset: Offset(0, 6),
-    ),
-  ],
+  boxShadow: dashboardCardShadow,
+);
+
+const dashboardSurfaceDecoration = BoxDecoration(
+  color: AppColors.white,
+  borderRadius: BorderRadius.all(Radius.circular(AppColors.radius)),
+  border: Border.fromBorderSide(BorderSide(color: AppColors.border)),
+  boxShadow: dashboardCardShadow,
 );

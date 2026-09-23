@@ -487,7 +487,8 @@
     "equipmentHint": "Attached equipment travels with this truck. Other equipment can stay with the company.",
     "equipmentEmpty": "No equipment is attached to this truck.",
     "equipmentAfterSave": "After saving, equipment can stay with the company or be attached to this truck.",
-    "manageEquipment": "Manage equipment"
+    "manageEquipment": "Manage equipment",
+    "details": "Truck details"
   },
   "truckTypes": {
     "title": "Truck types",
@@ -526,6 +527,7 @@
     "placementCompany": "Company only",
     "placementTruck": "On a truck",
     "assignmentHint": "Leave it with the company, or attach it to a specific truck.",
+    "details": "Equipment details",
     "import": "Import from Excel",
     "importTitle": "Import equipment from Excel",
     "importHint": "Download the template, then fill the equipment name and quantity. Leave the truck plate empty to keep it with the company, or enter an existing plate to attach it.",
@@ -566,6 +568,9 @@
     "inviteReady": "Share this activation link with the driver so they can set their password.",
     "whatsappSent": "An activation message was sent on WhatsApp.",
     "emailOptional": "Email (optional)",
+    "edit": "Edit driver",
+    "updated": "Driver details saved.",
+    "details": "Driver details",
     "row": "Row {row}",
     "rowDetails": "Row {row} — {details}",
     "importPhoneInvalid": "Enter a valid mobile number.",

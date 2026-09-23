@@ -21,6 +21,7 @@ class ApiEndpoints {
   static const drivers = '/drivers';
   static const driversImport = '/drivers/import';
   static const driversImportTemplate = '/drivers/import-template';
+  static String driver(int id) => '/drivers/$id';
   static String resendDriverInvite(int id) => '/drivers/$id/resend-invite';
   static const catalog = '/catalog';
   static const truckTypes = '/truck-types';

@@ -13,6 +13,7 @@ class AsyncBody<T> extends StatelessWidget {
     this.onRetry,
     this.empty,
     this.isEmpty,
+    this.skipLoadingOnReload = false,
   });
 
   final AsyncValue<T> value;
@@ -20,10 +21,12 @@ class AsyncBody<T> extends StatelessWidget {
   final VoidCallback? onRetry;
   final Widget? empty;
   final bool Function(T data)? isEmpty;
+  final bool skipLoadingOnReload;
 
   @override
   Widget build(BuildContext context) {
     return value.when(
+      skipLoadingOnReload: skipLoadingOnReload,
       data: (data) {
         if (isEmpty?.call(data) ?? false) {
           return empty ?? EmptyState(message: context.tr('common.empty'));

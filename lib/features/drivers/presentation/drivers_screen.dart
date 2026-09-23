@@ -19,7 +19,10 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/filter_bar.dart';
+import '../../../shared/widgets/info_grid.dart';
 import '../../../shared/widgets/page_header.dart';
+import '../../../shared/widgets/record_actions.dart';
+import '../../../shared/widgets/record_details_dialog.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../fleet/presentation/fleet_screen.dart';
@@ -101,6 +104,14 @@ class DriversScreen extends ConsumerWidget {
             builder: (data) {
               return ResponsiveDataView<AppUser>(
                 items: data.items,
+                onRowTap: (item) => _showDriverDetails(
+                  context,
+                  item,
+                  locale: locale,
+                  onEdit: canManage
+                      ? () => _openForm(context, ref, item)
+                      : null,
+                ),
                 columns: [
                   DataColumnSpec(context.tr('auth.name')),
                   DataColumnSpec(context.tr('auth.phone')),
@@ -109,7 +120,7 @@ class DriversScreen extends ConsumerWidget {
                   DataColumnSpec(context.tr('drivers.licenseExpiry')),
                   DataColumnSpec(context.tr('drivers.lastLogin')),
                   DataColumnSpec(context.tr('common.status')),
-                  if (canManage) DataColumnSpec(context.tr('common.actions')),
+                  DataColumnSpec(context.tr('common.actions')),
                 ],
                 rowCells: (item) => [
                   Text(item.name ?? ''),
@@ -124,7 +135,21 @@ class DriversScreen extends ConsumerWidget {
                   ),
                   Text(Formatters.dateTime(item.lastLoginAt, locale: locale)),
                   StatusBadge(status: item.displayStatus),
-                  if (canManage) _DriverActions(driver: item),
+                  _DriverRowActions(
+                    driver: item,
+                    canManage: canManage,
+                    onView: () => _showDriverDetails(
+                      context,
+                      item,
+                      locale: locale,
+                      onEdit: canManage
+                          ? () => _openForm(context, ref, item)
+                          : null,
+                    ),
+                    onEdit: canManage
+                        ? () => _openForm(context, ref, item)
+                        : null,
+                  ),
                 ],
                 cardBuilder: (item) => EntityCard(
                   title: item.name ?? '',
@@ -136,15 +161,29 @@ class DriversScreen extends ConsumerWidget {
                     item.email ?? '',
                     item.driverProfile?.licenseNumber ?? '',
                   ],
-                  footer: canManage && item.mustSetPassword
-                      ? Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: TextButton(
-                            onPressed: () => _resendInvite(context, ref, item),
-                            child: Text(context.tr('drivers.resendInvite')),
-                          ),
-                        )
-                      : null,
+                  onTap: () => _showDriverDetails(
+                    context,
+                    item,
+                    locale: locale,
+                    onEdit: canManage
+                        ? () => _openForm(context, ref, item)
+                        : null,
+                  ),
+                  footer: _DriverRowActions(
+                    driver: item,
+                    canManage: canManage,
+                    onView: () => _showDriverDetails(
+                      context,
+                      item,
+                      locale: locale,
+                      onEdit: canManage
+                          ? () => _openForm(context, ref, item)
+                          : null,
+                    ),
+                    onEdit: canManage
+                        ? () => _openForm(context, ref, item)
+                        : null,
+                  ),
                 ),
                 pagination: TablePagination(
                   currentPage: data.currentPage,
@@ -161,117 +200,177 @@ class DriversScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _openForm(BuildContext context, WidgetRef ref) async {
-    final name = TextEditingController();
-    final phone = TextEditingController();
-    final email = TextEditingController();
-    final license = TextEditingController();
-    final expiry = TextEditingController();
+  Future<void> _openForm(
+    BuildContext context,
+    WidgetRef ref, [
+    AppUser? existing,
+  ]) async {
+    final name = TextEditingController(text: existing?.name ?? '');
+    final phone = TextEditingController(text: existing?.phone ?? '');
+    final email = TextEditingController(text: existing?.email ?? '');
+    final license = TextEditingController(
+      text: existing?.driverProfile?.licenseNumber ?? '',
+    );
+    final expiry = TextEditingController(
+      text: _dateInput(existing?.driverProfile?.licenseExpiresAt),
+    );
+    var status = existing?.driverProfile?.status ?? 'available';
     final formKey = GlobalKey<FormState>();
+    var saving = false;
     await showDialog<void>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(context.tr('drivers.add')),
-          content: Form(
-            key: formKey,
-            child: SizedBox(
-              width: 420,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    AppTextField(
-                      label: context.tr('auth.name'),
-                      controller: name,
-                      required: true,
-                      validator: (value) => AppValidators.required(
-                        value,
-                        context.tr('validation.required'),
-                      ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(
+                context.tr(existing == null ? 'drivers.add' : 'drivers.edit'),
+              ),
+              content: Form(
+                key: formKey,
+                child: SizedBox(
+                  width: 420,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        AppTextField(
+                          label: context.tr('auth.name'),
+                          controller: name,
+                          required: true,
+                          validator: (value) => AppValidators.required(
+                            value,
+                            context.tr('validation.required'),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        AppTextField(
+                          label: context.tr('auth.phone'),
+                          controller: phone,
+                          required: true,
+                          validator: (value) => AppValidators.required(
+                            value,
+                            context.tr('validation.required'),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        AppTextField(
+                          label: context.tr('drivers.emailOptional'),
+                          controller: email,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return null;
+                            }
+                            return AppValidators.email(
+                              value,
+                              context.tr('validation.email'),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        AppTextField(
+                          label: context.tr('drivers.license'),
+                          controller: license,
+                        ),
+                        const SizedBox(height: 12),
+                        AppTextField(
+                          label: context.tr('drivers.licenseExpiry'),
+                          controller: expiry,
+                          hint: 'YYYY-MM-DD',
+                        ),
+                        if (existing != null) ...[
+                          const SizedBox(height: 12),
+                          AppDropdown<String>(
+                            label: context.tr('common.status'),
+                            value: status,
+                            items: [
+                              for (final item in AppConfig.driverStatuses)
+                                DropdownMenuItem(
+                                  value: item,
+                                  child: Text(context.l10n.status(item)),
+                                ),
+                            ],
+                            onChanged: (value) =>
+                                setState(() => status = value ?? status),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    AppTextField(
-                      label: context.tr('auth.phone'),
-                      controller: phone,
-                      required: true,
-                      validator: (value) => AppValidators.required(
-                        value,
-                        context.tr('validation.required'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    AppTextField(
-                      label: context.tr('drivers.emailOptional'),
-                      controller: email,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return null;
-                        }
-                        return AppValidators.email(
-                          value,
-                          context.tr('validation.email'),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    AppTextField(
-                      label: context.tr('drivers.license'),
-                      controller: license,
-                    ),
-                    const SizedBox(height: 12),
-                    AppTextField(
-                      label: context.tr('drivers.licenseExpiry'),
-                      controller: expiry,
-                      hint: 'YYYY-MM-DD',
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(context.tr('common.cancel')),
-            ),
-            FilledButton(
-              onPressed: () async {
-                if (!formKey.currentState!.validate()) {
-                  return;
-                }
-                try {
-                  final result = await ref
-                      .read(fleetRepositoryProvider)
-                      .createDriver({
-                        'name': name.text.trim(),
-                        'phone': phone.text.trim(),
-                        if (email.text.trim().isNotEmpty)
-                          'email': email.text.trim(),
-                        if (license.text.isNotEmpty)
-                          'license_number': license.text.trim(),
-                        if (expiry.text.isNotEmpty)
-                          'license_expires_at': expiry.text.trim(),
-                      });
-                  ref.invalidate(driversListProvider);
-                  ref.invalidate(fleetDriversProvider);
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    await _showInviteResult(context, result);
-                  }
-                } on ApiException catch (error) {
-                  if (context.mounted) {
-                    showAppSnack(
-                      context,
-                      error.firstFieldError('phone') ??
-                          error.firstFieldError('email') ??
-                          error.message,
-                    );
-                  }
-                }
-              },
-              child: Text(context.tr('common.save')),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: saving ? null : () => Navigator.pop(context),
+                  child: Text(context.tr('common.cancel')),
+                ),
+                FilledButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) {
+                            return;
+                          }
+                          setState(() => saving = true);
+                          try {
+                            final repository = ref.read(
+                              fleetRepositoryProvider,
+                            );
+                            if (existing == null) {
+                              final result = await repository.createDriver({
+                                'name': name.text.trim(),
+                                'phone': phone.text.trim(),
+                                if (email.text.trim().isNotEmpty)
+                                  'email': email.text.trim(),
+                                if (license.text.isNotEmpty)
+                                  'license_number': license.text.trim(),
+                                if (expiry.text.isNotEmpty)
+                                  'license_expires_at': expiry.text.trim(),
+                              });
+                              ref.invalidate(driversListProvider);
+                              ref.invalidate(fleetDriversProvider);
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                await _showInviteResult(context, result);
+                              }
+                            } else {
+                              await repository.updateDriver(existing.id, {
+                                'name': name.text.trim(),
+                                'phone': phone.text.trim(),
+                                'email': email.text.trim(),
+                                'license_number': license.text.trim(),
+                                'license_expires_at': expiry.text.trim(),
+                                'status': status,
+                              });
+                              ref.invalidate(driversListProvider);
+                              ref.invalidate(fleetDriversProvider);
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                showAppSnack(
+                                  context,
+                                  context.tr('drivers.updated'),
+                                );
+                              }
+                            }
+                          } on ApiException catch (error) {
+                            if (context.mounted) {
+                              showAppSnack(
+                                context,
+                                error.firstFieldError('phone') ??
+                                    error.firstFieldError('email') ??
+                                    error.message,
+                              );
+                            }
+                          } finally {
+                            if (context.mounted) {
+                              setState(() => saving = false);
+                            }
+                          }
+                        },
+                  child: Text(context.tr('common.save')),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -283,21 +382,89 @@ class DriversScreen extends ConsumerWidget {
   }
 }
 
-class _DriverActions extends ConsumerWidget {
-  const _DriverActions({required this.driver});
+class _DriverRowActions extends ConsumerWidget {
+  const _DriverRowActions({
+    required this.driver,
+    required this.canManage,
+    required this.onView,
+    required this.onEdit,
+  });
 
   final AppUser driver;
+  final bool canManage;
+  final VoidCallback onView;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!driver.mustSetPassword) {
-      return const Text('—');
-    }
-    return TextButton(
-      onPressed: () => _resendInvite(context, ref, driver),
-      child: Text(context.tr('drivers.resendInvite')),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RecordActions(onView: onView, onEdit: onEdit),
+        if (canManage && driver.mustSetPassword)
+          RecordIconButton(
+            tooltip: context.tr('drivers.resendInvite'),
+            icon: Icons.send_outlined,
+            onPressed: () => _resendInvite(context, ref, driver),
+          ),
+      ],
     );
   }
+}
+
+void _showDriverDetails(
+  BuildContext context,
+  AppUser driver, {
+  required String locale,
+  VoidCallback? onEdit,
+}) {
+  String text(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '—';
+    }
+    return value;
+  }
+
+  showRecordDetails(
+    context,
+    title: context.tr('drivers.details'),
+    onEdit: onEdit,
+    fields: [
+      InfoField(label: context.tr('auth.name'), value: text(driver.name)),
+      InfoField(label: context.tr('auth.phone'), value: text(driver.phone)),
+      InfoField(label: context.tr('auth.email'), value: text(driver.email)),
+      InfoField(
+        label: context.tr('drivers.license'),
+        value: text(driver.driverProfile?.licenseNumber),
+      ),
+      InfoField(
+        label: context.tr('drivers.licenseExpiry'),
+        value: Formatters.date(
+          driver.driverProfile?.licenseExpiresAt,
+          locale: locale,
+        ),
+      ),
+      InfoField(
+        label: context.tr('common.status'),
+        value: context.l10n.status(driver.displayStatus),
+      ),
+      InfoField(
+        label: context.tr('drivers.lastLogin'),
+        value: Formatters.dateTime(driver.lastLoginAt, locale: locale),
+      ),
+    ],
+  );
+}
+
+String _dateInput(String? raw) {
+  if (raw == null || raw.isEmpty) {
+    return '';
+  }
+  final match = RegExp(r'^(\d{4}-\d{2}-\d{2})').firstMatch(raw);
+  if (match != null) {
+    return match.group(1)!;
+  }
+  return raw;
 }
 
 Future<void> _resendInvite(

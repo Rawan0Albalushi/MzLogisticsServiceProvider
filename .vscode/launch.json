@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Provider (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "args": [
+        "--web-port=7357",
+        "--no-web-resources-cdn",
+        "--web-browser-flag=--disable-extensions",
+        "--web-browser-flag=--disable-background-networking",
+        "--web-browser-flag=--disable-sync",
+        "--web-browser-flag=--no-first-run",
+        "--web-browser-flag=--disable-default-apps"
+      ]
+    }
+  ]
+}

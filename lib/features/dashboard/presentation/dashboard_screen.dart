@@ -12,7 +12,7 @@ import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/account_restricted_view.dart';
 import '../../../shared/widgets/app_page.dart';
 import '../../../shared/widgets/async_body.dart';
-import 'widgets/dashboard_hero.dart';
+import '../../../shared/widgets/page_header.dart';
 import 'widgets/dashboard_kpi.dart';
 import 'widgets/dashboard_queues.dart';
 
@@ -45,77 +45,97 @@ class DashboardScreen extends ConsumerWidget {
 
     return RefreshIndicator(
       color: AppColors.teal,
-      onRefresh: () => _reload(
-        ref,
-        shipments: canShipments,
-        jobs: canJobs,
-        trips: canTrips,
-      ),
+      onRefresh: () =>
+          _reload(ref, shipments: canShipments, jobs: canJobs, trips: canTrips),
       child: AppPage(
         physics: const AlwaysScrollableScrollPhysics(),
         child: AsyncBody(
           value: ref.watch(dashboardProvider),
+          skipLoadingOnReload: true,
           onRetry: () => ref.invalidate(dashboardProvider),
           builder: (data) {
             final attention = _attention(context, data, session, locale);
             final operations = _operations(context, data, session, locale);
             final finance = _finance(context, data, session, locale);
             final links = _links(context, session);
+            final updatedLabel = updated == null
+                ? null
+                : context.tr('dashboard.updatedAt', {
+                    'time': Formatters.dateTime(
+                      updated.toIso8601String(),
+                      locale: locale,
+                    ),
+                  });
             return Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                DashboardHero(
-                  kicker: context.tr('app.tagline'),
-                  greeting: context.tr(_greetingKey(), {'name': _firstName(context, session)}),
+                PageHeader(
+                  title: context.tr(_greetingKey(), {
+                    'name': _firstName(context, session),
+                  }),
                   subtitle: context.tr('dashboard.subtitle'),
-                  refreshLabel: context.tr('common.refresh'),
-                  updatedLabel: updated == null
-                      ? null
-                      : context.tr('dashboard.updatedAt', {
-                          'time': Formatters.dateTime(updated.toIso8601String(), locale: locale),
-                        }),
-                  onRefresh: () {
-                    _reload(ref, shipments: canShipments, jobs: canJobs, trips: canTrips);
-                  },
+                  actions: [
+                    if (updatedLabel != null)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          updatedLabel,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColors.muted, height: 1.4),
+                        ),
+                      ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        _reload(
+                          ref,
+                          shipments: canShipments,
+                          jobs: canJobs,
+                          trips: canTrips,
+                        );
+                      },
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: Text(context.tr('common.refresh')),
+                    ),
+                  ],
                 ),
                 if (attention.isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   DashboardSection(
                     title: context.tr('dashboard.attention'),
-                    child: DashboardAttentionGrid(items: attention),
+                    child: DashboardAttentionList(items: attention),
                   ),
                 ],
                 if (operations.isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   DashboardSection(
                     title: context.tr('dashboard.operations'),
                     child: DashboardKpiGrid(metrics: operations),
                   ),
                 ],
-                if (finance.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  DashboardSection(
-                    title: context.tr('dashboard.finance'),
-                    child: DashboardKpiGrid(metrics: finance),
-                  ),
-                ],
                 if (canShipments || canJobs || canTrips) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   DashboardQueueGrid(
                     showShipments: canShipments,
                     showJobs: canJobs,
                     showTrips: canTrips,
                   ),
                 ],
+                if (finance.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  DashboardSection(
+                    title: context.tr('dashboard.finance'),
+                    child: DashboardKpiGrid(metrics: finance),
+                  ),
+                ],
                 if (links.isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   DashboardSection(
                     title: context.tr('dashboard.quickLinks'),
                     child: DashboardQuickLinkGrid(links: links),
                   ),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 const _FleetNote(),
               ],
             );
@@ -175,7 +195,8 @@ class DashboardScreen extends ConsumerWidget {
     SessionState session,
     String locale,
   ) {
-    String count(num value) => Formatters.number(value, locale: locale, decimals: 0);
+    String count(num value) =>
+        Formatters.number(value, locale: locale, decimals: 0);
     final view = context.tr('dashboard.viewAll');
     final can = session.permissions.can;
     return [
@@ -204,7 +225,9 @@ class DashboardScreen extends ConsumerWidget {
           icon: Icons.route_outlined,
           tone: DashboardKpiTone.danger,
           viewLabel: view,
-          onTap: () => context.go(can(AppPermissions.tripsAssign) ? '/dispatch' : '/trips'),
+          onTap: () => context.go(
+            can(AppPermissions.tripsAssign) ? '/dispatch' : '/trips',
+          ),
         ),
       if (can(AppPermissions.paymentsView) && data.paymentsPending > 0)
         DashboardAttentionItem(
@@ -233,7 +256,8 @@ class DashboardScreen extends ConsumerWidget {
     SessionState session,
     String locale,
   ) {
-    String count(num value) => Formatters.number(value, locale: locale, decimals: 0);
+    String count(num value) =>
+        Formatters.number(value, locale: locale, decimals: 0);
     final can = session.permissions.can;
     return [
       if (can(AppPermissions.shipmentsView))
@@ -242,7 +266,9 @@ class DashboardScreen extends ConsumerWidget {
           value: count(data.shipmentsOpen),
           hint: context.tr('dashboard.shipmentsOpenHint'),
           icon: Icons.local_shipping_outlined,
-          tone: data.shipmentsOpen > 0 ? DashboardKpiTone.info : DashboardKpiTone.neutral,
+          tone: data.shipmentsOpen > 0
+              ? DashboardKpiTone.info
+              : DashboardKpiTone.neutral,
           onTap: () => context.go('/shipments'),
         ),
       if (can(AppPermissions.quotationsView))
@@ -251,7 +277,9 @@ class DashboardScreen extends ConsumerWidget {
           value: count(data.quotationsPending),
           hint: context.tr('dashboard.quotationsPendingHint'),
           icon: Icons.request_quote_outlined,
-          tone: data.quotationsPending > 0 ? DashboardKpiTone.warning : DashboardKpiTone.neutral,
+          tone: data.quotationsPending > 0
+              ? DashboardKpiTone.warning
+              : DashboardKpiTone.neutral,
           onTap: () => context.go('/quotations'),
         ),
       if (can(AppPermissions.jobsView))
@@ -260,7 +288,9 @@ class DashboardScreen extends ConsumerWidget {
           value: count(data.jobsActive),
           hint: context.tr('dashboard.jobsActiveHint'),
           icon: Icons.work_outline_rounded,
-          tone: data.jobsPendingDispatch > 0 ? DashboardKpiTone.warning : DashboardKpiTone.info,
+          tone: data.jobsPendingDispatch > 0
+              ? DashboardKpiTone.warning
+              : DashboardKpiTone.info,
           onTap: () => context.go('/jobs'),
         ),
       if (can(AppPermissions.tripsView))
@@ -269,7 +299,9 @@ class DashboardScreen extends ConsumerWidget {
           value: count(data.tripsInTransit),
           hint: context.tr('dashboard.tripsInTransitHint'),
           icon: Icons.route_outlined,
-          tone: data.tripsInTransit > 0 ? DashboardKpiTone.info : DashboardKpiTone.neutral,
+          tone: data.tripsInTransit > 0
+              ? DashboardKpiTone.info
+              : DashboardKpiTone.neutral,
           onTap: () => context.go('/trips'),
         ),
     ];
@@ -282,7 +314,8 @@ class DashboardScreen extends ConsumerWidget {
     String locale,
   ) {
     String money(num value) => Formatters.money(value, locale: locale);
-    String count(num value) => Formatters.number(value, locale: locale, decimals: 0);
+    String count(num value) =>
+        Formatters.number(value, locale: locale, decimals: 0);
     final can = session.permissions.can;
     return [
       if (can(AppPermissions.paymentsView))
@@ -316,7 +349,9 @@ class DashboardScreen extends ConsumerWidget {
           value: money(data.walletAvailable),
           hint: context.tr('dashboard.availableHint'),
           icon: Icons.savings_outlined,
-          tone: data.walletAvailable > 0 ? DashboardKpiTone.success : DashboardKpiTone.neutral,
+          tone: data.walletAvailable > 0
+              ? DashboardKpiTone.success
+              : DashboardKpiTone.neutral,
           onTap: () => context.go('/finance'),
         ),
       if (can(AppPermissions.invoicesView))
@@ -325,7 +360,9 @@ class DashboardScreen extends ConsumerWidget {
           value: count(data.invoicesUnpaid),
           hint: context.tr('dashboard.invoicesUnpaidHint'),
           icon: Icons.receipt_long_outlined,
-          tone: data.invoicesUnpaid > 0 ? DashboardKpiTone.warning : DashboardKpiTone.neutral,
+          tone: data.invoicesUnpaid > 0
+              ? DashboardKpiTone.warning
+              : DashboardKpiTone.neutral,
           onTap: () => context.go('/finance'),
         ),
     ];
@@ -333,7 +370,8 @@ class DashboardScreen extends ConsumerWidget {
 
   List<DashboardQuickLink> _links(BuildContext context, SessionState session) {
     final can = session.permissions.can;
-    final finance = can(AppPermissions.paymentsView) ||
+    final finance =
+        can(AppPermissions.paymentsView) ||
         can(AppPermissions.invoicesView) ||
         can(AppPermissions.settlementsView) ||
         can(AppPermissions.walletsView);
@@ -392,7 +430,8 @@ class _FleetNote extends StatelessWidget {
         Expanded(
           child: Text(
             context.tr('app.companyFleetNote'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted, height: 1.45),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.muted, height: 1.45),
           ),
         ),
       ],

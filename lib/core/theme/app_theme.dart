@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../router/page_transitions.dart';
 import 'app_colors.dart';
@@ -7,8 +6,18 @@ import 'app_colors.dart';
 class AppTheme {
   const AppTheme._();
 
-  static ThemeData light(Locale locale) {
-    final arabic = locale.languageCode == 'ar';
+  static const fontFamily = 'IBM Plex Sans Arabic';
+
+  static const _fallbacks = <String>[
+    'Segoe UI',
+    'Tahoma',
+    'Arial',
+    'sans-serif',
+  ];
+
+  static final ThemeData light = _build();
+
+  static ThemeData _build() {
     final scheme = const ColorScheme.light(
       primary: AppColors.teal,
       onPrimary: AppColors.white,
@@ -21,51 +30,56 @@ class AppTheme {
       outline: AppColors.border,
     );
 
-    final latinStyle = GoogleFonts.ibmPlexSans();
-    final arabicStyle = GoogleFonts.ibmPlexSansArabic();
-    final primaryFamily = arabic ? arabicStyle.fontFamily : latinStyle.fontFamily;
-    final fallbackFamily = arabic ? latinStyle.fontFamily : arabicStyle.fontFamily;
-
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.surface,
-      fontFamily: primaryFamily,
+      fontFamily: fontFamily,
     );
-    final fallbacks = <String>[
-      ?fallbackFamily,
-      'Segoe UI',
-      'Tahoma',
-      'Arial',
-      'sans-serif',
-    ];
 
-    final seeded = arabic
-        ? GoogleFonts.ibmPlexSansArabicTextTheme(base.textTheme)
-        : GoogleFonts.ibmPlexSansTextTheme(base.textTheme);
-
-    TextStyle? withMetrics(TextStyle? style, {FontWeight? weight, double height = 1.45}) {
+    TextStyle? withMetrics(
+      TextStyle? style, {
+      FontWeight? weight,
+      double height = 1.45,
+    }) {
       return style?.copyWith(
-        fontFamily: primaryFamily,
-        fontFamilyFallback: fallbacks,
+        fontFamily: fontFamily,
+        fontFamilyFallback: _fallbacks,
         fontWeight: weight ?? style.fontWeight,
         height: height,
         letterSpacing: 0,
       );
     }
 
+    final seeded = base.textTheme;
     final textTheme = seeded
         .apply(
           bodyColor: AppColors.ink,
           displayColor: AppColors.ink,
-          fontFamily: primaryFamily,
-          fontFamilyFallback: fallbacks,
+          fontFamily: fontFamily,
+          fontFamilyFallback: _fallbacks,
         )
         .copyWith(
-          headlineSmall: withMetrics(seeded.headlineSmall, weight: FontWeight.w600, height: 1.35),
-          titleLarge: withMetrics(seeded.titleLarge, weight: FontWeight.w600, height: 1.35),
-          titleMedium: withMetrics(seeded.titleMedium, weight: FontWeight.w600, height: 1.4),
-          titleSmall: withMetrics(seeded.titleSmall, weight: FontWeight.w600, height: 1.4),
+          headlineSmall: withMetrics(
+            seeded.headlineSmall,
+            weight: FontWeight.w600,
+            height: 1.35,
+          ),
+          titleLarge: withMetrics(
+            seeded.titleLarge,
+            weight: FontWeight.w600,
+            height: 1.35,
+          ),
+          titleMedium: withMetrics(
+            seeded.titleMedium,
+            weight: FontWeight.w600,
+            height: 1.4,
+          ),
+          titleSmall: withMetrics(
+            seeded.titleSmall,
+            weight: FontWeight.w600,
+            height: 1.4,
+          ),
           bodyLarge: withMetrics(seeded.bodyLarge),
           bodyMedium: withMetrics(seeded.bodyMedium),
           bodySmall: withMetrics(seeded.bodySmall),
@@ -108,7 +122,10 @@ class AppTheme {
         labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.muted),
         floatingLabelBehavior: FloatingLabelBehavior.never,
         alignLabelWithHint: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.border),
@@ -132,7 +149,9 @@ class AppTheme {
           foregroundColor: AppColors.white,
           minimumSize: const Size(48, 44),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -141,7 +160,9 @@ class AppTheme {
           side: const BorderSide(color: AppColors.border),
           minimumSize: const Size(48, 44),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -166,7 +187,9 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.ink,
-        contentTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.white),
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.white,
+        ),
         behavior: SnackBarBehavior.floating,
       ),
       dialogTheme: DialogThemeData(
@@ -193,6 +216,8 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
+            fontFamily: fontFamily,
+            fontFamilyFallback: _fallbacks,
             fontSize: 11,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? AppColors.teal800 : AppColors.muted,
