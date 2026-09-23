@@ -44,6 +44,10 @@ class ApiEndpoints {
   static String assignTrip(int id) => '/trips/$id/assign';
   static String tripStatus(int id) => '/trips/$id/status';
   static String truck(int id) => '/trucks/$id';
+  static String truckDocuments(int id) => '/trucks/$id/documents';
+  static String driverDocuments(int id) => '/drivers/$id/documents';
+  static String organizationDocuments(int id) => '/organizations/$id/documents';
+  static String documentFile(int id) => '/documents/$id/file';
   static String truckType(int id) => '/truck-types/$id';
   static String organization(int id) => '/organizations/$id';
   static String wallet(int id) => '/wallets/$id';

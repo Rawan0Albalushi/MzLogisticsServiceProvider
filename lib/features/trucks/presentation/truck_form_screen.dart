@@ -17,6 +17,7 @@ import '../../../shared/widgets/async_body.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
+import '../../documents/presentation/required_documents_section.dart';
 import '../../fleet/presentation/fleet_screen.dart';
 import '../../truck_types/presentation/truck_type_providers.dart';
 import 'trucks_screen.dart';
@@ -47,6 +48,7 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
   String _status = 'available';
   var _loading = false;
   var _hydrated = false;
+  final _pendingDocuments = <String, PendingUpload>{};
 
   @override
   void dispose() {
@@ -119,6 +121,8 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
       return;
     }
     setState(() => _loading = true);
+    var leaving = false;
+    int? createdId;
     final payload = {
       'plate_number': _plate.text.trim(),
       'type': type,
@@ -136,25 +140,40 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
         'insurance_expires_at': _insurance.text.trim(),
     };
     try {
+      final repository = ref.read(fleetRepositoryProvider);
+      final saved = widget.truckId == null
+          ? await repository.createTruck(payload)
+          : await repository.updateTruck(widget.truckId!, payload);
       if (widget.truckId == null) {
-        await ref.read(fleetRepositoryProvider).createTruck(payload);
-      } else {
-        await ref
-            .read(fleetRepositoryProvider)
-            .updateTruck(widget.truckId!, payload);
+        createdId = saved.id;
       }
-      ref.invalidate(trucksProvider);
-      ref.invalidate(fleetTrucksProvider);
+      for (final entry in _pendingDocuments.entries) {
+        await repository.uploadTruckDocument(
+          truckId: saved.id,
+          type: entry.key,
+          bytes: entry.value.bytes,
+          filename: entry.value.filename,
+        );
+      }
+      _pendingDocuments.clear();
+      leaving = true;
       if (mounted) {
         showAppSnack(context, context.tr('trucks.saved'));
         context.go('/trucks');
       }
+      ref.invalidate(trucksProvider);
+      ref.invalidate(fleetTrucksProvider);
     } on ApiException catch (error) {
       if (mounted) {
         showAppSnack(context, error.message);
+        final id = createdId;
+        if (id != null) {
+          leaving = true;
+          context.go('/trucks/$id/edit');
+        }
       }
     } finally {
-      if (mounted) {
+      if (!leaving && mounted) {
         setState(() => _loading = false);
       }
     }
@@ -249,6 +268,38 @@ class _TruckFormScreenState extends ConsumerState<TruckFormScreen> {
                   hint: 'YYYY-MM-DD',
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SectionCard(
+            title: context.tr('documents.requiredTitle'),
+            icon: Icons.upload_file_outlined,
+            child: RequiredDocumentsSection(
+              types: const ['insurance', 'vehicle_registration'],
+              documents: truck?.documents ?? const [],
+              pending: _pendingDocuments,
+              canUpload: true,
+              showHeading: false,
+              onUpload: (type, bytes, filename) async {
+                final truckId = widget.truckId;
+                if (truckId == null) {
+                  setState(() {
+                    _pendingDocuments[type] = PendingUpload(bytes: bytes, filename: filename);
+                  });
+                  return;
+                }
+                await ref.read(fleetRepositoryProvider).uploadTruckDocument(
+                      truckId: truckId,
+                      type: type,
+                      bytes: bytes,
+                      filename: filename,
+                    );
+                ref.invalidate(trucksProvider);
+                ref.invalidate(fleetTrucksProvider);
+                if (context.mounted) {
+                  showAppSnack(context, context.tr('documents.uploaded'));
+                }
+              },
             ),
           ),
           const SizedBox(height: 16),

@@ -8,6 +8,7 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/truck.dart';
 import '../../../shared/providers/session_provider.dart';
+import '../../documents/presentation/required_documents_section.dart';
 import '../../fleet/presentation/fleet_screen.dart';
 import '../../fleet/presentation/import_fleet_sheet.dart';
 import '../../../core/theme/page_visuals.dart';
@@ -330,5 +331,9 @@ void _showTruckDetails(
         wide: true,
       ),
     ],
+    extra: RequiredDocumentsSection(
+      types: const ['insurance', 'vehicle_registration'],
+      documents: truck.documents,
+    ),
   );
 }

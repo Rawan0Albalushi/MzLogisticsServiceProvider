@@ -731,7 +731,22 @@
     "companyDocs": "Company documents",
     "expiringSoon": "Expiring soon",
     "expired": "Expired",
-    "valid": "Valid"
+    "valid": "Valid",
+    "requiredTitle": "Required documents",
+    "requiredHint": "Upload a PDF or image. The file appears in the view after it is uploaded.",
+    "upload": "Upload file",
+    "replace": "Replace file",
+    "notUploaded": "Not uploaded yet",
+    "open": "Open file",
+    "uploaded": "Document uploaded.",
+    "tooLarge": "The file must be 5 MB or smaller.",
+    "types": {
+      "commercial_license": "Commercial register",
+      "insurance": "Insurance certificate",
+      "vehicle_registration": "Vehicle registration",
+      "driver_license": "Driving license",
+      "identity": "Identity document"
+    }
   },
   "validation": {
     "email": "Enter a valid email address.",

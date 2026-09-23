@@ -8,6 +8,7 @@ Future<void> showRecordDetails(
   required String title,
   required List<InfoField> fields,
   VoidCallback? onEdit,
+  Widget? extra,
 }) {
   return showDialog<void>(
     context: context,
@@ -16,7 +17,18 @@ Future<void> showRecordDetails(
         title: Text(title),
         content: SizedBox(
           width: 560,
-          child: SingleChildScrollView(child: InfoGrid(fields: fields)),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                InfoGrid(fields: fields),
+                if (extra != null) ...[
+                  const SizedBox(height: 16),
+                  extra,
+                ],
+              ],
+            ),
+          ),
         ),
         actions: [
           if (onEdit != null)

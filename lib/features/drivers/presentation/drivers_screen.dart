@@ -8,6 +8,7 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/validators.dart';
+import '../../../shared/models/document.dart';
 import '../../../shared/models/driver_invite.dart';
 import '../../../shared/models/user.dart';
 import '../../../shared/providers/session_provider.dart';
@@ -25,6 +26,7 @@ import '../../../shared/widgets/record_actions.dart';
 import '../../../shared/widgets/record_details_dialog.dart';
 import '../../../shared/widgets/responsive_data_view.dart';
 import '../../../shared/widgets/status_badge.dart';
+import '../../documents/presentation/required_documents_section.dart';
 import '../../fleet/presentation/fleet_screen.dart';
 import 'import_drivers_sheet.dart';
 
@@ -217,14 +219,19 @@ class DriversScreen extends ConsumerWidget {
     var status = existing?.driverProfile?.status ?? 'available';
     final formKey = GlobalKey<FormState>();
     var saving = false;
+    var documents = List<CompanyDocument>.from(existing?.documents ?? const []);
+    final pendingDocuments = <String, PendingUpload>{};
+    DriverInviteResult? createdInvite;
+    var saved = false;
+    var closing = false;
     await showDialog<void>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
               title: Text(
-                context.tr(existing == null ? 'drivers.add' : 'drivers.edit'),
+                dialogContext.tr(existing == null ? 'drivers.add' : 'drivers.edit'),
               ),
               content: Form(
                 key: formKey,
@@ -293,6 +300,43 @@ class DriversScreen extends ConsumerWidget {
                                 setState(() => status = value ?? status),
                           ),
                         ],
+                        const SizedBox(height: 16),
+                        RequiredDocumentsSection(
+                          types: const ['driver_license', 'identity'],
+                          documents: documents,
+                          pending: pendingDocuments,
+                          canUpload: !saving,
+                          onUpload: (type, bytes, filename) async {
+                            final driver = existing;
+                            if (driver == null) {
+                              setState(() {
+                                pendingDocuments[type] = PendingUpload(
+                                  bytes: bytes,
+                                  filename: filename,
+                                );
+                              });
+                              return;
+                            }
+                            final saved = await ref
+                                .read(fleetRepositoryProvider)
+                                .uploadDriverDocument(
+                                  driverId: driver.id,
+                                  type: type,
+                                  bytes: bytes,
+                                  filename: filename,
+                                );
+                            setState(() {
+                              documents = [
+                                for (final item in documents)
+                                  if (item.type != type) item,
+                                saved,
+                              ];
+                            });
+                            if (context.mounted) {
+                              showAppSnack(context, context.tr('documents.uploaded'));
+                            }
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -316,7 +360,7 @@ class DriversScreen extends ConsumerWidget {
                               fleetRepositoryProvider,
                             );
                             if (existing == null) {
-                              final result = await repository.createDriver({
+                              createdInvite ??= await repository.createDriver({
                                 'name': name.text.trim(),
                                 'phone': phone.text.trim(),
                                 if (email.text.trim().isNotEmpty)
@@ -326,11 +370,20 @@ class DriversScreen extends ConsumerWidget {
                                 if (expiry.text.isNotEmpty)
                                   'license_expires_at': expiry.text.trim(),
                               });
-                              ref.invalidate(driversListProvider);
-                              ref.invalidate(fleetDriversProvider);
+                              final result = createdInvite!;
+                              for (final entry in pendingDocuments.entries) {
+                                await repository.uploadDriverDocument(
+                                  driverId: result.driver.id,
+                                  type: entry.key,
+                                  bytes: entry.value.bytes,
+                                  filename: entry.value.filename,
+                                );
+                              }
+                              pendingDocuments.clear();
+                              saved = true;
+                              closing = true;
                               if (context.mounted) {
                                 Navigator.pop(context);
-                                await _showInviteResult(context, result);
                               }
                             } else {
                               await repository.updateDriver(existing.id, {
@@ -341,14 +394,10 @@ class DriversScreen extends ConsumerWidget {
                                 'license_expires_at': expiry.text.trim(),
                                 'status': status,
                               });
-                              ref.invalidate(driversListProvider);
-                              ref.invalidate(fleetDriversProvider);
+                              saved = true;
+                              closing = true;
                               if (context.mounted) {
                                 Navigator.pop(context);
-                                showAppSnack(
-                                  context,
-                                  context.tr('drivers.updated'),
-                                );
                               }
                             }
                           } on ApiException catch (error) {
@@ -361,7 +410,7 @@ class DriversScreen extends ConsumerWidget {
                               );
                             }
                           } finally {
-                            if (context.mounted) {
+                            if (!closing && context.mounted) {
                               setState(() => saving = false);
                             }
                           }
@@ -379,6 +428,17 @@ class DriversScreen extends ConsumerWidget {
     email.dispose();
     license.dispose();
     expiry.dispose();
+    if (!saved || !context.mounted) {
+      return;
+    }
+    ref.invalidate(driversListProvider);
+    ref.invalidate(fleetDriversProvider);
+    final invite = createdInvite;
+    if (invite != null) {
+      await _showInviteResult(context, invite);
+      return;
+    }
+    showAppSnack(context, context.tr('drivers.updated'));
   }
 }
 
@@ -453,6 +513,10 @@ void _showDriverDetails(
         value: Formatters.dateTime(driver.lastLoginAt, locale: locale),
       ),
     ],
+    extra: RequiredDocumentsSection(
+      types: const ['driver_license', 'identity'],
+      documents: driver.documents,
+    ),
   );
 }
 

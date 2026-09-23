@@ -33,6 +33,7 @@ class ComplianceItem {
     this.expiresAt,
     this.status,
     this.owner,
+    this.file,
   });
 
   final String title;
@@ -40,4 +41,5 @@ class ComplianceItem {
   final String? expiresAt;
   final String? status;
   final String? owner;
+  final CompanyDocument? file;
 }

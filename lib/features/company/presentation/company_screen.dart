@@ -14,6 +14,7 @@ import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
+import '../../documents/presentation/required_documents_section.dart';
 
 final organizationProvider = FutureProvider.autoDispose.family<Organization, int>((ref, id) {
   return ref.watch(organizationRepositoryProvider).show(id);
@@ -152,6 +153,29 @@ class _CompanyScreenState extends ConsumerState<CompanyScreen> {
                     ),
                     ],
                   ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              SectionCard(
+                title: context.tr('documents.requiredTitle'),
+                icon: Icons.upload_file_outlined,
+                child: RequiredDocumentsSection(
+                  types: const ['commercial_license'],
+                  documents: org.documents,
+                  canUpload: true,
+                  showHeading: false,
+                  onUpload: (type, bytes, filename) async {
+                    await ref.read(organizationRepositoryProvider).uploadDocument(
+                          organizationId: id,
+                          type: type,
+                          bytes: bytes,
+                          filename: filename,
+                        );
+                    ref.invalidate(organizationProvider(id));
+                    if (context.mounted) {
+                      showAppSnack(context, context.tr('documents.uploaded'));
+                    }
+                  },
                 ),
               ),
             ],

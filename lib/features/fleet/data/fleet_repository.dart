@@ -4,6 +4,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/paginated.dart';
 import '../../../core/utils/json_utils.dart';
+import '../../../shared/models/document.dart';
 import '../../../shared/models/driver_invite.dart';
 import '../../../shared/models/equipment.dart';
 import '../../../shared/models/fleet_import.dart';
@@ -56,6 +57,54 @@ class FleetRepository {
       asMap(response['data']),
       errorDetailKeys: const ['plate_number', 'type'],
     );
+  }
+
+  Future<CompanyDocument> uploadTruckDocument({
+    required int truckId,
+    required String type,
+    required List<int> bytes,
+    required String filename,
+  }) {
+    return _uploadDocument(
+      ApiEndpoints.truckDocuments(truckId),
+      type: type,
+      bytes: bytes,
+      filename: filename,
+    );
+  }
+
+  Future<CompanyDocument> uploadDriverDocument({
+    required int driverId,
+    required String type,
+    required List<int> bytes,
+    required String filename,
+  }) {
+    return _uploadDocument(
+      ApiEndpoints.driverDocuments(driverId),
+      type: type,
+      bytes: bytes,
+      filename: filename,
+    );
+  }
+
+  Future<List<int>> downloadDocument(int id) {
+    return _api.getBytes(ApiEndpoints.documentFile(id));
+  }
+
+  Future<CompanyDocument> _uploadDocument(
+    String path, {
+    required String type,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final response = await _api.post(
+      path,
+      data: FormData.fromMap({
+        'type': type,
+        'file': MultipartFile.fromBytes(bytes, filename: filename),
+      }),
+    );
+    return CompanyDocument.fromJson(asMap(response['data']));
   }
 
   Future<Truck> updateTruck(int id, Map<String, dynamic> payload) async {

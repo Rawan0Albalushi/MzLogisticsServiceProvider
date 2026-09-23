@@ -731,7 +731,22 @@
     "companyDocs": "وثائق الشركة",
     "expiringSoon": "قاربة على الانتهاء",
     "expired": "منتهية",
-    "valid": "سارية"
+    "valid": "سارية",
+    "requiredTitle": "المستندات المطلوبة",
+    "requiredHint": "ارفعوا ملف PDF أو صورة. يظهر الملف في العرض بعد الرفع.",
+    "upload": "رفع ملف",
+    "replace": "استبدال الملف",
+    "notUploaded": "لم يُرفع بعد",
+    "open": "عرض الملف",
+    "uploaded": "تم رفع المستند.",
+    "tooLarge": "حجم الملف يجب ألا يتجاوز 5 ميغابايت.",
+    "types": {
+      "commercial_license": "السجل التجاري",
+      "insurance": "وثيقة التأمين",
+      "vehicle_registration": "استمارة المركبة",
+      "driver_license": "رخصة القيادة",
+      "identity": "الهوية"
+    }
   },
   "validation": {
     "email": "أدخلوا بريداً إلكترونياً صالحاً.",

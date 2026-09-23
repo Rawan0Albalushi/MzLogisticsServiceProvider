@@ -14,6 +14,8 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../company/presentation/company_screen.dart';
 import '../../fleet/presentation/fleet_screen.dart';
+import 'document_preview.dart';
+import 'required_documents_section.dart';
 
 final documentSearchProvider = StateProvider<String>((ref) => '');
 final documentCategoryProvider = StateProvider<String?>((ref) => null);
@@ -54,34 +56,72 @@ class DocumentsScreen extends ConsumerWidget {
     final organization = orgId == null ? null : ref.watch(organizationProvider(orgId));
 
     final items = <ComplianceItem>[];
+    CompanyDocument? fileOf(List<CompanyDocument> documents, String type) {
+      for (final document in documents) {
+        if (document.type == type) {
+          return document;
+        }
+      }
+      return null;
+    }
+
     for (final truck in trucks.asData?.value.items ?? const []) {
-      if (truck.insuranceExpiresAt != null) {
+      final insurance = fileOf(truck.documents, 'insurance');
+      final registration = fileOf(truck.documents, 'vehicle_registration');
+      if (insurance != null || truck.insuranceExpiresAt != null) {
         items.add(ComplianceItem(
           title: truck.plateNumber ?? context.tr('common.truck'),
           category: context.tr('documents.insurance'),
-          expiresAt: truck.insuranceExpiresAt,
-          status: truck.status,
+          expiresAt: insurance?.expiresAt ?? truck.insuranceExpiresAt,
+          status: insurance?.status ?? truck.status,
           owner: truck.plateNumber,
+          file: insurance,
+        ));
+      }
+      if (registration != null) {
+        items.add(ComplianceItem(
+          title: '${truck.plateNumber ?? context.tr('common.truck')} · ${context.tr('documents.types.vehicle_registration')}',
+          category: context.tr('documents.insurance'),
+          expiresAt: registration.expiresAt,
+          status: registration.status,
+          owner: truck.plateNumber,
+          file: registration,
         ));
       }
     }
     for (final driver in drivers.asData?.value.items ?? const []) {
-      if (driver.driverProfile?.licenseExpiresAt != null) {
+      final license = fileOf(driver.documents, 'driver_license');
+      final identity = fileOf(driver.documents, 'identity');
+      if (license != null || driver.driverProfile?.licenseExpiresAt != null) {
         items.add(ComplianceItem(
           title: driver.name ?? context.tr('common.driver'),
           category: context.tr('documents.license'),
-          expiresAt: driver.driverProfile?.licenseExpiresAt,
-          status: driver.driverProfile?.status,
+          expiresAt: license?.expiresAt ?? driver.driverProfile?.licenseExpiresAt,
+          status: license?.status ?? driver.driverProfile?.status,
           owner: driver.name,
+          file: license,
+        ));
+      }
+      if (identity != null) {
+        items.add(ComplianceItem(
+          title: '${driver.name ?? context.tr('common.driver')} · ${context.tr('documents.types.identity')}',
+          category: context.tr('documents.license'),
+          expiresAt: identity.expiresAt,
+          status: identity.status,
+          owner: driver.name,
+          file: identity,
         ));
       }
     }
     for (final doc in organization?.asData?.value.documents ?? const []) {
       items.add(ComplianceItem(
-        title: doc.title ?? doc.type ?? context.tr('documents.companyDocs'),
+        title: doc.type == null
+            ? (doc.title ?? context.tr('documents.companyDocs'))
+            : context.tr('documents.types.${doc.type}'),
         category: context.tr('documents.companyDocs'),
         expiresAt: doc.expiresAt,
         status: doc.status,
+        file: doc,
       ));
     }
 
@@ -148,11 +188,48 @@ class DocumentsScreen extends ConsumerWidget {
                   for (final item in visible)
                     ListTile(
                       contentPadding: EdgeInsets.zero,
+                      leading: item.file != null && isDocumentImage(item.file!.title)
+                          ? SizedBox(
+                              width: 56,
+                              height: 56,
+                              child: DocumentImagePreview(
+                                documentId: item.file!.id,
+                                height: 56,
+                                onTap: () => showDocumentImage(
+                                  context,
+                                  documentId: item.file!.id,
+                                  filename: item.file!.title,
+                                ),
+                              ),
+                            )
+                          : null,
                       title: Text(item.title),
                       subtitle: Text(
-                        '${item.category} · ${context.tr('documents.expires')} ${Formatters.date(item.expiresAt, locale: locale)}',
+                        [
+                          item.category,
+                          if (item.file?.title != null && !isDocumentImage(item.file!.title)) item.file!.title!,
+                          '${context.tr('documents.expires')} ${Formatters.date(item.expiresAt, locale: locale)}',
+                        ].join(' · '),
                       ),
-                      trailing: StatusBadge(status: item.status),
+                      onTap: item.file != null && isDocumentImage(item.file!.title)
+                          ? () => showDocumentImage(
+                                context,
+                                documentId: item.file!.id,
+                                filename: item.file!.title,
+                              )
+                          : null,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (item.file != null && !isDocumentImage(item.file!.title))
+                            IconButton(
+                              tooltip: context.tr('documents.open'),
+                              onPressed: () => openStoredDocument(ref, context, item.file!),
+                              icon: const Icon(Icons.open_in_new),
+                            ),
+                          StatusBadge(status: item.status),
+                        ],
+                      ),
                     ),
                 ],
               ),

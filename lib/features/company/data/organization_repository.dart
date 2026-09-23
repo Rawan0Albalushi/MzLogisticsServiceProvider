@@ -1,6 +1,9 @@
+import 'package:dio/dio.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_endpoints.dart';
 import '../../../core/utils/json_utils.dart';
+import '../../../shared/models/document.dart';
 import '../../../shared/models/organization.dart';
 
 class OrganizationRepository {
@@ -18,6 +21,22 @@ class OrganizationRepository {
       if (response['documents'] != null) 'documents': response['documents'],
     };
     return Organization.fromJson(merged);
+  }
+
+  Future<CompanyDocument> uploadDocument({
+    required int organizationId,
+    required String type,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final response = await _api.post(
+      ApiEndpoints.organizationDocuments(organizationId),
+      data: FormData.fromMap({
+        'type': type,
+        'file': MultipartFile.fromBytes(bytes, filename: filename),
+      }),
+    );
+    return CompanyDocument.fromJson(asMap(response['data']));
   }
 
   Future<Organization> update(int id, Map<String, dynamic> payload) async {

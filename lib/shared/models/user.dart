@@ -1,5 +1,6 @@
 import '../../core/permissions/app_permissions.dart';
 import '../../core/utils/json_utils.dart';
+import 'document.dart';
 import 'organization.dart';
 
 class DriverProfile {
@@ -44,6 +45,7 @@ class AppUser {
     this.roleLabels = const [],
     this.permissions = const [],
     this.driverProfile,
+    this.documents = const [],
     this.lastLoginAt,
     this.mustSetPassword = false,
   });
@@ -61,6 +63,7 @@ class AppUser {
   final List<String> roleLabels;
   final List<String> permissions;
   final DriverProfile? driverProfile;
+  final List<CompanyDocument> documents;
   final String? lastLoginAt;
   final bool mustSetPassword;
 
@@ -91,6 +94,7 @@ class AppUser {
       driverProfile: json['driver_profile'] is Map
           ? DriverProfile.fromJson(asMap(json['driver_profile']))
           : null,
+      documents: asMapList(json['documents']).map(CompanyDocument.fromJson).toList(),
       lastLoginAt: asString(json['last_login_at']),
       mustSetPassword: asBool(json['must_set_password']),
     );
@@ -117,6 +121,7 @@ class AppUser {
       roleLabels: roleLabels,
       permissions: permissions ?? this.permissions,
       driverProfile: driverProfile,
+      documents: documents,
       lastLoginAt: lastLoginAt,
       mustSetPassword: mustSetPassword,
     );
