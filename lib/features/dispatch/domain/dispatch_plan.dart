@@ -9,6 +9,7 @@ class DispatchPlan {
     this.truckType,
     this.truckTypeLabel,
     this.truckCapacityTons,
+    this.requiredDate,
   });
 
   final List<Trip> trips;
@@ -17,6 +18,7 @@ class DispatchPlan {
   final String? truckType;
   final String? truckTypeLabel;
   final double? truckCapacityTons;
+  final String? requiredDate;
 
   bool get isMulti => trips.length > 1;
 
@@ -25,13 +27,15 @@ class DispatchPlan {
     final truckCount = quotation?.dispatchTruckCount ?? 1;
 
     if (focus != null && focus.status != 'unassigned' && focus.canAssign) {
+      final current = job.trips.where((trip) => trip.id == focus.id).firstOrNull ?? focus;
       return DispatchPlan(
-        trips: [focus],
+        trips: [current],
         quotedTruckCount: truckCount,
         job: job,
         truckType: quotation?.truckType,
         truckTypeLabel: quotation?.truckTypeLabel,
         truckCapacityTons: quotation?.truckCapacityTons,
+        requiredDate: job.shipment?.requiredDate,
       );
     }
 
@@ -54,6 +58,7 @@ class DispatchPlan {
       truckType: quotation?.truckType,
       truckTypeLabel: quotation?.truckTypeLabel,
       truckCapacityTons: quotation?.truckCapacityTons,
+      requiredDate: job.shipment?.requiredDate,
     );
   }
 
@@ -65,6 +70,7 @@ class DispatchPlan {
       truckType: trip.job?.quotation?.truckType,
       truckTypeLabel: trip.job?.quotation?.truckTypeLabel,
       truckCapacityTons: trip.job?.quotation?.truckCapacityTons,
+      requiredDate: trip.job?.shipment?.requiredDate,
     );
   }
 }

@@ -50,6 +50,7 @@ class Trip {
     this.otpCode,
     this.otpRequired = false,
     this.assignedAt,
+    this.scheduledDepartureAt,
     this.job,
     this.truck,
     this.driver,
@@ -75,6 +76,7 @@ class Trip {
   final String? otpCode;
   final bool otpRequired;
   final String? assignedAt;
+  final String? scheduledDepartureAt;
   final TransportJob? job;
   final Truck? truck;
   final AppUser? driver;
@@ -118,6 +120,7 @@ class Trip {
       otpCode: asString(json['otp_code']),
       otpRequired: asBool(json['otp_required']),
       assignedAt: asString(json['assigned_at']),
+      scheduledDepartureAt: asString(json['scheduled_departure_at']),
       job: json['job'] is Map ? TransportJob.fromJson(asMap(json['job'])) : null,
       truck: json['truck'] is Map ? Truck.fromJson(asMap(json['truck'])) : null,
       driver: json['driver'] is Map ? AppUser.fromJson(asMap(json['driver'])) : null,

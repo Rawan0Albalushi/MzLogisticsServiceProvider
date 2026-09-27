@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/l10n/app_localizations.dart';
@@ -39,7 +40,10 @@ Future<void> showAssignSheet(
   final jobId = job?.id ?? trip?.job?.id;
   if (jobId != null) {
     final quoted = resolved?.dispatchTruckCount ?? 1;
-    if (resolved == null || resolved.quotation == null || resolved.unassignedTrips.length < quoted) {
+    if (resolved == null ||
+        (resolved.shipment?.requiredDate ?? '').isEmpty ||
+        resolved.quotation == null ||
+        resolved.unassignedTrips.length < quoted) {
       try {
         resolved = await ref.read(jobRepositoryProvider).show(jobId);
       } on ApiException catch (error) {
@@ -90,6 +94,7 @@ class AssignTripSheet extends ConsumerStatefulWidget {
 class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
   late List<int?> _truckIds;
   late List<int?> _driverIds;
+  late List<TimeOfDay?> _departureTimes;
   String? _error;
   var _loading = false;
 
@@ -100,11 +105,14 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
     super.initState();
     _truckIds = List<int?>.filled(_plan.trips.length, null);
     _driverIds = List<int?>.filled(_plan.trips.length, null);
+    _departureTimes = [
+      for (final trip in _plan.trips) _timeFromRaw(trip.scheduledDepartureAt),
+    ];
   }
 
   bool get _ready {
     for (var index = 0; index < _plan.trips.length; index++) {
-      if (_truckIds[index] == null || _driverIds[index] == null) {
+      if (_truckIds[index] == null || _driverIds[index] == null || _departureTimes[index] == null) {
         return false;
       }
     }
@@ -177,6 +185,15 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
                       context.tr('dispatch.fleetPlanType', {
                         'type': context.l10n.truckType(quotedType, label: _plan.truckTypeLabel),
                         'capacity': Formatters.number(quotedCapacity, locale: locale),
+                      }),
+                      style: const TextStyle(color: AppColors.muted, height: 1.4),
+                    ),
+                  ],
+                  if ((_plan.requiredDate ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      context.tr('dispatch.departureHint', {
+                        'date': _calendarDateLabel(_plan.requiredDate!, locale),
                       }),
                       style: const TextStyle(color: AppColors.muted, height: 1.4),
                     ),
@@ -276,6 +293,15 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
                                     _error = _validate(truckPage.items, driverPage.items);
                                   }),
                                 ),
+                                const SizedBox(height: 12),
+                                _DepartureTimeField(
+                                  label: context.tr('dispatch.departureTime'),
+                                  value: _departureTimes[index] == null
+                                      ? null
+                                      : _clockLabel(_departureTimes[index]!, locale),
+                                  placeholder: context.tr('dispatch.chooseTime'),
+                                  onTap: () => _pickDepartureTime(index, truckPage.items, driverPage.items),
+                                ),
                               ],
                             ),
                           );
@@ -353,6 +379,11 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
   }
 
   String? _validate(List<Truck> trucks, List<AppUser> drivers) {
+    final requiredDate = _plan.requiredDate;
+    if (requiredDate == null || requiredDate.isEmpty) {
+      return context.tr('dispatch.requiredDateMissing');
+    }
+
     final selectedTrucks = <int>{};
     final selectedDrivers = <int>{};
 
@@ -360,6 +391,11 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
       final trip = _plan.trips[index];
       if (!trip.canAssign) {
         return context.tr('dispatch.invalidState');
+      }
+
+      final departure = _departureTimes[index];
+      if (departure != null && !_departureIsFuture(requiredDate, departure)) {
+        return context.tr('dispatch.departurePast');
       }
 
       final truckId = _truckIds[index];
@@ -409,6 +445,7 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
               _plan.trips[index].id,
               truckId: _truckIds[index]!,
               driverId: _driverIds[index]!,
+              departureTime: _clockValue(_departureTimes[index]!),
             );
       }
       ref.invalidate(unassignedTripsProvider);
@@ -435,11 +472,141 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
         );
       }
     } on ApiException catch (error) {
-      setState(() => _error = error.message);
+      setState(() => _error = error.firstFieldError('departure_time') ?? error.message);
     } finally {
       if (mounted) {
         setState(() => _loading = false);
       }
     }
+  }
+
+  Future<void> _pickDepartureTime(int index, List<Truck> trucks, List<AppUser> drivers) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _departureTimes[index] ?? const TimeOfDay(hour: 8, minute: 0),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+    if (!mounted || picked == null) {
+      return;
+    }
+    setState(() {
+      _departureTimes[index] = picked;
+      _error = _validate(trucks, drivers);
+    });
+  }
+}
+
+TimeOfDay? _timeFromRaw(String? raw) {
+  final parsed = DateTime.tryParse(raw ?? '');
+  if (parsed == null) {
+    return null;
+  }
+  final local = parsed.toLocal();
+  return TimeOfDay(hour: local.hour, minute: local.minute);
+}
+
+String _clockValue(TimeOfDay time) {
+  final hour = time.hour.toString().padLeft(2, '0');
+  final minute = time.minute.toString().padLeft(2, '0');
+  return '$hour:$minute';
+}
+
+String _clockLabel(TimeOfDay time, String locale) {
+  return DateFormat.Hm(locale).format(DateTime(2020, 1, 1, time.hour, time.minute));
+}
+
+String _calendarDateLabel(String raw, String locale) {
+  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(raw);
+  if (match == null) {
+    return raw;
+  }
+  final date = DateTime(
+    int.parse(match.group(1)!),
+    int.parse(match.group(2)!),
+    int.parse(match.group(3)!),
+  );
+  return DateFormat.yMMMd(locale).format(date);
+}
+
+bool _departureIsFuture(String requiredDate, TimeOfDay time) {
+  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(requiredDate);
+  if (match == null) {
+    return false;
+  }
+  final scheduled = DateTime(
+    int.parse(match.group(1)!),
+    int.parse(match.group(2)!),
+    int.parse(match.group(3)!),
+    time.hour,
+    time.minute,
+  );
+  return scheduled.isAfter(DateTime.now());
+}
+
+class _DepartureTimeField extends StatelessWidget {
+  const _DepartureTimeField({
+    required this.label,
+    required this.value,
+    required this.placeholder,
+    required this.onTap,
+  });
+
+  final String label;
+  final String? value;
+  final String placeholder;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final missing = value == null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text.rich(
+          TextSpan(
+            text: label,
+            children: const [
+              TextSpan(
+                text: ' *',
+                style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+        ),
+        const SizedBox(height: 6),
+        Semantics(
+          button: true,
+          label: '$label. ${value ?? placeholder}',
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                suffixIcon: const Icon(Icons.schedule_outlined),
+                helperText: context.tr('common.required'),
+                helperMaxLines: 2,
+                helperStyle: const TextStyle(fontSize: 11, height: 1.35, color: AppColors.muted),
+              ),
+              child: Text(
+                value ?? placeholder,
+                style: TextStyle(
+                  color: missing ? AppColors.muted : AppColors.ink,
+                  fontWeight: missing ? FontWeight.w500 : FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

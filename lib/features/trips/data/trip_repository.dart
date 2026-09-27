@@ -37,10 +37,16 @@ class TripRepository {
     return Trip.fromJson(asMap(response['data']));
   }
 
-  Future<Trip> assign(int id, {required int truckId, required int driverId}) async {
+  Future<Trip> assign(
+    int id, {
+    required int truckId,
+    required int driverId,
+    required String departureTime,
+  }) async {
     final response = await _api.post(ApiEndpoints.assignTrip(id), data: {
       'truck_id': truckId,
       'driver_id': driverId,
+      'departure_time': departureTime,
     });
     return Trip.fromJson(asMap(response['data']));
   }

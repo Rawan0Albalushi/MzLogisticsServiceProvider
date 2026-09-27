@@ -106,6 +106,13 @@ class TripDetailScreen extends ConsumerWidget {
                               icon: Icons.pin_outlined,
                               tone: IconTone.warning,
                             ),
+                          if (trip.scheduledDepartureAt != null)
+                            InfoField(
+                              label: context.tr('trips.scheduledDeparture'),
+                              value: Formatters.dateTime(trip.scheduledDepartureAt, locale: locale),
+                              icon: Icons.schedule_outlined,
+                              tone: IconTone.warning,
+                            ),
                           if (trip.etaAt != null)
                             InfoField(
                               label: context.tr('trips.eta'),

@@ -159,7 +159,11 @@ class JobDetailScreen extends ConsumerWidget {
                                 icon: Icons.route_outlined,
                                 tone: IconTone.success,
                                 trailing: StatusBadge(status: job.trips[i].status),
-                                subtitle: '${context.tr('trips.sequence')} ${job.trips[i].sequence ?? ''}',
+                                subtitle: [
+                                  '${context.tr('trips.sequence')} ${job.trips[i].sequence ?? ''}',
+                                  if (job.trips[i].scheduledDepartureAt != null)
+                                    Formatters.dateTime(job.trips[i].scheduledDepartureAt, locale: locale),
+                                ].join(' · '),
                                 meta: [
                                   directionalRouteOf(
                                     context,

@@ -123,6 +123,7 @@ class TripsScreen extends ConsumerWidget {
                   DataColumnSpec(context.tr('common.driver')),
                   DataColumnSpec(context.tr('trips.planned')),
                   DataColumnSpec(context.tr('jobs.delivered')),
+                  DataColumnSpec(context.tr('trips.scheduledDeparture')),
                   DataColumnSpec(context.tr('trips.eta')),
                   DataColumnSpec(context.tr('common.status')),
                 ],
@@ -140,6 +141,7 @@ class TripsScreen extends ConsumerWidget {
                   Text(
                     Formatters.number(item.deliveredQuantity, locale: locale),
                   ),
+                  Text(Formatters.dateTime(item.scheduledDepartureAt, locale: locale)),
                   Text(Formatters.dateTime(item.etaAt, locale: locale)),
                   StatusBadge(status: item.status),
                 ],
@@ -150,6 +152,8 @@ class TripsScreen extends ConsumerWidget {
                   trailing: StatusBadge(status: item.status),
                   subtitle: item.job?.reference,
                   meta: [
+                    if (item.scheduledDepartureAt != null)
+                      Formatters.dateTime(item.scheduledDepartureAt, locale: locale),
                     directionalRouteOf(context, item.pickupCity, item.deliveryCity),
                     [item.truck?.plateNumber, item.driver?.name]
                         .where(
