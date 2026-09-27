@@ -57,6 +57,13 @@ const sidebarDestinations = <NavDestination>[
     permission: AppPermissions.quotationsView,
   ),
   NavDestination(
+    path: '/projects',
+    labelKey: 'nav.projects',
+    icon: Icons.folder_outlined,
+    selectedIcon: Icons.folder_rounded,
+    permission: AppPermissions.jobsView,
+  ),
+  NavDestination(
     path: '/jobs',
     labelKey: 'nav.jobs',
     icon: Icons.work_outline_rounded,
@@ -108,14 +115,6 @@ const sidebarDestinations = <NavDestination>[
     selectedIcon: Icons.badge_rounded,
     section: NavSection.fleet,
     permission: AppPermissions.driversView,
-  ),
-  NavDestination(
-    path: '/documents',
-    labelKey: 'nav.documents',
-    icon: Icons.folder_outlined,
-    selectedIcon: Icons.folder_rounded,
-    section: NavSection.fleet,
-    permission: AppPermissions.fleetView,
   ),
   NavDestination(
     path: '/finance',
@@ -322,6 +321,9 @@ class AppShell extends ConsumerWidget {
   }
 
   int _mobileIndex(List<NavDestination> tabs, String location) {
+    if (location.startsWith('/projects')) {
+      return tabs.length - 1;
+    }
     if (location == '/more' ||
         location == '/profile' ||
         location == '/company' ||
@@ -334,8 +336,7 @@ class AppShell extends ConsumerWidget {
         location == '/trucks' ||
         location == '/truck-types' ||
         location == '/equipment' ||
-        location == '/drivers' ||
-        location == '/documents') {
+        location == '/drivers') {
       return tabs.length - 1;
     }
     final index = tabs.indexWhere((item) => location == item.path || location.startsWith('${item.path}/'));
@@ -345,6 +346,7 @@ class AppShell extends ConsumerWidget {
   String _titleKey(String location) {
     if (location.startsWith('/shipments')) return 'nav.shipments';
     if (location.startsWith('/quotations')) return 'nav.quotations';
+    if (location.startsWith('/projects')) return 'nav.projects';
     if (location.startsWith('/jobs')) return 'nav.jobs';
     if (location.startsWith('/trips')) return 'nav.trips';
     if (location.startsWith('/dispatch')) return 'nav.dispatch';
@@ -352,7 +354,6 @@ class AppShell extends ConsumerWidget {
     if (location.startsWith('/trucks')) return 'nav.trucks';
     if (location.startsWith('/equipment')) return 'nav.equipment';
     if (location.startsWith('/drivers')) return 'nav.drivers';
-    if (location.startsWith('/documents')) return 'nav.documents';
     if (location.startsWith('/finance')) return 'nav.finance';
     if (location.startsWith('/notifications')) return 'nav.notifications';
     if (location.startsWith('/company')) return 'nav.company';
@@ -480,6 +481,7 @@ class _TopBar extends ConsumerWidget {
   String _desktopTitle(String location) {
     if (location.startsWith('/shipments')) return 'nav.shipments';
     if (location.startsWith('/quotations')) return 'nav.quotations';
+    if (location.startsWith('/projects')) return 'nav.projects';
     if (location.startsWith('/jobs')) return 'nav.jobs';
     if (location.startsWith('/trips')) return 'nav.trips';
     if (location.startsWith('/dispatch')) return 'nav.dispatch';
@@ -487,7 +489,6 @@ class _TopBar extends ConsumerWidget {
     if (location.startsWith('/trucks')) return 'nav.trucks';
     if (location.startsWith('/equipment')) return 'nav.equipment';
     if (location.startsWith('/drivers')) return 'nav.drivers';
-    if (location.startsWith('/documents')) return 'nav.documents';
     if (location.startsWith('/finance')) return 'nav.finance';
     if (location.startsWith('/notifications')) return 'nav.notifications';
     if (location.startsWith('/company')) return 'nav.company';

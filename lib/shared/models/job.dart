@@ -1,4 +1,5 @@
 import '../../core/utils/json_utils.dart';
+import '../../features/projects/data/project.dart';
 import 'organization.dart';
 import 'quotation.dart';
 import 'shipment.dart';
@@ -20,6 +21,7 @@ class TransportJob {
     this.provider,
     this.shipment,
     this.quotation,
+    this.project,
     this.trips = const [],
     this.createdAt,
   });
@@ -38,6 +40,7 @@ class TransportJob {
   final Organization? provider;
   final Shipment? shipment;
   final Quotation? quotation;
+  final Project? project;
   final List<Trip> trips;
   final String? createdAt;
 
@@ -62,6 +65,7 @@ class TransportJob {
       provider: json['provider'] is Map ? Organization.fromJson(asMap(json['provider'])) : null,
       shipment: json['shipment'] is Map ? Shipment.fromJson(asMap(json['shipment'])) : null,
       quotation: json['quotation'] is Map ? Quotation.fromJson(asMap(json['quotation'])) : null,
+      project: json['project'] is Map ? Project.fromJson(asMap(json['project'])) : null,
       trips: asMapList(json['trips']).map(Trip.fromJson).toList(),
       createdAt: asString(json['created_at']),
     );

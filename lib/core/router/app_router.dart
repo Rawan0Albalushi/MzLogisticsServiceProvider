@@ -8,10 +8,11 @@ import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/company/presentation/company_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/dispatch/presentation/dispatch_screen.dart';
-import '../../features/documents/presentation/documents_screen.dart';
 import '../../features/drivers/presentation/drivers_screen.dart';
 import '../../features/equipment/presentation/equipment_screen.dart';
 import '../../features/finance/presentation/finance_screen.dart';
+import '../../features/projects/presentation/project_detail_screen.dart';
+import '../../features/projects/presentation/projects_screen.dart';
 import '../../features/jobs/presentation/job_detail_screen.dart';
 import '../../features/jobs/presentation/jobs_screen.dart';
 import '../../features/more/presentation/more_screen.dart';
@@ -108,6 +109,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               id: int.parse(state.pathParameters['id']!),
             ),
           ),
+          fadeRoute('/projects', (context, state) => const ProjectsScreen()),
+          fadeRoute(
+            '/projects/:id',
+            (context, state) => ProjectDetailScreen(id: int.parse(state.pathParameters['id']!)),
+          ),
           fadeRoute('/jobs', (context, state) => const JobsScreen()),
           fadeRoute(
             '/jobs/:id',
@@ -135,7 +141,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           fadeRoute('/equipment', (context, state) => const EquipmentScreen()),
           fadeRoute('/drivers', (context, state) => const DriversScreen()),
-          fadeRoute('/documents', (context, state) => const DocumentsScreen()),
           fadeRoute('/finance', (context, state) => const FinanceScreen()),
           fadeRoute(
             '/notifications',

@@ -153,12 +153,6 @@ class FleetScreen extends ConsumerWidget {
                     Icons.category_outlined,
                     IconTone.muted,
                   ),
-                _Shortcut(
-                  '/documents',
-                  'nav.documents',
-                  Icons.folder_outlined,
-                  IconTone.warning,
-                ),
               ];
               return Wrap(
                 spacing: gap,

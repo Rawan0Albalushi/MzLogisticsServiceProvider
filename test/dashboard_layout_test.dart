@@ -80,8 +80,8 @@ void main() {
 
   testWidgets('kpi grid keeps labels in Arabic layout', (tester) async {
     await _pumpGrid(tester, const Size(400, 900), [
-      _metric('شحنات مفتوحة', '١٢'),
-      _metric('عروض معلّقة', '٤'),
+      _metric('شحنات مفتوحة', '12'),
+      _metric('عروض معلّقة', '4'),
     ], textDirection: TextDirection.rtl);
 
     expect(find.text('شحنات مفتوحة'), findsOneWidget);

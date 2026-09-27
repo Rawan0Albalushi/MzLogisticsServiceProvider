@@ -12,6 +12,7 @@ import '../../features/finance/data/finance_repository.dart';
 import '../../features/fleet/data/fleet_repository.dart';
 import '../../features/jobs/data/job_repository.dart';
 import '../../features/notifications/data/notification_repository.dart';
+import '../../features/projects/data/project_repository.dart';
 import '../../features/quotations/data/quotation_repository.dart';
 import '../../features/shipments/data/shipment_repository.dart';
 import '../../features/trips/data/trip_repository.dart';
@@ -46,6 +47,9 @@ final quotationRepositoryProvider = Provider(
 );
 final jobRepositoryProvider = Provider(
   (ref) => JobRepository(ref.watch(apiClientProvider)),
+);
+final projectRepositoryProvider = Provider(
+  (ref) => ProjectRepository(ref.watch(apiClientProvider)),
 );
 final tripRepositoryProvider = Provider(
   (ref) => TripRepository(ref.watch(apiClientProvider)),

@@ -10,6 +10,7 @@ class ApiEndpoints {
   static const shipments = '/shipments';
   static const quotations = '/quotations';
   static const jobs = '/jobs';
+  static const projects = '/projects';
   static const trips = '/trips';
   static const trucks = '/trucks';
   static const trucksImport = '/trucks/import';
@@ -40,6 +41,7 @@ class ApiEndpoints {
   static String quotation(int id) => '/quotations/$id';
   static String withdrawQuotation(int id) => '/quotations/$id/withdraw';
   static String job(int id) => '/jobs/$id';
+  static String project(int id) => '/projects/$id';
   static String trip(int id) => '/trips/$id';
   static String assignTrip(int id) => '/trips/$id/assign';
   static String tripStatus(int id) => '/trips/$id/status';

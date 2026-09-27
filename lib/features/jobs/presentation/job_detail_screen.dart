@@ -96,6 +96,12 @@ class JobDetailScreen extends ConsumerWidget {
                             tone: IconTone.info,
                           ),
                           InfoField(
+                            label: context.tr('projects.linked'),
+                            value: job.project?.label(locale) ?? '—',
+                            icon: Icons.folder_outlined,
+                            tone: IconTone.info,
+                          ),
+                          InfoField(
                             label: context.tr('jobs.progress'),
                             value: Formatters.percent(job.progressPercent),
                             icon: Icons.trending_up_rounded,

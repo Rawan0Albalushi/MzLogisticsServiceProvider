@@ -34,6 +34,11 @@ class PageVisuals {
     selectedIcon: Icons.request_quote_rounded,
     tone: IconTone.info,
   );
+  static const projects = PageVisual(
+    icon: Icons.folder_outlined,
+    selectedIcon: Icons.folder_rounded,
+    tone: IconTone.info,
+  );
   static const jobs = PageVisual(
     icon: Icons.work_outline_rounded,
     selectedIcon: Icons.work_rounded,
@@ -74,11 +79,6 @@ class PageVisuals {
     selectedIcon: Icons.badge_rounded,
     tone: IconTone.success,
   );
-  static const documents = PageVisual(
-    icon: Icons.folder_outlined,
-    selectedIcon: Icons.folder_rounded,
-    tone: IconTone.muted,
-  );
   static const finance = PageVisual(
     icon: Icons.account_balance_outlined,
     selectedIcon: Icons.account_balance_rounded,
@@ -114,13 +114,13 @@ class PageVisuals {
     (prefix: '/truck-types', visual: truckTypes),
     (prefix: '/shipments', visual: shipments),
     (prefix: '/quotations', visual: quotations),
+    (prefix: '/projects', visual: projects),
     (prefix: '/jobs', visual: jobs),
     (prefix: '/trips', visual: trips),
     (prefix: '/dispatch', visual: dispatch),
     (prefix: '/trucks', visual: trucks),
     (prefix: '/equipment', visual: equipment),
     (prefix: '/drivers', visual: drivers),
-    (prefix: '/documents', visual: documents),
     (prefix: '/finance', visual: finance),
     (prefix: '/notifications', visual: notifications),
     (prefix: '/company', visual: company),
