@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
+import '../../../core/utils/directional_text.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/trip.dart';
 import '../../../shared/providers/session_provider.dart';
@@ -131,7 +132,7 @@ class TripsScreen extends ConsumerWidget {
                   Text(item.job?.reference ?? ''),
                   Text('${item.sequence ?? ''}'),
                   Text(
-                    '${item.pickupCity ?? '—'} → ${item.deliveryCity ?? '—'}',
+                    directionalRouteOf(context, item.pickupCity, item.deliveryCity),
                   ),
                   Text(item.truck?.plateNumber ?? '—'),
                   Text(item.driver?.name ?? '—'),
@@ -149,7 +150,7 @@ class TripsScreen extends ConsumerWidget {
                   trailing: StatusBadge(status: item.status),
                   subtitle: item.job?.reference,
                   meta: [
-                    '${item.pickupCity ?? ''} → ${item.deliveryCity ?? ''}',
+                    directionalRouteOf(context, item.pickupCity, item.deliveryCity),
                     [item.truck?.plateNumber, item.driver?.name]
                         .where(
                           (value) =>

@@ -124,12 +124,11 @@ class DetailBackLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rtl = Directionality.of(context) == TextDirection.rtl;
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: TextButton.icon(
         onPressed: () => context.go(path),
-        icon: Icon(rtl ? Icons.arrow_forward : Icons.arrow_back, size: 18),
+        icon: const Icon(Icons.arrow_back, size: 18),
         label: Text(label),
       ),
     );

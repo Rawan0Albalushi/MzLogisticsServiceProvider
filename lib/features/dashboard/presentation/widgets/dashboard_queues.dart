@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/utils/directional_text.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/page_visuals.dart';
 import '../../../../shared/providers/session_provider.dart';
@@ -427,14 +428,8 @@ String _queueMeta(
       (from != null && from.isNotEmpty) || (to != null && to.isNotEmpty);
   final lines = <String>[
     if (name != null && name.isNotEmpty) name,
-    if (hasRoute) _routeLine(context, from, to),
+    if (hasRoute) directionalRouteOf(context, from, to),
   ];
   return lines.join('\n');
 }
 
-String _routeLine(BuildContext context, String? pickup, String? delivery) {
-  final arrow = Directionality.of(context) == TextDirection.rtl ? '←' : '→';
-  final from = (pickup == null || pickup.isEmpty) ? '—' : pickup;
-  final to = (delivery == null || delivery.isEmpty) ? '—' : delivery;
-  return '$from $arrow $to';
-}

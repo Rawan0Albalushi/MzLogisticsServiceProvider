@@ -6,6 +6,7 @@ import '../../../core/api/api_exception.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../core/theme/page_visuals.dart';
+import '../../../core/utils/directional_text.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -34,7 +35,7 @@ class TripDetailScreen extends ConsumerWidget {
         value: ref.watch(tripDetailProvider(id)),
         onRetry: () => ref.invalidate(tripDetailProvider(id)),
         builder: (trip) {
-          final routeLabel = '${trip.pickupCity ?? ''} → ${trip.deliveryCity ?? ''}';
+          final routeLabel = routeLabelOf(context, trip.pickupCity, trip.deliveryCity);
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -66,7 +67,7 @@ class TripDetailScreen extends ConsumerWidget {
                     children: [
                       DetailHero(
                         title: trip.reference ?? context.tr('trips.detailTitle'),
-                        subtitle: routeLabel.trim() == '→' ? null : routeLabel,
+                        subtitle: routeLabel,
                         icon: Icons.route_outlined,
                         tone: IconTone.success,
                         chips: [

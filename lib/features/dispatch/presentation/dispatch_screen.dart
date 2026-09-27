@@ -7,6 +7,7 @@ import '../../../core/permissions/app_permissions.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/page_visuals.dart';
 import '../../../core/utils/breakpoints.dart';
+import '../../../core/utils/directional_text.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/trip.dart';
 import '../../../shared/providers/session_provider.dart';
@@ -174,7 +175,7 @@ class _DispatchGroupCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final job = group.job;
     final first = group.trips.first;
-    final route = '${first.pickupCity ?? ''} → ${first.deliveryCity ?? ''}';
+    final route = routeLabelOf(context, first.pickupCity, first.deliveryCity);
     final quoted = job?.quotation?.dispatchTruckCount ?? group.trips.length;
 
     return Card(
@@ -210,7 +211,7 @@ class _DispatchGroupCard extends ConsumerWidget {
                         runSpacing: 8,
                         children: [
                           StatusBadge(status: job?.status ?? first.status),
-                          if (route.trim() != '→')
+                          if (route != null)
                             DetailChip(
                               label: route,
                               icon: Icons.route_outlined,

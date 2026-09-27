@@ -385,12 +385,7 @@ class _ShortcutCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(
-                Directionality.of(context) == TextDirection.rtl
-                    ? Icons.chevron_left
-                    : Icons.chevron_right,
-                color: AppColors.muted,
-              ),
+              const Icon(Icons.chevron_right, color: AppColors.muted),
             ],
           ),
         ),

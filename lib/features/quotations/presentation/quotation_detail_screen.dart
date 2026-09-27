@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/utils/directional_text.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../core/theme/page_visuals.dart';
 import '../../../core/utils/formatters.dart';
@@ -38,10 +39,7 @@ class QuotationDetailScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(quotationDetailProvider(id)),
         builder: (item) {
           final shipment = item.shipment;
-          final routeLabel = [
-            if (shipment?.pickupCity?.isNotEmpty == true) shipment!.pickupCity,
-            if (shipment?.deliveryCity?.isNotEmpty == true) shipment!.deliveryCity,
-          ].join(' → ');
+          final routeLabel = routeLabelOf(context, shipment?.pickupCity, shipment?.deliveryCity);
 
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -99,7 +97,7 @@ class QuotationDetailScreen extends ConsumerWidget {
                               icon: Icons.local_shipping_outlined,
                               onTap: () => context.go('/shipments/${shipment.id}'),
                             ),
-                          if (routeLabel.isNotEmpty)
+                          if (routeLabel != null)
                             DetailChip(label: routeLabel, icon: Icons.route_outlined),
                         ],
                       ),
@@ -247,7 +245,7 @@ class QuotationDetailScreen extends ConsumerWidget {
                             icon: Icons.event_outlined,
                             tone: IconTone.warning,
                           ),
-                          if (routeLabel.isNotEmpty)
+                          if (routeLabel != null)
                             InfoField(
                               label: context.tr('shipments.route'),
                               value: routeLabel,

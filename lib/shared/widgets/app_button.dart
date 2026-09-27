@@ -37,7 +37,7 @@ class AppButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 18),
+                _ButtonIcon(icon: icon!),
                 const SizedBox(width: 8),
               ],
               Text(label),
@@ -74,5 +74,22 @@ class AppButton extends StatelessWidget {
       return button;
     }
     return SizedBox(width: double.infinity, child: button);
+  }
+}
+
+class _ButtonIcon extends StatelessWidget {
+  const _ButtonIcon({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final glyph = Icon(icon, size: 18);
+    final mirrorOutward =
+        icon == Icons.arrow_outward_rounded && Directionality.of(context) == TextDirection.rtl;
+    if (!mirrorOutward) {
+      return glyph;
+    }
+    return Transform.flip(flipX: true, child: glyph);
   }
 }

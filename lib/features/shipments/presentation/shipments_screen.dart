@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
+import '../../../core/utils/directional_text.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/models/shipment.dart';
 import '../../../shared/providers/session_provider.dart';
@@ -141,7 +142,7 @@ class ShipmentsScreen extends ConsumerWidget {
                   trailing: StatusBadge(status: item.status),
                   subtitle: item.customer?.name ?? '—',
                   meta: [
-                    '${item.pickupCity ?? ''} → ${item.deliveryCity ?? ''}',
+                    directionalRouteOf(context, item.pickupCity, item.deliveryCity),
                     '${item.cargoType ?? ''} · ${Formatters.number(item.quantity, locale: locale)} ${item.quantityUnit ?? ''} · ${Formatters.number(item.weightTons, locale: locale)} ${context.tr('common.tons')}',
                     Formatters.date(item.requiredDate, locale: locale),
                   ],

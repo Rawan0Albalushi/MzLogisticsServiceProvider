@@ -6,6 +6,7 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/page_visuals.dart';
+import '../../../core/utils/directional_text.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -160,7 +161,11 @@ class JobDetailScreen extends ConsumerWidget {
                                 trailing: StatusBadge(status: job.trips[i].status),
                                 subtitle: '${context.tr('trips.sequence')} ${job.trips[i].sequence ?? ''}',
                                 meta: [
-                                  '${job.trips[i].pickupCity ?? ''} → ${job.trips[i].deliveryCity ?? ''}',
+                                  directionalRouteOf(
+                                    context,
+                                    job.trips[i].pickupCity,
+                                    job.trips[i].deliveryCity,
+                                  ),
                                 ],
                                 onTap: () => context.go('/trips/${job.trips[i].id}'),
                               ),
