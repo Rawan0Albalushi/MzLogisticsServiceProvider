@@ -417,6 +417,8 @@
     "otp": "Delivery code",
     "otpReceiverHolds": "The customer holds the delivery code. Ask the receiver at delivery.",
     "pod": "Proof of delivery",
+    "invoice": "Invoice",
+    "weightTicket": "Weight ticket",
     "eta": "ETA",
     "scheduledDeparture": "Departure",
     "assignedTo": "Assigned resources",

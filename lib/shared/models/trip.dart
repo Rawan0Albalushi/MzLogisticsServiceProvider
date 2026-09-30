@@ -11,6 +11,8 @@ class ProofOfDelivery {
     this.otpVerified,
     this.notes,
     this.capturedAt,
+    this.invoicePath,
+    this.weightTicketPath,
   });
 
   final String? receiverName;
@@ -18,6 +20,8 @@ class ProofOfDelivery {
   final bool? otpVerified;
   final String? notes;
   final String? capturedAt;
+  final String? invoicePath;
+  final String? weightTicketPath;
 
   factory ProofOfDelivery.fromJson(Map<String, dynamic> json) {
     return ProofOfDelivery(
@@ -26,6 +30,8 @@ class ProofOfDelivery {
       otpVerified: json['otp_verified'] is bool ? json['otp_verified'] as bool : null,
       notes: asString(json['notes']),
       capturedAt: asString(json['captured_at']),
+      invoicePath: asString(json['invoice_path']),
+      weightTicketPath: asString(json['weight_ticket_path']),
     );
   }
 }

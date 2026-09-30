@@ -1,10 +1,14 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/api/api_endpoints.dart';
 import '../../../core/api/api_exception.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/page_visuals.dart';
 import '../../../core/utils/directional_text.dart';
 import '../../../core/utils/formatters.dart';
@@ -183,19 +187,34 @@ class TripDetailScreen extends ConsumerWidget {
                         title: context.tr('trips.pod'),
                         icon: Icons.verified_outlined,
                         tone: IconTone.success,
-                        child: InfoGrid(
-                          fields: [
-                            InfoField(
-                              label: context.tr('auth.name'),
-                              value: trip.proofOfDelivery!.receiverName ?? '—',
-                              icon: Icons.person_outline_rounded,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            InfoGrid(
+                              fields: [
+                                InfoField(
+                                  label: context.tr('auth.name'),
+                                  value: trip.proofOfDelivery!.receiverName ?? '—',
+                                  icon: Icons.person_outline_rounded,
+                                ),
+                                InfoField(
+                                  label: context.tr('common.quantity'),
+                                  value: Formatters.number(trip.proofOfDelivery!.receivedQuantity, locale: locale),
+                                  icon: Icons.inventory_2_outlined,
+                                  tone: IconTone.success,
+                                ),
+                              ],
                             ),
-                            InfoField(
-                              label: context.tr('common.quantity'),
-                              value: Formatters.number(trip.proofOfDelivery!.receivedQuantity, locale: locale),
-                              icon: Icons.inventory_2_outlined,
-                              tone: IconTone.success,
-                            ),
+                            if (trip.proofOfDelivery!.invoicePath != null)
+                              _PodDocumentBlock(
+                                label: context.tr('trips.invoice'),
+                                path: ApiEndpoints.tripPodInvoice(id),
+                              ),
+                            if (trip.proofOfDelivery!.weightTicketPath != null)
+                              _PodDocumentBlock(
+                                label: context.tr('trips.weightTicket'),
+                                path: ApiEndpoints.tripPodWeightTicket(id),
+                              ),
                           ],
                         ),
                       ),
@@ -227,6 +246,59 @@ class TripDetailScreen extends ConsumerWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+final _podDocumentProvider = FutureProvider.autoDispose.family<Uint8List, String>((ref, path) async {
+  final bytes = await ref.watch(apiClientProvider).getBytes(path);
+  return Uint8List.fromList(bytes);
+});
+
+class _PodDocumentBlock extends ConsumerWidget {
+  const _PodDocumentBlock({required this.label, required this.path});
+
+  final String label;
+  final String path;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final image = ref.watch(_podDocumentProvider(path));
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 8),
+          image.when(
+            data: (bytes) => DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  bytes,
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            loading: () => const SizedBox(
+              height: 120,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (_, _) => Text(
+              context.tr('common.error'),
+              style: const TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
       ),
     );
   }

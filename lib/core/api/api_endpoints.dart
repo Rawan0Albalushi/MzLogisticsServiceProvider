@@ -45,6 +45,8 @@ class ApiEndpoints {
   static String trip(int id) => '/trips/$id';
   static String assignTrip(int id) => '/trips/$id/assign';
   static String tripStatus(int id) => '/trips/$id/status';
+  static String tripPodInvoice(int id) => '/trips/$id/pod/invoice';
+  static String tripPodWeightTicket(int id) => '/trips/$id/pod/weight-ticket';
   static String truck(int id) => '/trucks/$id';
   static String truckDocuments(int id) => '/trucks/$id/documents';
   static String driverDocuments(int id) => '/drivers/$id/documents';
