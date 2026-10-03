@@ -41,6 +41,7 @@ Future<void> showAssignSheet(
   if (jobId != null) {
     final quoted = resolved?.dispatchTruckCount ?? 1;
     if (resolved == null ||
+        (resolved.quotation?.transportStartDate ?? '').isEmpty ||
         (resolved.shipment?.requiredDate ?? '').isEmpty ||
         resolved.quotation == null ||
         resolved.unassignedTrips.length < quoted) {
@@ -94,6 +95,7 @@ class AssignTripSheet extends ConsumerStatefulWidget {
 class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
   late List<int?> _truckIds;
   late List<int?> _driverIds;
+  late List<DateTime?> _departureDates;
   late List<TimeOfDay?> _departureTimes;
   String? _error;
   var _loading = false;
@@ -105,6 +107,9 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
     super.initState();
     _truckIds = List<int?>.filled(_plan.trips.length, null);
     _driverIds = List<int?>.filled(_plan.trips.length, null);
+    _departureDates = [
+      for (final trip in _plan.trips) _dateFromTrip(trip),
+    ];
     _departureTimes = [
       for (final trip in _plan.trips) _timeFromRaw(trip.scheduledDepartureAt),
     ];
@@ -114,6 +119,7 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
     for (var index = 0; index < _plan.trips.length; index++) {
       if (_truckIds[index] == null ||
           _driverIds[index] == null ||
+          _departureDates[index] == null ||
           _departureTimes[index] == null) {
         return false;
       }
@@ -213,12 +219,10 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
                       ),
                     ),
                   ],
-                  if ((_plan.requiredDate ?? '').isNotEmpty) ...[
+                  if (_plan.trips.any((trip) => (_plan.serviceDateFor(trip) ?? '').isNotEmpty)) ...[
                     const SizedBox(height: 6),
                     Text(
-                      context.tr('dispatch.departureHint', {
-                        'date': _calendarDateLabel(_plan.requiredDate!, locale),
-                      }),
+                      context.tr('dispatch.departureHint'),
                       style: const TextStyle(
                         color: AppColors.muted,
                         height: 1.4,
@@ -353,6 +357,23 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
                                 ),
                                 const SizedBox(height: 12),
                                 _DepartureTimeField(
+                                  label: context.tr('dispatch.departureDate'),
+                                  icon: Icons.calendar_today_outlined,
+                                  value: _departureDates[index] == null
+                                      ? null
+                                      : _calendarDateLabel(
+                                          _datePayload(_departureDates[index]!),
+                                          locale,
+                                        ),
+                                  placeholder: context.tr('dispatch.departureDate'),
+                                  onTap: () => _pickDepartureDate(
+                                    index,
+                                    truckPage.items,
+                                    driverPage.items,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _DepartureTimeField(
                                   label: context.tr('dispatch.departureTime'),
                                   value: _departureTimes[index] == null
                                       ? null
@@ -467,11 +488,6 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
   }
 
   String? _validate(List<Truck> trucks, List<AppUser> drivers) {
-    final requiredDate = _plan.requiredDate;
-    if (requiredDate == null || requiredDate.isEmpty) {
-      return context.tr('dispatch.requiredDateMissing');
-    }
-
     final selectedTrucks = <int>{};
     final selectedDrivers = <int>{};
 
@@ -481,8 +497,13 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
         return context.tr('dispatch.invalidState');
       }
 
+      final chosen = _departureDates[index];
+      if (chosen == null) {
+        return context.tr('dispatch.startDateMissing');
+      }
+
       final departure = _departureTimes[index];
-      if (departure != null && !_departureIsFuture(requiredDate, departure)) {
+      if (departure != null && !_departureIsFuture(_datePayload(chosen), departure)) {
         return context.tr('dispatch.departurePast');
       }
 
@@ -537,6 +558,7 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
               truckId: _truckIds[index]!,
               driverId: _driverIds[index]!,
               departureTime: _clockValue(_departureTimes[index]!),
+              departureDate: _datePayload(_departureDates[index]!),
             );
       }
       ref.invalidate(unassignedTripsProvider);
@@ -566,13 +588,47 @@ class _AssignTripSheetState extends ConsumerState<AssignTripSheet> {
       }
     } on ApiException catch (error) {
       setState(
-        () => _error = error.firstFieldError('departure_time') ?? error.message,
+        () => _error = error.firstFieldError('departure_date') ??
+            error.firstFieldError('departure_time') ??
+            error.message,
       );
     } finally {
       if (mounted) {
         setState(() => _loading = false);
       }
     }
+  }
+
+  DateTime? _dateFromTrip(Trip trip) {
+    final scheduled = DateTime.tryParse(trip.scheduledDepartureAt ?? '');
+    if (scheduled != null) {
+      return DateUtils.dateOnly(scheduled.toLocal());
+    }
+    return _parseServiceDate(_plan.serviceDateFor(trip));
+  }
+
+  Future<void> _pickDepartureDate(
+    int index,
+    List<Truck> trucks,
+    List<AppUser> drivers,
+  ) async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final current = _departureDates[index];
+    final initial = current == null || current.isBefore(today) ? today : current;
+    final picked = await showDatePicker(
+      context: context,
+      locale: Localizations.localeOf(context),
+      initialDate: initial,
+      firstDate: today,
+      lastDate: DateTime(today.year + 2, today.month, today.day),
+    );
+    if (!mounted || picked == null) {
+      return;
+    }
+    setState(() {
+      _departureDates[index] = DateUtils.dateOnly(picked);
+      _error = _validate(trucks, drivers);
+    });
   }
 
   Future<void> _pickDepartureTime(
@@ -608,6 +664,25 @@ TimeOfDay? _timeFromRaw(String? raw) {
   }
   final local = parsed.toLocal();
   return TimeOfDay(hour: local.hour, minute: local.minute);
+}
+
+DateTime? _parseServiceDate(String? raw) {
+  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(raw ?? '');
+  if (match == null) {
+    return null;
+  }
+  return DateTime(
+    int.parse(match.group(1)!),
+    int.parse(match.group(2)!),
+    int.parse(match.group(3)!),
+  );
+}
+
+String _datePayload(DateTime date) {
+  final local = DateUtils.dateOnly(date);
+  final month = local.month.toString().padLeft(2, '0');
+  final day = local.day.toString().padLeft(2, '0');
+  return '${local.year}-$month-$day';
 }
 
 String _clockValue(TimeOfDay time) {
@@ -656,12 +731,16 @@ class _DepartureTimeField extends StatelessWidget {
     required this.value,
     required this.placeholder,
     required this.onTap,
+    this.helper,
+    this.icon = Icons.schedule_outlined,
   });
 
   final String label;
   final String? value;
   final String placeholder;
   final VoidCallback onTap;
+  final String? helper;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -694,8 +773,8 @@ class _DepartureTimeField extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: InputDecorator(
               decoration: InputDecoration(
-                suffixIcon: const Icon(Icons.schedule_outlined),
-                helperText: context.tr('common.required'),
+                suffixIcon: Icon(icon),
+                helperText: helper ?? context.tr('common.required'),
                 helperMaxLines: 2,
                 helperStyle: const TextStyle(
                   fontSize: 11,

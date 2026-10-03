@@ -73,6 +73,19 @@ class DispatchPlan {
       requiredDate: trip.job?.shipment?.requiredDate,
     );
   }
+
+  String? serviceDateFor(Trip trip) {
+    final quotation = job?.quotation ?? trip.job?.quotation;
+    final planned = quotation?.serviceDateForSequence(trip.sequence ?? 1);
+    if (planned != null && planned.isNotEmpty) {
+      return planned;
+    }
+    final fallback = requiredDate ?? trip.job?.shipment?.requiredDate;
+    if (fallback == null || fallback.isEmpty) {
+      return null;
+    }
+    return fallback;
+  }
 }
 
 class DispatchJobGroup {

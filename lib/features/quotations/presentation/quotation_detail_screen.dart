@@ -104,6 +104,13 @@ class QuotationDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       InfoGrid(
                         fields: [
+                          if (item.pricePerTrip != null)
+                            InfoField(
+                              label: context.tr('quotations.pricePerTrip'),
+                              value: Formatters.money(item.pricePerTrip, currency: item.currency, locale: locale),
+                              icon: Icons.route_outlined,
+                              tone: IconTone.teal,
+                            ),
                           InfoField(
                             label: context.tr('quotations.totalPrice'),
                             value: Formatters.money(item.totalPrice, currency: item.currency, locale: locale),
@@ -179,6 +186,12 @@ class QuotationDetailScreen extends ConsumerWidget {
                             value: '${item.durationDays ?? 0}',
                             icon: Icons.schedule_outlined,
                             tone: IconTone.warning,
+                          ),
+                          InfoField(
+                            label: context.tr('quotations.transportStartDate'),
+                            value: Formatters.date(item.transportStartDate, locale: locale),
+                            icon: Icons.event_outlined,
+                            tone: IconTone.info,
                           ),
                         ],
                       ),

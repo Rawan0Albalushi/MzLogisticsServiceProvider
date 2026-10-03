@@ -42,10 +42,12 @@ class TripRepository {
     required int truckId,
     required int driverId,
     required String departureTime,
+    required String departureDate,
   }) async {
     final response = await _api.post(ApiEndpoints.assignTrip(id), data: {
       'truck_id': truckId,
       'driver_id': driverId,
+      'departure_date': departureDate,
       'departure_time': departureTime,
     });
     return Trip.fromJson(asMap(response['data']));

@@ -124,7 +124,7 @@ Convert data intelligently into:
 
 Quotation forms must clearly support:
 
-- Total price.
+- Price per trip. The job total is that price multiplied by the number of trips.
 - Number of trucks.
 - Truck types.
 - Truck capacities.

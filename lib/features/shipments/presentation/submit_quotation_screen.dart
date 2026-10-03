@@ -59,6 +59,8 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
   var _trucksTouched = false;
   var _tripsTouched = false;
   var _durationTouched = false;
+  DateTime? _transportStart;
+  var _startTouched = false;
   String? _appliedPlanKey;
   Shipment? _shipment;
 
@@ -101,6 +103,12 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
   }
 
   double get _qtyPerTripValue => double.tryParse(_qtyPerTrip.text.trim()) ?? 0;
+
+  double _quotedTotal(int trips) {
+    final unit = double.tryParse(_price.text.trim()) ?? 0;
+    final count = trips < 1 ? 1 : trips;
+    return ((unit * count) * 1000).round() / 1000;
+  }
 
   double get _capacityValue => double.tryParse(_capacity.text.trim()) ?? 0;
 
@@ -302,7 +310,8 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
       return;
     }
     final truckType = _truckType;
-    if (truckType == null || truckType.isEmpty) {
+    final shipment = _shipment;
+    if (truckType == null || truckType.isEmpty || shipment == null) {
       return;
     }
     if (!plan.covers || plan.overshoot) {
@@ -319,13 +328,14 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
       await ref.read(quotationRepositoryProvider).submit(
             widget.shipmentId,
             QuotationDraft(
-              totalPrice: double.parse(_price.text),
+              pricePerTrip: double.parse(_price.text),
               truckCount: int.parse(_truckCount.text),
               truckType: truckType,
               truckCapacityTons: double.parse(_capacity.text),
               tripCount: int.parse(_tripCount.text),
               quantityPerTrip: double.parse(_qtyPerTrip.text),
               durationDays: int.parse(_duration.text),
+              transportStartDate: _datePayload(_resolvedStart(shipment)),
               additionalCosts: double.tryParse(_extra.text),
               conditions: _conditions.text.trim(),
             ),
@@ -524,7 +534,7 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
             child: Column(
               children: [
                 AppTextField(
-                  label: context.tr('quotations.totalPrice'),
+                  label: context.tr('quotations.pricePerTrip'),
                   controller: _price,
                   required: true,
                   showRequiredHint: false,
@@ -534,16 +544,36 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  context.tr('quotations.totalPriceHint'),
+                  context.tr('quotations.pricePerTripHint'),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.muted,
                         height: 1.45,
                       ),
                 ),
+                if ((double.tryParse(_price.text.trim()) ?? 0) > 0) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      context.tr('quotations.calculatedTotal', {
+                        'amount': Formatters.money(
+                          _quotedTotal(plan.tripCount),
+                          locale: Localizations.localeOf(context).languageCode,
+                        ),
+                        'count': '${plan.tripCount}',
+                      }),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.ink,
+                            fontWeight: FontWeight.w600,
+                            height: 1.45,
+                          ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 QuotationBillingPreview(
                   shipment: shipment,
-                  totalPrice: double.tryParse(_price.text.trim()) ?? 0,
+                  totalPrice: _quotedTotal(plan.tripCount),
                   tripCount: plan.tripCount,
                 ),
                 const SizedBox(height: 12),
@@ -553,6 +583,8 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
                   showRequiredHint: false,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
+                const SizedBox(height: 12),
+                _startDateField(context, shipment),
                 const SizedBox(height: 12),
                 AppTextField(
                   label: context.tr('quotations.durationDays'),
@@ -613,6 +645,85 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
           onChanged: (selected) => _selectTruckType(selected ?? _truckType),
         );
       },
+    );
+  }
+
+  DateTime _defaultStart(Shipment shipment) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final parsed = DateTime.tryParse(shipment.requiredDate ?? '');
+    if (parsed == null) {
+      return today;
+    }
+    final required = DateUtils.dateOnly(parsed.toLocal());
+    return required.isBefore(today) ? today : required;
+  }
+
+  DateTime _resolvedStart(Shipment shipment) {
+    if (_startTouched && _transportStart != null) {
+      return DateUtils.dateOnly(_transportStart!);
+    }
+    return _defaultStart(shipment);
+  }
+
+  String _datePayload(DateTime date) {
+    final local = DateUtils.dateOnly(date);
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    return '${local.year}-$month-$day';
+  }
+
+  Future<void> _pickStartDate(Shipment shipment) async {
+    final earliest = _defaultStart(shipment);
+    final current = _resolvedStart(shipment);
+    final selected = await showDatePicker(
+      context: context,
+      locale: Localizations.localeOf(context),
+      initialDate: current.isBefore(earliest) ? earliest : current,
+      firstDate: earliest,
+      lastDate: DateTime(earliest.year + 2, earliest.month, earliest.day),
+    );
+    if (selected == null) {
+      return;
+    }
+    setState(() {
+      _startTouched = true;
+      _transportStart = DateUtils.dateOnly(selected);
+    });
+  }
+
+  Widget _startDateField(BuildContext context, Shipment shipment) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final value = Formatters.date(_datePayload(_resolvedStart(shipment)), locale: locale);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          button: true,
+          label: '${context.tr('quotations.transportStartDate')}. $value',
+          child: InkWell(
+            onTap: _loading ? null : () => _pickStartDate(shipment),
+            borderRadius: BorderRadius.circular(8),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: context.tr('quotations.transportStartDate'),
+                suffixIcon: const Icon(Icons.calendar_today_outlined),
+              ),
+              child: Text(
+                value,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          context.tr('quotations.transportStartHint'),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+                height: 1.45,
+              ),
+        ),
+      ],
     );
   }
 

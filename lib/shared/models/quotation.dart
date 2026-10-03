@@ -8,6 +8,7 @@ class Quotation {
     this.reference,
     this.shipmentRequestId,
     this.totalPrice,
+    this.pricePerTrip,
     this.currency,
     this.truckCount,
     this.truckType,
@@ -16,6 +17,7 @@ class Quotation {
     this.tripCount,
     this.quantityPerTrip,
     this.durationDays,
+    this.transportStartDate,
     this.additionalCosts,
     this.conditions,
     this.validUntil,
@@ -29,6 +31,7 @@ class Quotation {
   final String? reference;
   final int? shipmentRequestId;
   final double? totalPrice;
+  final double? pricePerTrip;
   final String? currency;
   final int? truckCount;
   final String? truckType;
@@ -37,6 +40,7 @@ class Quotation {
   final int? tripCount;
   final double? quantityPerTrip;
   final int? durationDays;
+  final String? transportStartDate;
   final double? additionalCosts;
   final String? conditions;
   final String? validUntil;
@@ -58,12 +62,34 @@ class Quotation {
     return trucks > trips ? trucks : trips;
   }
 
+  String? serviceDateForSequence(int sequence) {
+    final raw = transportStartDate;
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(raw);
+    if (match == null) {
+      return null;
+    }
+    final start = DateTime(
+      int.parse(match.group(1)!),
+      int.parse(match.group(2)!),
+      int.parse(match.group(3)!),
+    );
+    final safeSequence = sequence < 1 ? 1 : sequence;
+    final planned = start.add(Duration(days: (safeSequence - 1) ~/ dispatchTruckCount));
+    final month = planned.month.toString().padLeft(2, '0');
+    final day = planned.day.toString().padLeft(2, '0');
+    return '${planned.year}-$month-$day';
+  }
+
   factory Quotation.fromJson(Map<String, dynamic> json) {
     return Quotation(
       id: asInt(json['id']) ?? 0,
       reference: asString(json['reference']),
       shipmentRequestId: asInt(json['shipment_request_id']),
       totalPrice: asDouble(json['total_price']),
+      pricePerTrip: asDouble(json['price_per_trip']),
       currency: asString(json['currency']),
       truckCount: asInt(json['truck_count']),
       truckType: asString(json['truck_type']),
@@ -72,6 +98,7 @@ class Quotation {
       tripCount: asInt(json['trip_count']),
       quantityPerTrip: asDouble(json['quantity_per_trip']),
       durationDays: asInt(json['duration_days']),
+      transportStartDate: asString(json['transport_start_date']),
       additionalCosts: asDouble(json['additional_costs']),
       conditions: asString(json['conditions']),
       validUntil: asString(json['valid_until']),
@@ -85,36 +112,39 @@ class Quotation {
 
 class QuotationDraft {
   const QuotationDraft({
-    required this.totalPrice,
+    required this.pricePerTrip,
     required this.truckCount,
     required this.truckType,
     required this.truckCapacityTons,
     required this.tripCount,
     required this.quantityPerTrip,
     required this.durationDays,
+    required this.transportStartDate,
     this.additionalCosts,
     this.conditions,
   });
 
-  final double totalPrice;
+  final double pricePerTrip;
   final int truckCount;
   final String truckType;
   final double truckCapacityTons;
   final int tripCount;
   final double quantityPerTrip;
   final int durationDays;
+  final String transportStartDate;
   final double? additionalCosts;
   final String? conditions;
 
   Map<String, dynamic> toJson() {
     return {
-      'total_price': totalPrice,
+      'price_per_trip': pricePerTrip,
       'truck_count': truckCount,
       'truck_type': truckType,
       'truck_capacity_tons': truckCapacityTons,
       'trip_count': tripCount,
       'quantity_per_trip': quantityPerTrip,
       'duration_days': durationDays,
+      'transport_start_date': transportStartDate,
       if (additionalCosts != null) 'additional_costs': additionalCosts,
       if (conditions != null && conditions!.isNotEmpty) 'conditions': conditions,
     };
