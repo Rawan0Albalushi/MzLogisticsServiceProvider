@@ -327,14 +327,6 @@ class DashboardScreen extends ConsumerWidget {
           tone: DashboardKpiTone.success,
           onTap: () => context.go('/finance'),
         ),
-      if (can(AppPermissions.paymentsView))
-        DashboardKpi(
-          label: context.tr('dashboard.commission'),
-          value: money(data.commissionAmount),
-          hint: context.tr('dashboard.commissionHint'),
-          icon: Icons.account_balance_outlined,
-          onTap: () => context.go('/finance'),
-        ),
       if (can(AppPermissions.walletsView))
         DashboardKpi(
           label: context.tr('dashboard.receivable'),

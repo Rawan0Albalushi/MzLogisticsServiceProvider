@@ -556,10 +556,7 @@ Future<void> _showInviteResult(
   DriverInviteResult result, {
   bool resent = false,
 }) async {
-  if (result.whatsappSent) {
-    showAppSnack(context, context.tr('drivers.whatsappSent'));
-    return;
-  }
+  final code = formatActivationCode(result.activationCode);
   await showDialog<void>(
     context: context,
     builder: (context) {
@@ -567,21 +564,32 @@ Future<void> _showInviteResult(
         title: Text(
           resent
               ? context.tr('drivers.inviteResent')
-              : context.tr('drivers.saved'),
+              : context.tr('drivers.inviteTitle'),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(context.tr('drivers.inviteReady')),
-            const SizedBox(height: 12),
-            SelectableText(result.inviteUrl),
+            if (result.whatsappSent) ...[
+              const SizedBox(height: 8),
+              Text(context.tr('drivers.whatsappSent')),
+            ],
+            const SizedBox(height: 16),
+            SelectableText(
+              code,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 4,
+                  ),
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: result.inviteUrl));
+              await Clipboard.setData(ClipboardData(text: code));
               if (context.mounted) {
                 showAppSnack(context, context.tr('drivers.inviteCopied'));
               }

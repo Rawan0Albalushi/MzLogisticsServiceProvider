@@ -67,7 +67,6 @@ class AppConfig {
   static const List<String> invoiceTypes = [
     'customer',
     'provider',
-    'commission',
   ];
   static const List<String> settlementStatuses = [
     'pending',

@@ -7,6 +7,7 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/permissions/app_permissions.dart';
 import '../../../core/utils/directional_text.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../shared/models/job.dart';
 import '../../../shared/models/trip.dart';
 import '../../../shared/providers/session_provider.dart';
 import '../../../core/theme/page_visuals.dart';
@@ -21,9 +22,24 @@ import '../../../shared/widgets/status_badge.dart';
 final tripStatusProvider = StateProvider<String?>((ref) => null);
 final tripSearchProvider = StateProvider<String>((ref) => '');
 final tripCityProvider = StateProvider<String>((ref) => '');
+final tripJobIdProvider = StateProvider<int?>((ref) => null);
+final tripJobLabelProvider = StateProvider<String?>((ref) => null);
+final tripJobSearchProvider = StateProvider<String>((ref) => '');
 final tripDateFromProvider = StateProvider<String?>((ref) => null);
 final tripDateToProvider = StateProvider<String?>((ref) => null);
 final tripPageProvider = StateProvider<int>((ref) => 1);
+
+final tripJobOptionsProvider = FutureProvider.autoDispose((ref) async {
+  if (!ref.watch(sessionProvider).permissions.can(AppPermissions.jobsView)) {
+    return const <TransportJob>[];
+  }
+  final page = await ref.watch(jobRepositoryProvider).list(
+        page: 1,
+        perPage: 30,
+        search: ref.watch(tripJobSearchProvider),
+      );
+  return page.items;
+});
 
 final tripsProvider = FutureProvider.autoDispose((ref) {
   return ref
@@ -33,6 +49,7 @@ final tripsProvider = FutureProvider.autoDispose((ref) {
         status: ref.watch(tripStatusProvider),
         search: ref.watch(tripSearchProvider),
         city: ref.watch(tripCityProvider),
+        jobId: ref.watch(tripJobIdProvider),
         dateFrom: ref.watch(tripDateFromProvider),
         dateTo: ref.watch(tripDateToProvider),
       );
@@ -48,6 +65,18 @@ final tripDetailProvider = FutureProvider.autoDispose.family((ref, int id) {
   return ref.watch(tripRepositoryProvider).show(id);
 });
 
+String? _jobCustomer(TransportJob job, String locale) {
+  final customer = job.customer;
+  if (customer == null) {
+    return null;
+  }
+  if (locale.startsWith('ar') && (customer.nameAr?.trim().isNotEmpty ?? false)) {
+    return customer.nameAr;
+  }
+  final name = customer.name?.trim();
+  return name == null || name.isEmpty ? null : name;
+}
+
 class TripsScreen extends ConsumerWidget {
   const TripsScreen({super.key});
 
@@ -57,6 +86,10 @@ class TripsScreen extends ConsumerWidget {
       return const NoPermissionState();
     }
     final locale = Localizations.localeOf(context).languageCode;
+    final canFilterByJob = ref.watch(sessionProvider).permissions.can(AppPermissions.jobsView);
+    final jobOptions = ref.watch(tripJobOptionsProvider);
+    final selectedJobId = ref.watch(tripJobIdProvider);
+    final selectedJobLabel = ref.watch(tripJobLabelProvider);
     return AppPage(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -83,6 +116,32 @@ class TripsScreen extends ConsumerWidget {
                   ref.read(tripPageProvider.notifier).state = 1;
                 },
               ),
+              if (canFilterByJob)
+                FilterLookup(
+                  value: selectedJobId?.toString(),
+                  selectedLabel: selectedJobLabel,
+                  loading: jobOptions.isLoading,
+                  emptyLabel: jobOptions.hasError
+                      ? context.tr('common.error')
+                      : context.tr('common.noResults'),
+                  options: [
+                    for (final job in jobOptions.value ?? const <TransportJob>[])
+                      FilterOption(
+                        value: '${job.id}',
+                        label: job.reference ?? '',
+                        meta: _jobCustomer(job, locale),
+                      ),
+                  ],
+                  onQuery: (value) {
+                    ref.read(tripJobSearchProvider.notifier).state = value;
+                  },
+                  onChanged: (option) {
+                    ref.read(tripJobIdProvider.notifier).state =
+                        option == null ? null : int.tryParse(option.value);
+                    ref.read(tripJobLabelProvider.notifier).state = option?.label;
+                    ref.read(tripPageProvider.notifier).state = 1;
+                  },
+                ),
               FilterSelect(
                 options: AppConfig.tripStatuses,
                 value: ref.watch(tripStatusProvider),

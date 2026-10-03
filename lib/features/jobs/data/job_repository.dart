@@ -11,6 +11,7 @@ class JobRepository {
 
   Future<Paginated<TransportJob>> list({
     int page = 1,
+    int perPage = 15,
     String? status,
     String? search,
     String? dateFrom,
@@ -18,7 +19,7 @@ class JobRepository {
   }) async {
     final response = await _api.get(ApiEndpoints.jobs, query: {
       'page': page,
-      'per_page': 15,
+      'per_page': perPage,
       if (status != null && status.isNotEmpty) 'status': status,
       if (search != null && search.isNotEmpty) 'search': search,
       if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,

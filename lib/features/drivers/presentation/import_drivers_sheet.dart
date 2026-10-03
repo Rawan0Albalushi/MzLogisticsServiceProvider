@@ -120,8 +120,8 @@ class _ImportDriversDialogState extends ConsumerState<_ImportDriversDialog> {
     final result = _result;
     if (result == null) return;
     final links = result.drivers
-        .where((driver) => !driver.whatsappSent && driver.inviteUrl.isNotEmpty)
-        .map((driver) => '${driver.name}\t${driver.phone ?? ''}\t${driver.inviteUrl}')
+        .where((driver) => !driver.whatsappSent && driver.activationCode.isNotEmpty)
+        .map((driver) => '${driver.name}\t${driver.phone ?? ''}\t${formatActivationCode(driver.activationCode)}')
         .join('\n');
     if (links.isEmpty) {
       return;
@@ -132,8 +132,8 @@ class _ImportDriversDialogState extends ConsumerState<_ImportDriversDialog> {
     }
   }
 
-  Future<void> _copyLink(String url) async {
-    await Clipboard.setData(ClipboardData(text: url));
+  Future<void> _copyCode(String code) async {
+    await Clipboard.setData(ClipboardData(text: code));
     if (mounted) {
       showAppSnack(context, context.tr('drivers.inviteCopied'));
     }
@@ -200,13 +200,13 @@ class _ImportDriversDialogState extends ConsumerState<_ImportDriversDialog> {
                     subtitle: Text(
                       driver.whatsappSent
                           ? context.tr('drivers.whatsappSent')
-                          : (driver.phone ?? driver.inviteUrl),
+                          : formatActivationCode(driver.activationCode),
                     ),
-                    trailing: driver.inviteUrl.isEmpty
+                    trailing: driver.activationCode.isEmpty
                         ? null
                         : IconButton(
                             tooltip: context.tr('drivers.copyInvite'),
-                            onPressed: () => _copyLink(driver.inviteUrl),
+                            onPressed: () => _copyCode(formatActivationCode(driver.activationCode)),
                             icon: const Icon(Icons.copy_outlined),
                           ),
                   ),

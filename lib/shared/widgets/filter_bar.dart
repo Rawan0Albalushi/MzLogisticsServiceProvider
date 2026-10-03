@@ -15,6 +15,7 @@ const double _gap = 8;
 const double _searchMin = 220;
 const double _searchMax = 480;
 const double _selectWidth = 160;
+const double _lookupWidth = 220;
 const double _dateRangeWidth = 240;
 
 class FilterBar extends StatelessWidget {
@@ -66,6 +67,10 @@ class FilterBar extends StatelessWidget {
     }
     if (child is FilterSelect) {
       return _FilterSpec(child: child, grow: false, minWidth: _selectWidth);
+    }
+    if (child is FilterLookup) {
+      final width = maxWidth < _lookupWidth ? maxWidth : _lookupWidth;
+      return _FilterSpec(child: child, grow: false, minWidth: width);
     }
     if (child is FilterDateRange) {
       return _FilterSpec(child: child, grow: false, minWidth: _dateRangeWidth);
@@ -289,6 +294,349 @@ class FilterSelect extends StatelessWidget {
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Text(label, style: const TextStyle(fontSize: 14, color: _ink)),
+    );
+  }
+}
+
+class FilterOption {
+  const FilterOption({required this.value, required this.label, this.meta});
+
+  final String value;
+  final String label;
+  final String? meta;
+}
+
+class FilterLookup extends StatefulWidget {
+  const FilterLookup({
+    super.key,
+    required this.options,
+    required this.onChanged,
+    required this.onQuery,
+    this.value,
+    this.selectedLabel,
+    this.allLabel,
+    this.searchHint,
+    this.emptyLabel,
+    this.loading = false,
+  });
+
+  final List<FilterOption> options;
+  final String? value;
+  final String? selectedLabel;
+  final ValueChanged<FilterOption?> onChanged;
+  final ValueChanged<String> onQuery;
+  final String? allLabel;
+  final String? searchHint;
+  final String? emptyLabel;
+  final bool loading;
+
+  @override
+  State<FilterLookup> createState() => _FilterLookupState();
+}
+
+class _FilterLookupState extends State<FilterLookup> {
+  final GlobalKey _menuKey = GlobalKey();
+  OverlayEntry? _entry;
+
+  @override
+  void didUpdateWidget(covariant FilterLookup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _entry?.markNeedsBuild();
+  }
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _removeOverlay() {
+    _entry?.remove();
+    _entry = null;
+  }
+
+  void _close() {
+    _removeOverlay();
+    widget.onQuery('');
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _select(FilterOption? option) {
+    widget.onChanged(option);
+    _close();
+  }
+
+  void _open() {
+    if (_entry != null) {
+      _close();
+      return;
+    }
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      return;
+    }
+    final origin = box.localToGlobal(Offset.zero);
+    final size = box.size;
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final screen = MediaQuery.sizeOf(context);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    const popoverWidth = 280.0;
+    final top = origin.dy + size.height + 6;
+    final start = rtl ? screen.width - origin.dx - size.width : origin.dx;
+    final maxStart = screen.width - popoverWidth - 8;
+    final left = rtl ? null : start.clamp(8.0, maxStart < 8 ? 8.0 : maxStart);
+    final right = rtl ? start.clamp(8.0, maxStart < 8 ? 8.0 : maxStart) : null;
+
+    _entry = OverlayEntry(
+      builder: (context) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _close,
+              ),
+            ),
+            Positioned(
+              left: left,
+              right: right,
+              top: top,
+              width: popoverWidth,
+              child: _JobLookupMenu(
+                key: _menuKey,
+                options: widget.options,
+                value: widget.value,
+                allLabel: widget.allLabel ?? context.tr('common.allJobs'),
+                searchHint: widget.searchHint ?? context.tr('common.searchJob'),
+                emptyLabel: widget.emptyLabel ?? context.tr('common.noResults'),
+                loading: widget.loading,
+                onQuery: widget.onQuery,
+                onSelected: _select,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    overlay.insert(_entry!);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final empty = widget.value == null || widget.value!.isEmpty;
+    final allLabel = widget.allLabel ?? context.tr('common.allJobs');
+    final label = empty ? allLabel : (widget.selectedLabel ?? '…');
+
+    return SizedBox(
+      height: _controlHeight,
+      width: double.infinity,
+      child: Tooltip(
+        message: context.tr('common.job'),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: _open,
+          child: _AdminControl(
+            focused: _entry != null,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.2,
+                      color: empty ? _muted : _ink,
+                    ),
+                  ),
+                ),
+                if (!empty)
+                  GestureDetector(
+                    onTap: () => _select(null),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Tooltip(
+                        message: context.tr('common.allJobs'),
+                        child: const Icon(Icons.close, size: 14, color: _muted),
+                      ),
+                    ),
+                  ),
+                const Icon(Icons.arrow_drop_down, size: 20, color: _ink),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _JobLookupMenu extends StatefulWidget {
+  const _JobLookupMenu({
+    super.key,
+    required this.options,
+    required this.onQuery,
+    required this.onSelected,
+    required this.allLabel,
+    required this.searchHint,
+    required this.emptyLabel,
+    required this.loading,
+    this.value,
+  });
+
+  final List<FilterOption> options;
+  final String? value;
+  final String allLabel;
+  final String searchHint;
+  final String emptyLabel;
+  final bool loading;
+  final ValueChanged<String> onQuery;
+  final ValueChanged<FilterOption?> onSelected;
+
+  @override
+  State<_JobLookupMenu> createState() => _JobLookupMenuState();
+}
+
+class _JobLookupMenuState extends State<_JobLookupMenu> {
+  final TextEditingController _search = TextEditingController();
+  final FocusNode _focus = FocusNode();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focus.requestFocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _focus.dispose();
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      widget.onQuery(value.trim());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: _card,
+      elevation: 3,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        constraints: const BoxConstraints(maxHeight: 320),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: _border),
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _AdminControl(
+              focused: _focus.hasFocus,
+              child: TextField(
+                controller: _search,
+                focusNode: _focus,
+                onChanged: _onChanged,
+                cursorColor: _ink,
+                style: const TextStyle(fontSize: 14, height: 1.2, color: _ink),
+                decoration: InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
+                  hintText: widget.searchHint,
+                  hintStyle: const TextStyle(fontSize: 14, height: 1.2, color: _muted),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 248),
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                children: [
+                  _optionTile(
+                    label: widget.allLabel,
+                    selected: widget.value == null || widget.value!.isEmpty,
+                    onTap: () => widget.onSelected(null),
+                  ),
+                  if (widget.options.isNotEmpty)
+                    for (final option in widget.options)
+                      _optionTile(
+                        label: option.label,
+                        meta: option.meta,
+                        selected: option.value == widget.value,
+                        onTap: () => widget.onSelected(option),
+                      )
+                  else if (widget.loading)
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        context.tr('common.loading'),
+                        style: const TextStyle(fontSize: 13, color: _muted),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        widget.emptyLabel,
+                        style: const TextStyle(fontSize: 13, color: _muted),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _optionTile({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    String? meta,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: _ink)),
+            if (meta != null && meta.isNotEmpty)
+              Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: _muted)),
+          ],
+        ),
+      ),
     );
   }
 }

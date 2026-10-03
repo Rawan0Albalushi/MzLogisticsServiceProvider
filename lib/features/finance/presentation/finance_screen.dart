@@ -494,7 +494,6 @@ class _PaymentsTab extends ConsumerWidget {
                 DataColumnSpec(context.tr('common.reference')),
                 DataColumnSpec(context.tr('finance.amount')),
                 DataColumnSpec(context.tr('finance.providerAmount')),
-                DataColumnSpec(context.tr('finance.commission')),
                 DataColumnSpec(context.tr('finance.method')),
                 DataColumnSpec(context.tr('finance.gateway')),
                 DataColumnSpec(context.tr('finance.paidAt')),
@@ -512,13 +511,6 @@ class _PaymentsTab extends ConsumerWidget {
                 Text(
                   Formatters.money(
                     item.providerAmount,
-                    currency: item.currency,
-                    locale: locale,
-                  ),
-                ),
-                Text(
-                  Formatters.money(
-                    item.commissionAmount,
                     currency: item.currency,
                     locale: locale,
                   ),
@@ -735,7 +727,6 @@ class _SettlementsTab extends ConsumerWidget {
               columns: [
                 DataColumnSpec(context.tr('common.reference')),
                 DataColumnSpec(context.tr('finance.amount')),
-                DataColumnSpec(context.tr('finance.commission')),
                 DataColumnSpec(context.tr('finance.net')),
                 DataColumnSpec(context.tr('finance.period')),
                 DataColumnSpec(context.tr('finance.settledAt')),
@@ -746,13 +737,6 @@ class _SettlementsTab extends ConsumerWidget {
                 Text(
                   Formatters.money(
                     item.amount,
-                    currency: item.currency,
-                    locale: locale,
-                  ),
-                ),
-                Text(
-                  Formatters.money(
-                    item.commissionAmount,
                     currency: item.currency,
                     locale: locale,
                   ),

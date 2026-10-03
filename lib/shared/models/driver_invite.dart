@@ -1,21 +1,29 @@
 import '../../core/utils/json_utils.dart';
 import 'user.dart';
 
+String formatActivationCode(String code) {
+  final digits = code.replaceAll(RegExp(r'\D'), '');
+  if (digits.length != 6) {
+    return code;
+  }
+  return '${digits.substring(0, 3)} ${digits.substring(3)}';
+}
+
 class DriverInviteResult {
   const DriverInviteResult({
     required this.driver,
-    required this.inviteUrl,
+    required this.activationCode,
     required this.whatsappSent,
   });
 
   final AppUser driver;
-  final String inviteUrl;
+  final String activationCode;
   final bool whatsappSent;
 
   factory DriverInviteResult.fromJson(Map<String, dynamic> json) {
     return DriverInviteResult(
       driver: AppUser.fromJson(asMap(json['driver'])),
-      inviteUrl: asString(json['invite_url']) ?? '',
+      activationCode: asString(json['activation_code']) ?? '',
       whatsappSent: asBool(json['whatsapp_sent']),
     );
   }
@@ -26,14 +34,14 @@ class DriverImportRow {
     required this.row,
     required this.name,
     this.phone,
-    required this.inviteUrl,
+    required this.activationCode,
     required this.whatsappSent,
   });
 
   final int row;
   final String name;
   final String? phone;
-  final String inviteUrl;
+  final String activationCode;
   final bool whatsappSent;
 
   factory DriverImportRow.fromJson(Map<String, dynamic> json) {
@@ -41,7 +49,7 @@ class DriverImportRow {
       row: asInt(json['row']) ?? 0,
       name: asString(json['name']) ?? '',
       phone: asString(json['phone']),
-      inviteUrl: asString(json['invite_url']) ?? '',
+      activationCode: asString(json['activation_code']) ?? '',
       whatsappSent: asBool(json['whatsapp_sent']),
     );
   }
