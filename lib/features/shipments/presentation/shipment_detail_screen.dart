@@ -41,12 +41,7 @@ class ShipmentDetailScreen extends ConsumerWidget {
           final canQuote = session.canOperate &&
               session.permissions.can(AppPermissions.quotationsCreate) &&
               !alreadyQuoted;
-          final customerName = item.customer?.name?.trim();
           final cargoType = item.cargoType?.trim();
-          final subtitleParts = <String>[
-            if (customerName != null && customerName.isNotEmpty) customerName,
-            if (cargoType != null && cargoType.isNotEmpty) cargoType,
-          ];
 
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -56,7 +51,7 @@ class ShipmentDetailScreen extends ConsumerWidget {
               const SizedBox(height: 4),
               PageHeader(
                 title: item.reference ?? context.tr('shipments.detailTitle'),
-                subtitle: subtitleParts.isEmpty ? null : subtitleParts.join(' · '),
+                subtitle: cargoType == null || cargoType.isEmpty ? null : cargoType,
                 actions: [
                   StatusBadge(status: item.status),
                   if (canQuote)

@@ -377,17 +377,14 @@ class _SubmitQuotationScreenState extends ConsumerState<SubmitQuotationScreen> {
           final plan = _planOf(shipment, trucks, suggestion);
           final summary = ShipmentRequestSummary(shipment: shipment);
           final form = _quoteForm(shipment, plan, trucks);
-          final subtitleParts = [
-            shipment.reference,
-            shipment.customer?.name,
-          ].whereType<String>().where((part) => part.trim().isNotEmpty);
+          final subtitle = shipment.reference?.trim();
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PageHeader(
                 title: context.tr('quotations.submitTitle'),
-                subtitle: subtitleParts.join(' · '),
+                subtitle: subtitle == null || subtitle.isEmpty ? null : subtitle,
                 actions: [
                   AppButton(
                     label: context.tr('quotations.backToRequest'),

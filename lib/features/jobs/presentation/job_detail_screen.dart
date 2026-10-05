@@ -72,8 +72,6 @@ class JobDetailScreen extends ConsumerWidget {
                         tone: IconTone.warning,
                         chips: [
                           StatusBadge(status: job.status),
-                          if (job.customer?.name != null)
-                            DetailChip(label: job.customer!.name!, icon: Icons.apartment_outlined),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -89,12 +87,6 @@ class JobDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       InfoGrid(
                         fields: [
-                          InfoField(
-                            label: context.tr('common.customer'),
-                            value: job.customer?.name ?? '—',
-                            icon: Icons.apartment_outlined,
-                            tone: IconTone.info,
-                          ),
                           InfoField(
                             label: context.tr('projects.linked'),
                             value: job.project?.label(locale) ?? '—',

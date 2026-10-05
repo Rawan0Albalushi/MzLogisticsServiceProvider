@@ -65,18 +65,6 @@ final tripDetailProvider = FutureProvider.autoDispose.family((ref, int id) {
   return ref.watch(tripRepositoryProvider).show(id);
 });
 
-String? _jobCustomer(TransportJob job, String locale) {
-  final customer = job.customer;
-  if (customer == null) {
-    return null;
-  }
-  if (locale.startsWith('ar') && (customer.nameAr?.trim().isNotEmpty ?? false)) {
-    return customer.nameAr;
-  }
-  final name = customer.name?.trim();
-  return name == null || name.isEmpty ? null : name;
-}
-
 class TripsScreen extends ConsumerWidget {
   const TripsScreen({super.key});
 
@@ -129,7 +117,6 @@ class TripsScreen extends ConsumerWidget {
                       FilterOption(
                         value: '${job.id}',
                         label: job.reference ?? '',
-                        meta: _jobCustomer(job, locale),
                       ),
                   ],
                   onQuery: (value) {

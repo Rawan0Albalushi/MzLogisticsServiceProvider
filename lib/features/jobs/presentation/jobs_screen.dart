@@ -104,7 +104,6 @@ class JobsScreen extends ConsumerWidget {
                 items: data.items,
                 columns: [
                   DataColumnSpec(context.tr('common.reference')),
-                  DataColumnSpec(context.tr('common.customer')),
                   DataColumnSpec(context.tr('nav.shipments')),
                   DataColumnSpec(context.tr('quotations.totalPrice')),
                   DataColumnSpec(context.tr('jobs.totalQuantity')),
@@ -116,7 +115,6 @@ class JobsScreen extends ConsumerWidget {
                 onRowTap: (item) => context.go('/jobs/${item.id}'),
                 rowCells: (item) => [
                   Text(item.reference ?? ''),
-                  Text(item.customer?.name ?? ''),
                   Text(item.shipment?.reference ?? '—'),
                   Text(
                     Formatters.money(
@@ -138,7 +136,7 @@ class JobsScreen extends ConsumerWidget {
                   icon: Icons.work_outline_rounded,
                   tone: IconTone.warning,
                   trailing: StatusBadge(status: item.status),
-                  subtitle: item.customer?.name,
+                  subtitle: item.shipment?.reference,
                   meta: [
                     item.shipment?.reference ?? '',
                     Formatters.money(

@@ -42,7 +42,6 @@ class ShipmentRequestSummary extends StatelessWidget {
         ),
     ];
     final schedule = <_SummaryMetric>[
-      _SummaryMetric(context.tr('common.customer'), shipment.customer?.name ?? '—'),
       _SummaryMetric(
         context.tr('common.requiredDate'),
         Formatters.date(shipment.requiredDate, locale: locale),

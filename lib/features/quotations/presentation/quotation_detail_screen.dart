@@ -242,12 +242,6 @@ class QuotationDetailScreen extends ConsumerWidget {
                             onTap: () => context.go('/shipments/${shipment.id}'),
                           ),
                           InfoField(
-                            label: context.tr('common.customer'),
-                            value: shipment.customer?.name ?? '—',
-                            icon: Icons.apartment_outlined,
-                            tone: IconTone.info,
-                          ),
-                          InfoField(
                             label: context.tr('shipments.cargo'),
                             value: shipment.cargoType ?? '—',
                             icon: Icons.inventory_2_outlined,

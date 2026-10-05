@@ -108,7 +108,6 @@ class ShipmentsScreen extends ConsumerWidget {
                 items: data.items,
                 columns: [
                   DataColumnSpec(context.tr('common.reference')),
-                  DataColumnSpec(context.tr('common.customer')),
                   DataColumnSpec(context.tr('shipments.cargo')),
                   DataColumnSpec(context.tr('shipments.pickup')),
                   DataColumnSpec(context.tr('shipments.delivery')),
@@ -121,7 +120,6 @@ class ShipmentsScreen extends ConsumerWidget {
                 onRowTap: (item) => context.go('/shipments/${item.id}'),
                 rowCells: (item) => [
                   Text(item.reference ?? ''),
-                  Text(item.customer?.name ?? '—'),
                   Text(item.cargoType ?? ''),
                   Text(item.pickupCity ?? ''),
                   Text(item.deliveryCity ?? ''),
@@ -140,7 +138,7 @@ class ShipmentsScreen extends ConsumerWidget {
                   icon: Icons.local_shipping_outlined,
                   tone: IconTone.teal,
                   trailing: StatusBadge(status: item.status),
-                  subtitle: item.customer?.name ?? '—',
+                  subtitle: item.cargoType,
                   meta: [
                     directionalRouteOf(context, item.pickupCity, item.deliveryCity),
                     '${item.cargoType ?? ''} · ${Formatters.number(item.quantity, locale: locale)} ${item.quantityUnit ?? ''} · ${Formatters.number(item.weightTons, locale: locale)} ${context.tr('common.tons')}',

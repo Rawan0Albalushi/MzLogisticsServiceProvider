@@ -91,13 +91,13 @@ class ProjectDetailScreen extends ConsumerWidget {
                         items: details.jobs,
                         columns: [
                           DataColumnSpec(context.tr('common.reference')),
-                          DataColumnSpec(context.tr('common.customer')),
+                          DataColumnSpec(context.tr('jobs.progress')),
                           DataColumnSpec(context.tr('common.status')),
                         ],
                         onRowTap: (item) => context.go('/jobs/${item.id}'),
                         rowCells: (item) => [
                           Text(item.reference ?? ''),
-                          Text(item.customer?.name ?? '—'),
+                          Text(Formatters.percent(item.progressPercent)),
                           StatusBadge(status: item.status),
                         ],
                         cardBuilder: (item) => EntityCard(
@@ -105,7 +105,6 @@ class ProjectDetailScreen extends ConsumerWidget {
                           icon: Icons.work_outline_rounded,
                           tone: IconTone.warning,
                           trailing: StatusBadge(status: item.status),
-                          subtitle: item.customer?.name,
                           meta: [
                             Formatters.percent(item.progressPercent),
                           ],

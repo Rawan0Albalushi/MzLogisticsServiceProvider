@@ -1,10 +1,25 @@
+import 'package:flutter/foundation.dart';
+
 class AppConfig {
   const AppConfig._();
 
-  static const String apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://192.168.100.197:8000/api/v1',
-  );
+  static const String _apiBaseUrlFromEnv = String.fromEnvironment('API_BASE_URL');
+  static const int apiPort = 8000;
+  static const String lanApiHost = '192.168.100.94';
+
+  static String get apiBaseUrl {
+    if (_apiBaseUrlFromEnv.isNotEmpty) return _apiBaseUrlFromEnv;
+    if (kIsWeb) {
+      final host = Uri.base.host;
+      if (host == 'localhost' || host == '127.0.0.1') {
+        return 'http://127.0.0.1:$apiPort/api/v1';
+      }
+      if (host.isNotEmpty) {
+        return 'http://$host:$apiPort/api/v1';
+      }
+    }
+    return 'http://$lanApiHost:$apiPort/api/v1';
+  }
 
   static const String demoEmail = 'provider@omanhaulers.om';
   static const String demoPassword = 'Password123!';

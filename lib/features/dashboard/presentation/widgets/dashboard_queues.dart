@@ -111,7 +111,7 @@ class _ShipmentQueue extends ConsumerWidget {
             title: _reference(item.reference),
             meta: _queueMeta(
               context,
-              item.customer?.name,
+              null,
               item.pickupCity,
               item.deliveryCity,
             ),
@@ -148,7 +148,12 @@ class _JobQueue extends ConsumerWidget {
             .map((job) {
               return _QueueRowData(
                 title: _reference(job.reference),
-                meta: _party(job.customer?.name),
+                meta: _queueMeta(
+                  context,
+                  null,
+                  job.shipment?.pickupCity,
+                  job.shipment?.deliveryCity,
+                ),
                 status: job.status,
                 onTap: () => context.go('/jobs/${job.id}'),
               );
@@ -400,14 +405,6 @@ class _QueueRow extends StatelessWidget {
 }
 
 String _reference(String? value) {
-  final trimmed = value?.trim();
-  if (trimmed == null || trimmed.isEmpty) {
-    return '—';
-  }
-  return trimmed;
-}
-
-String _party(String? value) {
   final trimmed = value?.trim();
   if (trimmed == null || trimmed.isEmpty) {
     return '—';
