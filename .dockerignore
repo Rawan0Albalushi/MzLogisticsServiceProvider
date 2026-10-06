@@ -1,0 +1,31 @@
+.git
+.github
+.cursor
+.idea
+.vscode
+*.iml
+
+.dart_tool
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub
+.pub-cache
+build
+coverage
+.widget_preview
+
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.tmp
+
+# Native and desktop targets are not required to compile the web release.
+# They remain in git and are not modified by this Docker setup.
+android
+ios
+linux
+macos
+windows
+
+test
